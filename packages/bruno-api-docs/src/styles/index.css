@@ -1135,7 +1135,6 @@ tr.themed-row:nth-child(even) {
   opacity: 0;
 }
 
-/* Rendered in Monaco's overflow container, so it sits outside the CodeEditor style scope. */
 .variable-hover-widget {
   z-index: var(--z-popover);
   border-radius: var(--oc-radius);

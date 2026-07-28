@@ -77,8 +77,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     isFoundRef.current = resolver.isFound;
   }, [resolver]);
 
-  // The provider rebuilds the resolver on every request-item edit, so repaint only when the set of
-  // resolvable names or the active environment actually changes.
   const variableSignature = resolver.names.join('\n');
   useEffect(() => {
     decoratorRef.current?.refresh();

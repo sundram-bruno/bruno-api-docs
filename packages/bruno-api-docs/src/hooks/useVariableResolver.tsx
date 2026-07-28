@@ -29,14 +29,11 @@ export type DynamicVariableKind = 'random' | 'time' | 'unknown';
 export interface VariableLookup {
   name: string;
   scope: VariableScope;
-  /** Deep-resolved value, for display. */
   value: string;
-  /** Raw stored value (may contain `{{refs}}`), for editing — so edits don't flatten references. */
   rawValue: string;
   secret: boolean;
   valid: boolean;
   dynamicKind?: DynamicVariableKind;
-  /** See `VariableEntry.simpleString`. */
   simpleString: boolean;
 }
 
@@ -67,9 +64,7 @@ export interface VariableResolver {
   lookup: (name: string) => VariableLookup;
   isFound: (name: string) => boolean;
   names: string[];
-  /** Whether `updateVariable` reaches a store; callers must not offer editing when false. */
   canWrite: boolean;
-  /** Inline-edit a variable's value in its scope. No-op unless `canWrite`. */
   updateVariable: (name: string, value: string) => void;
 }
 
@@ -191,7 +186,6 @@ export const ItemVariableResolverProvider: React.FC<{
   collection: OpenCollection | null;
   ancestry: Item[];
   item: Item | null;
-  /** Set only where `collection` is the playground collection, since edits are written there. */
   writable?: boolean;
   children: React.ReactNode;
 }> = ({ collection, ancestry, item, writable = false, children }) => {
@@ -221,8 +215,6 @@ export const ItemVariableResolverProvider: React.FC<{
         const itemUuid = getItemUuid(item);
         if (itemUuid) dispatch(setPlaygroundVariable({ scope, name: varName, value, itemUuid }));
       } else if (scope === 'folder') {
-        // Innermost-first: the model resolves folders last-wins, so edit the folder the card showed.
-        // Disabled entries are skipped here too, or the edit targets a folder the reducer will skip.
         const owner = [...ancestry].reverse().find((folder) =>
           folderVariables(folder).some((v) => v.name === varName && !v.disabled && !isSecretVariable(v))
         );

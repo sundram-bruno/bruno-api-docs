@@ -115,8 +115,6 @@ export interface VariableEntry {
   scope: ConcreteScope;
   secret: boolean;
   dataType?: VariableValueType;
-  /** The raw value is a plain string (not a typed `{ type, data }` value or a variant list),
-   *  so it can be safely inline-edited as text without dropping its shape. */
   simpleString: boolean;
 }
 

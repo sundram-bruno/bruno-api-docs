@@ -223,9 +223,6 @@ const playgroundSlice = createSlice({
       if (state.hydratedCollection) writeEnvironments(state.hydratedCollection, environments);
       if (state.collection) writeEnvironments(state.collection, environments);
     },
-    // Inline-edit one variable's value in its scope. Only the hydrated collection is written: it is
-    // what the resolver and request execution read, and it is the only copy whose items carry the
-    // uuid an item-scoped edit is addressed by.
     setPlaygroundVariable: (
       state: PlaygroundState,
       action: PayloadAction<{
@@ -241,7 +238,6 @@ const playgroundSlice = createSlice({
       if (!collection) return;
 
       const setInList = (list: (Variable | SecretVariable)[] | undefined): void => {
-        // Last enabled wins, matching the resolver, so a duplicate name edits the shown variable.
         const enabled = (list ?? []).filter((v) => v.name === name && !v.disabled);
         const variable = enabled[enabled.length - 1];
         if (variable && !isSecretVariable(variable)) variable.value = value;

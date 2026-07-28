@@ -30,7 +30,6 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   const [draft, setDraft] = useState('');
   const editRef = useRef<HTMLTextAreaElement>(null);
 
-  // Grow the edit field with its content; the container caps and scrolls it.
   useLayoutEffect(() => {
     const el = editRef.current;
     if (!editing || !el) return;
@@ -48,7 +47,6 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     (info.scope !== 'environment' || !!activeEnvName);
 
   const startEditing = () => {
-    // Edit the raw stored value (which may contain `{{refs}}`), not the deep-resolved display value.
     setDraft(info.rawValue);
     setEditing(true);
   };
@@ -115,7 +113,6 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
 
   const readOnlyNote = getReadOnlyNote(info.scope, activeEnvName);
   const emptyLabel = info.value === '' ? '(empty)' : null;
-  // An editable empty value keeps the clickable display rather than the plain placeholder.
   const placeholder = info.secret ? '(Secret)' : canEdit ? null : emptyLabel;
 
   const copyButton = (
@@ -160,7 +157,6 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
         role="button"
         tabIndex={0}
         title="Click to edit"
-        // mousedown + preventDefault so the display swaps to the textarea without a focus-ring flash.
         onMouseDown={(event) => {
           event.preventDefault();
           startEditing();
