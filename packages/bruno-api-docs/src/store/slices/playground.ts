@@ -4,9 +4,11 @@ import type { OpenCollection as OpenCollectionCollection } from '@opencollection
 import type { Environment } from '@opencollection/types/config/environments';
 import type { Item as OpenCollectionItem, Folder } from '@opencollection/types/collection/item';
 import type { HttpRequest } from '@opencollection/types/requests/http';
+import type { Variable, SecretVariable } from '@opencollection/types/common/variables';
 import type { RootState } from '../store';
 import { hydrateWithUUIDs, findAndUpdateItem } from '../../utils/fileUtils';
-import { isFolder } from '../../utils/schemaHelpers';
+import { isFolder, getRequestVariables } from '../../utils/schemaHelpers';
+import { isSecretVariable } from '../../utils/variableResolution';
 
 export type ViewMode = 'playground' | 'environments' | 'folder-settings' | 'collection-settings' | 'example';
 
@@ -221,6 +223,44 @@ const playgroundSlice = createSlice({
       if (state.hydratedCollection) writeEnvironments(state.hydratedCollection, environments);
       if (state.collection) writeEnvironments(state.collection, environments);
     },
+    // Inline-edit one variable's value in its scope; written to both collection copies so the
+    // resolver and request execution stay in sync.
+    setPlaygroundVariable: (
+      state: PlaygroundState,
+      action: PayloadAction<{
+        scope: 'environment' | 'collection' | 'folder' | 'request';
+        name: string;
+        value: string;
+        envName?: string;
+        itemUuid?: string;
+      }>
+    ) => {
+      const { scope, name, value, envName, itemUuid } = action.payload;
+      const setInList = (list: (Variable | SecretVariable)[] | undefined): void => {
+        // Last enabled wins, matching the resolver, so a duplicate name edits the shown variable.
+        const enabled = (list ?? []).filter((v) => v.name === name && !v.disabled);
+        const variable = enabled[enabled.length - 1];
+        if (variable && !isSecretVariable(variable)) variable.value = value;
+      };
+      const apply = (collection: OpenCollectionCollection | null) => {
+        if (!collection) return;
+        if (scope === 'environment') {
+          setInList(readEnvironments(collection)?.find((env) => env.name === envName)?.variables);
+        } else if (scope === 'collection') {
+          setInList(collection.request?.variables as (Variable | SecretVariable)[] | undefined);
+        } else if (itemUuid && collection.items) {
+          findAndUpdateItem(collection.items, itemUuid, (item) => {
+            const list =
+              scope === 'folder'
+                ? (item.request?.variables as (Variable | SecretVariable)[] | undefined)
+                : (getRequestVariables(item) as (Variable | SecretVariable)[]);
+            setInList(list);
+          });
+        }
+      };
+      apply(state.hydratedCollection);
+      apply(state.collection);
+    },
   }
 });
 
@@ -238,7 +278,8 @@ export const {
   updateCollectionSettings,
   updateCollectionEnvironments,
   updateFolderInCollection,
-  resetPlaygroundEnvironments
+  resetPlaygroundEnvironments,
+  setPlaygroundVariable
 } = playgroundSlice.actions;
 
 // Selectors

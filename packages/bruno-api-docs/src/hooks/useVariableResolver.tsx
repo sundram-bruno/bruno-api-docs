@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useMemo } from 'react';
 import type { OpenCollection } from '@opencollection/types';
 import type { Environment } from '@opencollection/types/config/environments';
 import type { Item } from '@opencollection/types/collection/item';
 import type { Variable, SecretVariable } from '@opencollection/types/common/variables';
-import { useAppSelector } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { selectDocsCollection } from '../store/slices/docs';
+import { setPlaygroundVariable } from '../store/slices/playground';
 import { selectActiveEnvName, selectShowVars } from '../store/slices/env';
 import { getRequestVariables, isFolder } from '../utils/schemaHelpers';
 import { mockDataFunctions, timeBasedDynamicVars } from '../runner/utils/faker-functions';
@@ -16,6 +17,7 @@ import {
   isValidVariableName,
   formatEntryValue,
   referencesSecret,
+  isSecretVariable,
   type ScopedVariableModel,
   type VariableScope,
   type VariableSource
@@ -26,10 +28,15 @@ export type DynamicVariableKind = 'random' | 'time' | 'unknown';
 export interface VariableLookup {
   name: string;
   scope: VariableScope;
+  /** Deep-resolved value, for display. */
   value: string;
+  /** Raw stored value (may contain `{{refs}}`), for editing — so edits don't flatten references. */
+  rawValue: string;
   secret: boolean;
   valid: boolean;
   dynamicKind?: DynamicVariableKind;
+  /** The raw value is a plain string, so it can be inline-edited without dropping a typed/variant shape. */
+  simpleString: boolean;
 }
 
 const classifyDynamic = (name: string): DynamicVariableKind => {
@@ -59,11 +66,16 @@ export interface VariableResolver {
   lookup: (name: string) => VariableLookup;
   isFound: (name: string) => boolean;
   names: string[];
+  /** Whether `updateVariable` writes to a real store. False in docs/settings surfaces with no
+   *  playground item context, so callers must not offer editing there. */
+  canWrite: boolean;
+  /** Inline-edit a variable's value in its scope. No-op unless `canWrite`. */
+  updateVariable: (name: string, value: string) => void;
 }
 
 const lookupVariable = (rawName: string, model: ScopedVariableModel): VariableLookup => {
   const name = (rawName ?? '').trim();
-  const base = { name, value: '', secret: false };
+  const base = { name, value: '', rawValue: '', secret: false, simpleString: false };
 
   const special = detectSpecialScope(name);
   if (special === 'dynamic') return { ...base, scope: 'dynamic', valid: true, dynamicKind: classifyDynamic(name) };
@@ -76,7 +88,7 @@ const lookupVariable = (rawName: string, model: ScopedVariableModel): VariableLo
   const safeValue = formatEntryValue(entry, model.values);
   const secret = entry.secret || model.secretNames.has(name) || referencesSecret(safeValue, model.secretNames);
   const value = secret ? formatEntryValue(entry, model.fullValues) : safeValue;
-  return { name, scope: entry.scope, value, secret, valid: true };
+  return { name, scope: entry.scope, value, rawValue: entry.value, secret, valid: true, simpleString: entry.simpleString };
 };
 
 const makeResolver = (
@@ -96,7 +108,10 @@ const makeResolver = (
       const name = singleReferenceName(raw);
       return name && isSecret(name) ? name : null;
     },
-    lookup: (name: string) => lookupVariable(name, model)
+    lookup: (name: string) => lookupVariable(name, model),
+    canWrite: false,
+    // Only the playground's ItemVariableResolverProvider wires a real writer.
+    updateVariable: () => {}
   };
 };
 
@@ -143,9 +158,19 @@ const PASSTHROUGH_RESOLVER: VariableResolver = {
   resolve: (raw) => raw,
   isSecret: () => false,
   secretRefName: () => null,
-  lookup: (name) => ({ name: (name ?? '').trim(), scope: 'undefined', value: '', secret: false, valid: true }),
+  lookup: (name) => ({
+    name: (name ?? '').trim(),
+    scope: 'undefined',
+    value: '',
+    rawValue: '',
+    secret: false,
+    valid: true,
+    simpleString: false
+  }),
   isFound: () => false,
-  names: []
+  names: [],
+  canWrite: false,
+  updateVariable: () => {}
 };
 
 const VariableResolverContext = createContext<VariableResolver>(PASSTHROUGH_RESOLVER);
@@ -169,6 +194,7 @@ export const ItemVariableResolverProvider: React.FC<{
   item: Item | null;
   children: React.ReactNode;
 }> = ({ collection, ancestry, item, children }) => {
+  const dispatch = useAppDispatch();
   const activeEnvName = useAppSelector(selectActiveEnvName);
   const showVars = useAppSelector(selectShowVars);
 
@@ -183,5 +209,29 @@ export const ItemVariableResolverProvider: React.FC<{
 
   const resolver = useMemo(() => makeResolver(model, showVars, activeEnvName), [model, showVars, activeEnvName]);
 
-  return <VariableResolverContext.Provider value={resolver}>{children}</VariableResolverContext.Provider>;
+  const updateVariable = useCallback(
+    (name: string, value: string) => {
+      const { name: varName, scope } = resolver.lookup(name);
+      if (scope === 'environment') {
+        if (activeEnvName) dispatch(setPlaygroundVariable({ scope, name: varName, value, envName: activeEnvName }));
+      } else if (scope === 'collection') {
+        dispatch(setPlaygroundVariable({ scope, name: varName, value }));
+      } else if (scope === 'request') {
+        const itemUuid = (item as { uuid?: string } | null)?.uuid;
+        if (itemUuid) dispatch(setPlaygroundVariable({ scope, name: varName, value, itemUuid }));
+      } else if (scope === 'folder') {
+        // Innermost-first: the model resolves folders last-wins, so edit the folder the card showed.
+        const owner = [...ancestry]
+          .reverse()
+          .find((folder) => folderVariables(folder).some((v) => v.name === varName && !isSecretVariable(v)));
+        const itemUuid = (owner as { uuid?: string } | undefined)?.uuid;
+        if (itemUuid) dispatch(setPlaygroundVariable({ scope, name: varName, value, itemUuid }));
+      }
+    },
+    [resolver, dispatch, activeEnvName, item, ancestry]
+  );
+
+  const value = useMemo(() => ({ ...resolver, canWrite: true, updateVariable }), [resolver, updateVariable]);
+
+  return <VariableResolverContext.Provider value={value}>{children}</VariableResolverContext.Provider>;
 };

@@ -115,6 +115,9 @@ export interface VariableEntry {
   scope: ConcreteScope;
   secret: boolean;
   dataType?: VariableValueType;
+  /** The raw value is a plain string (not a typed `{ type, data }` value or a variant list),
+   *  so it can be safely inline-edited as text without dropping its shape. */
+  simpleString: boolean;
 }
 
 export interface ScopedVariableModel extends VariableModel {
@@ -150,8 +153,10 @@ export const buildScopedVariableModel = (sources: VariableSource[]): ScopedVaria
     for (const variable of source.variables ?? []) {
       if (!variable.name || variable.disabled) continue;
       const secret = isSecretVariable(variable);
-      const { value, dataType } = unwrapVariableTyped((variable as Variable).value);
-      entries[variable.name] = { value, scope: source.scope, secret, dataType };
+      const rawValue = (variable as Variable).value;
+      const simpleString = rawValue === undefined || rawValue === null || typeof rawValue === 'string';
+      const { value, dataType } = unwrapVariableTyped(rawValue);
+      entries[variable.name] = { value, scope: source.scope, secret, dataType, simpleString };
       fullValues[variable.name] = value;
       if (secret) {
         secretNames.add(variable.name);

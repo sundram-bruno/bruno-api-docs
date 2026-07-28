@@ -55,7 +55,8 @@ export const StyledWrapper = styled.div`
 
   .var-value-container {
     position: relative;
-    height: 2.25rem;
+    min-height: 2.25rem;
+    max-height: 11.125rem;
     padding: 0.5rem;
     overflow-y: auto;
     overflow-x: hidden;
@@ -79,6 +80,37 @@ export const StyledWrapper = styled.div`
   .var-value-placeholder {
     font-style: italic;
     color: var(--text-tertiary);
+  }
+
+  .var-value-editable {
+    cursor: text;
+  }
+
+  .var-value-container:focus-within {
+    outline: 0.0625rem solid var(--oc-brand);
+    outline-offset: -0.0625rem;
+  }
+
+  .var-value-edit {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.25rem;
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    resize: none;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .var-value-edit:focus,
+  .var-value-edit:focus-visible {
+    outline: none;
   }
 
   .var-icons {

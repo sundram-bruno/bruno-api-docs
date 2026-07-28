@@ -9,23 +9,25 @@ export const StyledWrapper = styled.div`
   border-radius: var(--oc-radius);
   background-color: var(--bg-primary);
 
-  input {
+  .highlight-input {
     flex: 1;
     min-width: 0;
-    outline: none;
-    border: none;
-    border-radius: 0;
-    background-color: transparent;
+    padding: 0;
     font-family: var(--font-mono);
-    font-weight: 400;
+  }
+
+  .highlight-input .text-input {
+    padding: 0 !important;
+    font-size: 0.75rem !important;
+    line-height: 1.125rem !important;
+  }
+
+  .highlight-input .highlight-input-mirror {
+    padding: 0;
     font-size: 0.75rem;
     line-height: 1.125rem;
-    color: var(--text-primary);
-
-    &::placeholder {
-      color: var(--text-secondary);
-      opacity: 0.6;
-    }
+    left: 0;
+    right: 0;
   }
 
   .method-select {

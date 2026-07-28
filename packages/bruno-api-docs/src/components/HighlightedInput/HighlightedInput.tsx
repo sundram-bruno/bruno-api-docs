@@ -25,6 +25,8 @@ interface HighlightedInputProps {
   title?: string;
   testId?: string;
   multiline?: boolean;
+  /** Key handler forwarded only when the autocomplete dropdown is closed (e.g. Enter-to-send). */
+  onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
 interface HoveredToken {
@@ -75,7 +77,8 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
   variablesAutocomplete = true,
   title,
   testId,
-  multiline = false
+  multiline = false,
+  onKeyDown
 }) => {
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const mirrorRef = useRef<HTMLDivElement | null>(null);
@@ -112,6 +115,8 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
     if (closeTimer.current) return;
     closeTimer.current = setTimeout(() => {
       closeTimer.current = null;
+      // Don't close the card while it holds focus — that would drop an in-progress edit.
+      if (document.activeElement?.closest('.variable-info-card')) return;
       setHovered(null);
     }, HOVER_CLOSE_MS);
   }, [cancelOpen]);
@@ -253,7 +258,10 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (!autocomplete) return;
+    if (!autocomplete) {
+      onKeyDown?.(event);
+      return;
+    }
     const { items, active } = autocomplete;
     switch (event.key) {
       case 'ArrowDown':
@@ -378,7 +386,7 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
               visibility: hoverPos ? 'visible' : 'hidden'
             }}
           >
-            <VariableInfoCard name={hovered.name} />
+            <VariableInfoCard key={hovered.name} name={hovered.name} editable />
           </HoverCard>
         </Portal>
       )}

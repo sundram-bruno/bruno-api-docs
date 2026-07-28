@@ -1134,3 +1134,10 @@ tr.themed-row:nth-child(even) {
   transform: translateY(-50%);
   opacity: 0;
 }
+
+/* Floats the Monaco variable hover card widget; rendered in Monaco's overflow container. */
+.variable-hover-widget {
+  z-index: 40;
+  border-radius: var(--oc-radius);
+  box-shadow: var(--shadow-md);
+}
