@@ -2,6 +2,8 @@ import type { Locator } from '@playwright/test';
 import { BaseComponent } from './base.component';
 import { KeyValueTableComponent } from './key-value-table/key-value-table.component';
 import { CodeEditorComponent } from './code-editor/code-editor.component';
+import { PlaygroundVariableComponent } from './playground/playground-variable.component';
+import { EnvSwitcherComponent } from './layout/env-switcher.component';
 import type { DockMode } from '../../src/utils/playgroundDock';
 
 export class PlaygroundComponent extends BaseComponent {
@@ -10,6 +12,8 @@ export class PlaygroundComponent extends BaseComponent {
   readonly postResponseScriptEditor = new CodeEditorComponent(this.page, 'scripts-editor-post-response');
   readonly bodyEditor = new CodeEditorComponent(this.page, 'body-editor');
   readonly testsEditor = new CodeEditorComponent(this.page, 'tests-editor');
+  readonly variable = new PlaygroundVariableComponent(this.page);
+  readonly envSwitcher = new EnvSwitcherComponent(this.page, 'playground-env-switcher');
 
   readonly header = this.page.getByTestId('playground-header');
   readonly switcher = this.page.getByTestId('playground-dock-switcher');
@@ -26,7 +30,6 @@ export class PlaygroundComponent extends BaseComponent {
   readonly collectionRootLink = this.collectionNode.getByRole('button', {
     name: /Bruno Testbench|Collection/,
   });
-  readonly envSwitcher = this.page.getByTestId('playground-env-switcher');
   readonly gear = this.page.getByTestId('playground-env-settings');
   readonly view = this.page.getByTestId('playground-view');
   readonly sidebarToggle = this.page.getByTestId('playground-sidebar-toggle');

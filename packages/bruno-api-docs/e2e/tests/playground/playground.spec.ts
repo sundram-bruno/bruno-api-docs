@@ -98,7 +98,7 @@ test.describe('playground docks (desktop)', () => {
     await page.goto(openAt('bottom'));
     await expect(playground.sidebarPanel).toBeVisible();
     await expect(playground.collectionNode).toBeVisible();
-    await expect(playground.envSwitcher).toBeVisible();
+    await expect(playground.envSwitcher.trigger).toBeVisible();
     await expect(playground.gear).toBeVisible();
     await expect(playground.treeItems.first()).toBeVisible();
   });
