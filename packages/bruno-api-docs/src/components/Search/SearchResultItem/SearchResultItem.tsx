@@ -18,7 +18,7 @@ interface SearchResultItemProps {
   testId?: string;
 }
 
-const BREADCRUMB_TOOLTIP_DELAY_MS = 500;
+const TOOLTIP_DELAY_MS = 500;
 
 /**
  * Whether the row cut the text off to fit. Both the name and the chain shrink
@@ -114,10 +114,10 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
           <Tooltip
             content={record.name}
             shouldOpen={isClipped}
-            openDelay={BREADCRUMB_TOOLTIP_DELAY_MS}
+            openDelay={TOOLTIP_DELAY_MS}
             testId={`${testId}-name-tooltip`}
           >
-            <span className="search-result-name">
+            <span className="search-result-name" data-testid={`${testId}-name`}>
               {record.type === 'folder' && <span className="search-result-kind">Folder: </span>}
               {highlightRanges(record.name, matches?.name)}
             </span>
@@ -126,7 +126,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
             <Tooltip
               content={fullBreadcrumb}
               shouldOpen={(el) => isElided || isClipped(el)}
-              openDelay={BREADCRUMB_TOOLTIP_DELAY_MS}
+              openDelay={TOOLTIP_DELAY_MS}
               testId={`${testId}-breadcrumb-tooltip`}
             >
               {breadcrumbNode}

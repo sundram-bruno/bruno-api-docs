@@ -146,9 +146,33 @@ test.describe('Search palette', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
 
     // The name is the primary label, so the chain yields the width, not it.
-    const nameBox = await row.locator('.search-result-name').boundingBox();
+    const nameBox = await row.getByTestId('search-result-name').boundingBox();
     const crumbBox = await row.getByTestId('search-result-breadcrumb').boundingBox();
     expect(nameBox?.width ?? 0).toBeGreaterThan(crumbBox?.width ?? 0);
+  });
+
+  test('hovering a clipped result name reveals it in full', async ({ page, search }) => {
+    await page.setViewportSize(MOBILE); // narrow enough that the name cannot fit
+    await page.goto(FIXTURE);
+    await search.toggleIcon.click();
+    await search.field.fill('retention');
+
+    const name = search.results.first().getByTestId('search-result-name');
+    await expect(name).toBeVisible();
+    await name.hover();
+    await expect(search.nameTooltip).toHaveText('Consolidated Retention and Deletion Policy Configuration');
+  });
+
+  test('a result name shown whole gets no tooltip on hover', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('retention'); // same row, but the width is there for it
+
+    const name = search.results.first().getByTestId('search-result-name');
+    await expect(name).toBeVisible();
+    await name.hover();
+    await expect(search.nameTooltip).toHaveCount(0);
   });
 
   test('a breadcrumb shown whole gets no tooltip on hover', async ({ page, search }) => {

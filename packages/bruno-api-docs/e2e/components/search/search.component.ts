@@ -22,7 +22,10 @@ export class SearchComponent extends BaseComponent {
   readonly resultsScroll = this.root.getByTestId('search-scroll');
   readonly results = this.root.getByTestId('search-result');
   readonly resultMethods = this.root.getByTestId('search-result-method');
+  readonly resultNames = this.root.getByTestId('search-result-name');
   readonly resultBreadcrumbs = this.root.getByTestId('search-result-breadcrumb');
+  /** Portalled bubble showing a clipped result name in full. */
+  readonly nameTooltip = this.root.getByTestId('search-result-name-tooltip');
   readonly breadcrumbTooltip = this.root.getByTestId('search-result-breadcrumb-tooltip');
   readonly folderResults = this.results.filter({ has: this.page.getByTestId('search-result-folder-icon') });
   /** The keyboard-highlighted result option. */
