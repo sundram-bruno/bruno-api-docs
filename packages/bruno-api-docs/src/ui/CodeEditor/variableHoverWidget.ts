@@ -1,8 +1,7 @@
 import type { Monaco } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import { HOVER_OPEN_MS, HOVER_CLOSE_MS } from '../../constants/ui';
-
-const TOKEN_REGEX = /\{\{[^}]+\}\}/g;
+import { templateVariableGlobalRegex } from '../../utils/common';
 
 interface TokenHit {
   name: string;
@@ -21,12 +20,12 @@ export interface VariableHover {
 
 const tokenAt = (model: editor.ITextModel, lineNumber: number, column: number): TokenHit | null => {
   const line = model.getLineContent(lineNumber);
-  TOKEN_REGEX.lastIndex = 0;
-  for (let match = TOKEN_REGEX.exec(line); match; match = TOKEN_REGEX.exec(line)) {
+  const tokens = templateVariableGlobalRegex();
+  for (let match = tokens.exec(line); match; match = tokens.exec(line)) {
     const startColumn = match.index + 1;
     const endColumn = match.index + match[0].length + 1;
     if (column >= startColumn && column < endColumn) {
-      const name = match[0].slice(2, -2).trim();
+      const name = match[1].trim();
       return name ? { name, lineNumber, startColumn } : null;
     }
   }
@@ -99,7 +98,8 @@ export const createVariableHover = (
     if (closeTimer) return;
     closeTimer = setTimeout(() => {
       closeTimer = null;
-      // Don't unmount the card while it holds focus — that would drop an in-progress edit.
+      // Hold the card open while it has focus so an in-progress edit survives; its own focusout
+      // schedules the next close.
       if (overCard || node.contains(document.activeElement)) return;
       hide();
     }, HOVER_CLOSE_MS);
@@ -113,8 +113,7 @@ export const createVariableHover = (
     const hit = position && model ? tokenAt(model, position.lineNumber, position.column) : null;
 
     if (!hit) {
-      cancelOpen();
-      if (!overCard) scheduleClose();
+      scheduleClose();
       return;
     }
     cancelClose();
@@ -145,10 +144,12 @@ export const createVariableHover = (
     overCard = false;
     scheduleClose();
   };
+  const onCardFocusOut = () => scheduleClose();
   // Stop clicks inside the card from reaching Monaco (which would blur/dismiss it).
   const onCardMouseDown = (event: MouseEvent) => event.stopPropagation();
   node.addEventListener('mouseenter', onCardEnter);
   node.addEventListener('mouseleave', onCardLeave);
+  node.addEventListener('focusout', onCardFocusOut);
   node.addEventListener('mousedown', onCardMouseDown);
 
   return {
@@ -159,6 +160,7 @@ export const createVariableHover = (
       leaveDisposable.dispose();
       node.removeEventListener('mouseenter', onCardEnter);
       node.removeEventListener('mouseleave', onCardLeave);
+      node.removeEventListener('focusout', onCardFocusOut);
       node.removeEventListener('mousedown', onCardMouseDown);
       editorInstance.removeContentWidget(widget);
     }

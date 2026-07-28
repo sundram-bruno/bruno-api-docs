@@ -223,8 +223,8 @@ const playgroundSlice = createSlice({
       if (state.hydratedCollection) writeEnvironments(state.hydratedCollection, environments);
       if (state.collection) writeEnvironments(state.collection, environments);
     },
-    // Inline-edit one variable's value in its scope; written to both collection copies so the
-    // resolver and request execution stay in sync.
+    // Inline-edit one variable's value in its scope. The hydrated collection is what the resolver
+    // and request execution read; the base copy is kept in step where the target is addressable.
     setPlaygroundVariable: (
       state: PlaygroundState,
       action: PayloadAction<{

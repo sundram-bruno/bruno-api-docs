@@ -122,14 +122,13 @@ describe('VariableInfoCard', () => {
   });
 });
 
-// Editing requires a real writer, so wrap in ItemVariableResolverProvider (canWrite) rather than
-// the docs VariableResolverProvider (read-only).
+// Editing needs a writable resolver, which only ItemVariableResolverProvider supplies.
 const editableCardTree = (name: string) => {
   const store = createOpenCollectionStore();
   store.dispatch(setActiveEnv('Dev'));
   return (
     <Provider store={store}>
-      <ItemVariableResolverProvider collection={collection} ancestry={[]} item={null}>
+      <ItemVariableResolverProvider collection={collection} ancestry={[]} item={null} writable>
         <VariableInfoCard name={name} editable />
       </ItemVariableResolverProvider>
     </Provider>
@@ -152,6 +151,28 @@ describe('VariableInfoCard (editable)', () => {
     const value = part(useRenderToDom(cardTree('host')), 'value');
     expect(value.classList.contains('var-value-editable')).toBe(false);
     expect(value.getAttribute('role')).toBeFalsy();
+  });
+
+  it('stays read-only when the resolver cannot write, even with editable set', () => {
+    const store = createOpenCollectionStore();
+    store.dispatch(setDocsCollection(collection));
+    store.dispatch(setActiveEnv('Dev'));
+    const tree = (
+      <Provider store={store}>
+        <VariableResolverProvider>
+          <VariableInfoCard name="host" editable />
+        </VariableResolverProvider>
+      </Provider>
+    );
+    const value = part(useRenderToDom(tree), 'value');
+    expect(value.classList.contains('var-value-editable')).toBe(false);
+  });
+
+  it('keeps an empty editable value clickable rather than showing the placeholder', () => {
+    const value = part(useRenderToDom(editableCardTree('emptyValue')), 'value');
+    expect(value.text).toBe('(empty)');
+    expect(value.classList.contains('var-value-editable')).toBe(true);
+    expect(value.classList.contains('var-value-placeholder')).toBe(false);
   });
 
   it('never makes a secret variable editable', () => {

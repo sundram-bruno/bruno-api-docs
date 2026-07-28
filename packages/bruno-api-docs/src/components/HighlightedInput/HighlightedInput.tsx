@@ -48,8 +48,13 @@ interface Coords extends AnchoredPosition {
 const renderTokens = (text: string, isFound: (name: string) => boolean) =>
   text.split(templateVariableSplitRegex()).map((part, index) => {
     if (part && isTemplateVariable(part)) {
+      const inner = part.slice(2, -2);
       return (
-        <span key={index} className={classifyVariableToken(part.slice(2, -2), isFound)}>
+        <span
+          key={index}
+          className={classifyVariableToken(inner, isFound)}
+          data-testid={`variable-token-${inner.trim()}`}
+        >
           {part}
         </span>
       );
@@ -115,11 +120,12 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
     if (closeTimer.current) return;
     closeTimer.current = setTimeout(() => {
       closeTimer.current = null;
-      // Don't close the card while it holds focus — that would drop an in-progress edit.
-      if (document.activeElement?.closest('.variable-info-card')) return;
+      // Hold the card open while it has focus so an in-progress edit survives; the card's own
+      // blur schedules the next close.
+      if (cardEl?.contains(document.activeElement)) return;
       setHovered(null);
     }, HOVER_CLOSE_MS);
-  }, [cancelOpen]);
+  }, [cancelOpen, cardEl]);
 
   useEffect(
     () => () => {
@@ -380,6 +386,7 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
               overCardRef.current = false;
               scheduleClose();
             }}
+            onBlur={scheduleClose}
             style={{
               top: hoverPos ? hoverPos.top : -9999,
               left: hoverPos ? hoverPos.left : -9999,

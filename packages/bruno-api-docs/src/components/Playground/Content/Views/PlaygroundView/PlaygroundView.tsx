@@ -103,7 +103,7 @@ const HttpRequestPlaygroundView: React.FC<PlaygroundViewProps> = ({ item, collec
   }, [collection, editableItem, runner, selectedEnvironment, itemUuid]);
 
   return (
-    <ItemVariableResolverProvider collection={collection} ancestry={ancestry} item={editableItem as unknown as Item}>
+    <ItemVariableResolverProvider collection={collection} ancestry={ancestry} item={editableItem as unknown as Item} writable>
     <div className="request-runner-container h-full flex flex-col px-5" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <TitleLabel className="truncate mb-2 mt-5">{itemName}</TitleLabel>
       

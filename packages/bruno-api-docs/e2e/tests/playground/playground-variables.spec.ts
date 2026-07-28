@@ -1,56 +1,44 @@
 import { test, expect } from '../../playwright';
-import { EnvSwitcherComponent } from '../../components/layout/env-switcher.component';
-import { PlaygroundVariableComponent } from '../../components/playground/playground-variable.component';
 
-const openVarsPlayground = async (
-  page: import('@playwright/test').Page,
-  playground: import('../../components/playground.component').PlaygroundComponent
-): Promise<void> => {
-  await page.goto('/?fixture=vars#/?pg=1&dock=bottom');
-  await playground.runner.waitFor({ state: 'visible' });
-  await playground.openTreeItem(['Customers', 'Variables Demo']);
-  await playground.view.waitFor({ state: 'visible' });
-  await new EnvSwitcherComponent(page, 'playground-env-switcher').selectEnvironment('Dev');
-};
+const VARS_PLAYGROUND = '/?fixture=vars#/?pg=1&dock=bottom';
 
 test.describe('Playground variables: highlight, hover card and inline edit', () => {
-  test.beforeEach(async ({ page, playground }) => {
-    await openVarsPlayground(page, playground);
+  test.beforeEach(async ({ page, playground, playgroundEnvSwitcher }) => {
+    await page.goto(VARS_PLAYGROUND);
+    await playground.runner.waitFor({ state: 'visible' });
+    await playground.openTreeItem(['Customers', 'Variables Demo']);
+    await playground.view.waitFor({ state: 'visible' });
+    await playgroundEnvSwitcher.selectEnvironment('Dev');
   });
 
-  test('highlights a resolved variable in the URL bar', async ({ page }) => {
-    const vars = new PlaygroundVariableComponent(page);
-    await expect(vars.inputToken('host')).toHaveClass(/variable-valid/);
+  test('highlights a resolved variable in the URL bar', async ({ playgroundVariable }) => {
+    await expect(playgroundVariable.token('host')).toHaveClass(/variable-valid/);
   });
 
-  test('paints variable tokens in the Monaco request body', async ({ page, playground }) => {
-    const vars = new PlaygroundVariableComponent(page);
+  test('paints variable tokens in the request body editor', async ({ playground, playgroundVariable }) => {
     await playground.selectTab('body');
-    await expect(vars.monacoValid.first()).toBeVisible();
+    await expect(playgroundVariable.monacoValid.first()).toBeVisible();
   });
 
-  test('hovering a URL variable shows its card with scope and resolved value', async ({ page }) => {
-    const vars = new PlaygroundVariableComponent(page);
-    await vars.hoverInputToken('host');
-    await expect(vars.name).toHaveText('host');
-    await expect(vars.scopeBadge).toHaveText('Environment');
-    await expect(vars.value).toHaveText('https://api.dev.example.com');
+  test('hovering a URL variable shows its card with scope and resolved value', async ({ playgroundVariable }) => {
+    await playgroundVariable.hoverInputToken('host');
+    await expect(playgroundVariable.name).toHaveText('host');
+    await expect(playgroundVariable.scopeBadge).toHaveText('Environment');
+    await expect(playgroundVariable.value).toHaveText('https://api.dev.example.com');
   });
 
-  test('editing a variable from the card updates its resolved value', async ({ page }) => {
-    const vars = new PlaygroundVariableComponent(page);
-    await vars.hoverInputToken('host');
-    await vars.editTo('https://edited.example.com');
-    await expect(vars.value).toHaveText('https://edited.example.com');
+  test('editing a variable from the card updates its resolved value', async ({ playgroundVariable }) => {
+    await playgroundVariable.hoverInputToken('host');
+    await playgroundVariable.editTo('https://edited.example.com');
+    await expect(playgroundVariable.value).toHaveText('https://edited.example.com');
   });
 
-  test('a read-only scope (process.env) is not editable', async ({ page, playground }) => {
-    const vars = new PlaygroundVariableComponent(page);
+  test('a read-only scope is not editable', async ({ playground, playgroundVariable }) => {
     await playground.selectTab('headers');
-    await vars.hoverInputToken('process.env.HOME');
-    await expect(vars.note).toHaveText('read-only');
+    await playgroundVariable.hoverInputToken('process.env.HOME');
+    await expect(playgroundVariable.note).toHaveText('read-only');
 
-    await vars.value.click();
-    await expect(vars.editField).toHaveCount(0);
+    await playgroundVariable.value.click();
+    await expect(playgroundVariable.editField).toHaveCount(0);
   });
 });

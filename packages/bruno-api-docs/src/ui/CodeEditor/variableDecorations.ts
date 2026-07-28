@@ -1,8 +1,7 @@
 import type { Monaco } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import { classifyVariableToken } from '../../utils/variableHighlight';
-
-const TOKEN_REGEX = /\{\{[^}]+\}\}/g;
+import { templateVariableGlobalRegex } from '../../utils/common';
 
 export interface VariableDecorator {
   refresh: () => void;
@@ -24,14 +23,13 @@ export const createVariableDecorator = (
     const text = model.getValue();
     const isFound = getIsFound();
     const decorations: editor.IModelDeltaDecoration[] = [];
-    TOKEN_REGEX.lastIndex = 0;
-    for (let match = TOKEN_REGEX.exec(text); match; match = TOKEN_REGEX.exec(text)) {
-      const inner = match[0].slice(2, -2);
+    const tokens = templateVariableGlobalRegex();
+    for (let match = tokens.exec(text); match; match = tokens.exec(text)) {
       const start = model.getPositionAt(match.index);
       const end = model.getPositionAt(match.index + match[0].length);
       decorations.push({
         range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
-        options: { inlineClassName: classifyVariableToken(inner, isFound) }
+        options: { inlineClassName: classifyVariableToken(match[1], isFound) }
       });
     }
     collection.set(decorations);

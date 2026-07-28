@@ -8,6 +8,7 @@ import { selectDocsCollection } from '../store/slices/docs';
 import { setPlaygroundVariable } from '../store/slices/playground';
 import { selectActiveEnvName, selectShowVars } from '../store/slices/env';
 import { getRequestVariables, isFolder } from '../utils/schemaHelpers';
+import { getItemUuid } from '../utils/itemUtils';
 import { mockDataFunctions, timeBasedDynamicVars } from '../runner/utils/faker-functions';
 import {
   buildScopedVariableModel,
@@ -35,7 +36,7 @@ export interface VariableLookup {
   secret: boolean;
   valid: boolean;
   dynamicKind?: DynamicVariableKind;
-  /** The raw value is a plain string, so it can be inline-edited without dropping a typed/variant shape. */
+  /** See `VariableEntry.simpleString`. */
   simpleString: boolean;
 }
 
@@ -66,8 +67,7 @@ export interface VariableResolver {
   lookup: (name: string) => VariableLookup;
   isFound: (name: string) => boolean;
   names: string[];
-  /** Whether `updateVariable` writes to a real store. False in docs/settings surfaces with no
-   *  playground item context, so callers must not offer editing there. */
+  /** Whether `updateVariable` reaches a store; callers must not offer editing when false. */
   canWrite: boolean;
   /** Inline-edit a variable's value in its scope. No-op unless `canWrite`. */
   updateVariable: (name: string, value: string) => void;
@@ -110,7 +110,6 @@ const makeResolver = (
     },
     lookup: (name: string) => lookupVariable(name, model),
     canWrite: false,
-    // Only the playground's ItemVariableResolverProvider wires a real writer.
     updateVariable: () => {}
   };
 };
@@ -192,8 +191,10 @@ export const ItemVariableResolverProvider: React.FC<{
   collection: OpenCollection | null;
   ancestry: Item[];
   item: Item | null;
+  /** Set only where `collection` is the playground collection, since edits are written there. */
+  writable?: boolean;
   children: React.ReactNode;
-}> = ({ collection, ancestry, item, children }) => {
+}> = ({ collection, ancestry, item, writable = false, children }) => {
   const dispatch = useAppDispatch();
   const activeEnvName = useAppSelector(selectActiveEnvName);
   const showVars = useAppSelector(selectShowVars);
@@ -217,21 +218,24 @@ export const ItemVariableResolverProvider: React.FC<{
       } else if (scope === 'collection') {
         dispatch(setPlaygroundVariable({ scope, name: varName, value }));
       } else if (scope === 'request') {
-        const itemUuid = (item as { uuid?: string } | null)?.uuid;
+        const itemUuid = getItemUuid(item);
         if (itemUuid) dispatch(setPlaygroundVariable({ scope, name: varName, value, itemUuid }));
       } else if (scope === 'folder') {
         // Innermost-first: the model resolves folders last-wins, so edit the folder the card showed.
         const owner = [...ancestry]
           .reverse()
           .find((folder) => folderVariables(folder).some((v) => v.name === varName && !isSecretVariable(v)));
-        const itemUuid = (owner as { uuid?: string } | undefined)?.uuid;
+        const itemUuid = getItemUuid(owner);
         if (itemUuid) dispatch(setPlaygroundVariable({ scope, name: varName, value, itemUuid }));
       }
     },
     [resolver, dispatch, activeEnvName, item, ancestry]
   );
 
-  const value = useMemo(() => ({ ...resolver, canWrite: true, updateVariable }), [resolver, updateVariable]);
+  const value = useMemo(
+    () => ({ ...resolver, canWrite: writable, updateVariable }),
+    [resolver, writable, updateVariable]
+  );
 
   return <VariableResolverContext.Provider value={value}>{children}</VariableResolverContext.Provider>;
 };

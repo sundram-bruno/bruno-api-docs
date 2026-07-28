@@ -1,28 +1,21 @@
-import type { Locator } from '@playwright/test';
-import { BaseComponent } from '../base.component';
+import type { Page } from '@playwright/test';
+import { VariableCardComponent } from '../variable-card/variable-card.component';
 
-// The playground variable hover card. Tokens live in HighlightedInput mirrors (URL / value cells)
-// and Monaco decorations (body); the mirror is behind a transparent input, so hover via mouse-move.
-export class PlaygroundVariableComponent extends BaseComponent {
-  readonly card = this.page.getByTestId('variable-info-card');
-  readonly name = this.card.getByTestId('variable-info-card-name');
-  readonly scopeBadge = this.card.getByTestId('variable-info-card-scope');
-  readonly value = this.card.getByTestId('variable-info-card-value');
+/** The hover card over playground request fields. Scoped to the playground view so tokens resolve
+ *  there and not to the docs page rendered behind the drawer. */
+export class PlaygroundVariableComponent extends VariableCardComponent {
   readonly editField = this.card.getByTestId('variable-info-card-edit');
-  readonly note = this.card.getByTestId('variable-info-card-note');
-
   readonly monacoValid = this.page.locator('.monaco-editor .variable-valid');
   readonly monacoInvalid = this.page.locator('.monaco-editor .variable-invalid');
 
-  inputToken(name: string): Locator {
-    return this.page
-      .locator('.highlight-input-mirror .variable-valid, .highlight-input-mirror .variable-invalid')
-      .filter({ hasText: `{{${name}}}` })
-      .first();
+  constructor(page: Page) {
+    super(page, page.getByTestId('playground-view'));
   }
 
+  /** Tokens painted in a `HighlightedInput` mirror sit behind a transparent input, so the
+   *  pointer is moved by coordinate instead of through `hover()`. */
   async hoverInputToken(name: string): Promise<void> {
-    const token = this.inputToken(name);
+    const token = this.token(name);
     await token.scrollIntoViewIfNeeded();
     const box = await token.boundingBox();
     if (!box) throw new Error(`variable token {{${name}}} not found`);

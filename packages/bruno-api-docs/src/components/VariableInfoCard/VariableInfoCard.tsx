@@ -38,7 +38,6 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     el.style.height = `${el.scrollHeight}px`;
   }, [editing, draft]);
 
-  // Editable only with a real writer, for a concrete scope holding a plain-string value.
   const canEdit =
     editable &&
     canWrite &&
@@ -115,9 +114,11 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   }
 
   const readOnlyNote = getReadOnlyNote(info.scope, activeEnvName);
-  const placeholder = info.secret ? '(Secret)' : !canEdit && info.value === '' ? '(empty)' : null;
+  const emptyLabel = info.value === '' ? '(empty)' : null;
+  // An editable empty value keeps the clickable display rather than the plain placeholder.
+  const placeholder = info.secret ? '(Secret)' : canEdit ? null : emptyLabel;
 
-  const copyIcon = (
+  const copyButton = (
     <div className="var-icons">
       <CopyButton
         text={info.value}
@@ -140,6 +141,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
       ref={editRef}
       className="var-value-edit"
       data-testid={`${testId}-edit`}
+      aria-label={`Edit ${info.name}`}
       value={draft}
       autoFocus
       rows={1}
@@ -164,12 +166,14 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
           startEditing();
         }}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') startEditing();
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          startEditing();
         }}
       >
-        {info.value === '' ? '(empty)' : info.value}
+        {emptyLabel ?? info.value}
       </div>
-      {copyIcon}
+      {copyButton}
     </>
   );
 
@@ -178,7 +182,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
       <div className="var-value-display" data-testid={`${testId}-value`}>
         {info.value}
       </div>
-      {copyIcon}
+      {copyButton}
     </>
   );
 
