@@ -21,6 +21,13 @@ interface SearchResultItemProps {
 const BREADCRUMB_TOOLTIP_DELAY_MS = 500;
 
 /**
+ * Whether the row cut the text off to fit. Both the name and the chain shrink
+ * to share one line, so either can end in a CSS ellipsis at a width no static
+ * rule can predict — only the laid-out node knows.
+ */
+const isClipped = (el: HTMLElement): boolean => el.scrollWidth > el.clientWidth + 1;
+
+/**
  * Bold the `ranges` (inclusive [start, end] pairs from Fuse) inside `text`, so
  * each field advertises the exact substring that matched. The mark keeps the
  * field's own colour (weight is the only highlight signal). No ranges leaves
@@ -55,9 +62,12 @@ const highlightRanges = (text: string, ranges?: Array<[number, number]>): React.
  * folder variant names its kind in text for screen readers.
  *
  * Both variants show the same breadcrumb: same-named folders in different
- * branches are otherwise indistinguishable. Only a chain long enough to be
- * elided gets a tooltip — on a chain shown whole, the bubble would just repeat
- * what is already on screen.
+ * branches are otherwise indistinguishable. The name takes the room it needs
+ * and the chain yields, capped so it can never crowd the name out.
+ *
+ * A tooltip appears only where text was actually cut — by eliding the middle
+ * of a long chain, or by the row running out of width. Text shown whole gets
+ * no bubble, since it would only repeat what is already on screen.
  */
 export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   record,
@@ -101,20 +111,26 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
       )}
       <span className="search-result-body">
         <span className="search-result-title-row">
-          <span className="search-result-name">
-            {record.type === 'folder' && <span className="search-result-kind">Folder: </span>}
-            {highlightRanges(record.name, matches?.name)}
-          </span>
-          {isElided && breadcrumbNode ? (
+          <Tooltip
+            content={record.name}
+            shouldOpen={isClipped}
+            openDelay={BREADCRUMB_TOOLTIP_DELAY_MS}
+            testId={`${testId}-name-tooltip`}
+          >
+            <span className="search-result-name">
+              {record.type === 'folder' && <span className="search-result-kind">Folder: </span>}
+              {highlightRanges(record.name, matches?.name)}
+            </span>
+          </Tooltip>
+          {breadcrumbNode && (
             <Tooltip
               content={fullBreadcrumb}
+              shouldOpen={(el) => isElided || isClipped(el)}
               openDelay={BREADCRUMB_TOOLTIP_DELAY_MS}
               testId={`${testId}-breadcrumb-tooltip`}
             >
               {breadcrumbNode}
             </Tooltip>
-          ) : (
-            breadcrumbNode
           )}
         </span>
         {record.type === 'folder' ? (

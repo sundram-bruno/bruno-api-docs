@@ -73,9 +73,12 @@ export const StyledWrapper = styled.button`
     display: flex;
     align-items: baseline;
     gap: 8px;
+    min-width: 0;
   }
 
   .search-result-name {
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: 13px;
     font-weight: 400;
     line-height: 1.3;
@@ -90,11 +93,15 @@ export const StyledWrapper = styled.button`
   }
 
   .search-result-breadcrumb {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 45%;
     font-size: 11px;
     line-height: 1.3;
     color: var(--oc-colors-text-subtext1);
     white-space: nowrap;
-    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .search-result-count {

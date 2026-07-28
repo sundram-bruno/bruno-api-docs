@@ -92,6 +92,14 @@ export const foldersFixtureCollection = {
           seq: 6,
           items: [
             {
+              // Long enough that the name and the chain have to compete for the
+              // row's width, which is what used to overflow the results list.
+              name: 'Consolidated Retention and Deletion Policy Configuration',
+              type: 'folder',
+              seq: 2,
+              items: [],
+            },
+            {
               name: 'Archive',
               type: 'folder',
               seq: 1,

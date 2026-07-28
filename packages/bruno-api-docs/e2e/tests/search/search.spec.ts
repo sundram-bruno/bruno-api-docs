@@ -128,6 +128,29 @@ test.describe('Search palette', () => {
     await expect(search.breadcrumbTooltip).toHaveCount(0);
   });
 
+  test('a long name and a long chain never overflow the results list', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('retention'); // deep folder with a very long name
+
+    const row = search.results.first();
+    await expect(row).toBeVisible();
+
+    // Overflowing here used to scroll the list sideways, which stranded the
+    // row's hover background at the container edge.
+    const { scrollWidth, clientWidth } = await search.resultsScroll.evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+    }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
+
+    // The name is the primary label, so the chain yields the width, not it.
+    const nameBox = await row.locator('.search-result-name').boundingBox();
+    const crumbBox = await row.getByTestId('search-result-breadcrumb').boundingBox();
+    expect(nameBox?.width ?? 0).toBeGreaterThan(crumbBox?.width ?? 0);
+  });
+
   test('a breadcrumb shown whole gets no tooltip on hover', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto(FIXTURE);
