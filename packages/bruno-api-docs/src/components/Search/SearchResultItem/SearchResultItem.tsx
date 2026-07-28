@@ -1,7 +1,10 @@
 import React from 'react';
 import { getMethodColorVar } from '../../../theme/methodColors';
 import { getShortMethod } from '../../../utils/request';
-import type { SearchRecord, FieldMatches } from '../searchIndex';
+import { FolderIcon } from '../../../assets/icons';
+import { Tooltip } from '../../../ui/Tooltip/Tooltip';
+import { requestCountLabel } from '../../../utils/folder';
+import { elideBreadcrumb, type SearchRecord, type FieldMatches } from '../searchIndex';
 import { StyledWrapper } from './StyledWrapper';
 
 interface SearchResultItemProps {
@@ -14,6 +17,8 @@ interface SearchResultItemProps {
   onSelect: (record: SearchRecord) => void;
   testId?: string;
 }
+
+const BREADCRUMB_TOOLTIP_DELAY_MS = 500;
 
 /**
  * Bold the `ranges` (inclusive [start, end] pairs from Fuse) inside `text`, so
@@ -40,10 +45,21 @@ const highlightRanges = (text: string, ranges?: Array<[number, number]>): React.
 };
 
 /**
- * One result row in the search palette. The method is rendered as a plain
- * colour-coded mono label (not the filled sidebar badge) while still sourcing
- * its colour from the shared `getMethodColorVar` token so methods stay
- * consistent app-wide.
+ * One result row in the search palette, in a request or a folder variant.
+ *
+ * A request leads with its method as a plain colour-coded mono label (not the
+ * filled sidebar badge) while still sourcing its colour from the shared
+ * `getMethodColorVar` token, so methods stay consistent app-wide. A folder
+ * leads with a folder glyph in that same slot and counts its requests rather
+ * than showing a url — it is not an endpoint. The glyph is decorative, so the
+ * folder variant names its kind in text for screen readers.
+ *
+ * Both variants show the same breadcrumb: same-named folders in different
+ * branches are otherwise indistinguishable. A long chain is elided on screen,
+ * and hovering it reveals the whole of it.
+ *
+ * `record.breadcrumb` is the full chain; `elideBreadcrumb` only shortens what
+ * is painted, so the tooltip always has the whole path to show.
  */
 export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   record,
@@ -51,27 +67,52 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   active = false,
   onSelect,
   testId = 'search-result',
-}) => (
-  <StyledWrapper type="button" data-active={active} data-testid={testId} onClick={() => onSelect(record)}>
-    {record.method && (
-      <span
-        className="search-result-method"
-        data-testid={`${testId}-method`}
-        style={{ ['--method-color' as string]: getMethodColorVar(record.method) }}
-      >
-        {getShortMethod(record.method)}
-      </span>
-    )}
-    <span className="search-result-body">
-      <span className="search-result-title-row">
-        <span className="search-result-name">{highlightRanges(record.name, matches?.name)}</span>
-        {record.breadcrumb && (
-          <span className="search-result-breadcrumb">{highlightRanges(record.breadcrumb, matches?.breadcrumb)}</span>
+}) => {
+  const breadcrumb = elideBreadcrumb(record.breadcrumb);
+
+  return (
+    <StyledWrapper type="button" data-active={active} data-testid={testId} onClick={() => onSelect(record)}>
+      {record.type === 'folder' ? (
+        <span className="search-result-icon" data-testid={`${testId}-folder-icon`}>
+          <FolderIcon />
+        </span>
+      ) : (
+        record.method && (
+          <span
+            className="search-result-method"
+            data-testid={`${testId}-method`}
+            style={{ ['--method-color' as string]: getMethodColorVar(record.method) }}
+          >
+            {getShortMethod(record.method)}
+          </span>
+        )
+      )}
+      <span className="search-result-body">
+        <span className="search-result-title-row">
+          <span className="search-result-name">
+            {record.type === 'folder' && <span className="search-result-kind">Folder: </span>}
+            {highlightRanges(record.name, matches?.name)}
+          </span>
+          {breadcrumb && (
+            <Tooltip
+              content={record.breadcrumb}
+              openDelay={BREADCRUMB_TOOLTIP_DELAY_MS}
+              testId={`${testId}-breadcrumb-tooltip`}
+            >
+              <span className="search-result-breadcrumb" data-testid={`${testId}-breadcrumb`}>
+                {breadcrumb}
+              </span>
+            </Tooltip>
+          )}
+        </span>
+        {record.type === 'folder' ? (
+          <span className="search-result-count">{requestCountLabel(record.requestCount)}</span>
+        ) : (
+          record.url && <span className="search-result-url">{highlightRanges(record.url, matches?.url)}</span>
         )}
       </span>
-      {record.url && <span className="search-result-url">{highlightRanges(record.url, matches?.url)}</span>}
-    </span>
-  </StyledWrapper>
-);
+    </StyledWrapper>
+  );
+};
 
 export default SearchResultItem;

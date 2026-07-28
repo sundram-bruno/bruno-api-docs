@@ -1,7 +1,7 @@
 import { test, expect } from '../../playwright';
 
 /**
- * The endpoint search palette: a header-anchored combobox whose listbox drops
+ * The collection search palette: a header-anchored combobox whose listbox drops
  * below the field. Inline on desktop; revealed by a Topbar icon below desktop.
  */
 test.use({ colorScheme: 'light' });
@@ -63,7 +63,7 @@ test.describe('Search palette', () => {
     await search.field.click();
 
     await expect(search.panel).toContainText('Search the collection');
-    await expect(search.panel).toContainText('Find any request by name, endpoint, or folder.');
+    await expect(search.panel).toContainText('Find by name or endpoint.');
   });
 
   test('typing fuzzy-matches over request names', async ({ page, search }) => {
@@ -86,14 +86,84 @@ test.describe('Search palette', () => {
     await expect(search.panel).toContainText('Login');
   });
 
-  test('matches on the folder chain typed as text (not only the filter dropdown)', async ({ page, search }) => {
+  test('a folder matches by name and renders as its own result', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('availability'); // a folder nested under Rooms
+
+    await expect(search.folderResults).toHaveCount(1);
+    await expect(search.folderResults.first()).toContainText('Availability');
+    await expect(search.folderResults.first()).toContainText('3 requests');
+    // The chain is what separates two folders sharing a name.
+    await expect(search.folderResults.first().getByTestId('search-result-breadcrumb')).toHaveText('Rooms');
+  });
+
+  test('hovering a breadcrumb reveals the full chain in a tooltip', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('check availability'); // sits at Rooms / Availability
+
+    const crumb = search.results.first().getByTestId('search-result-breadcrumb');
+    await expect(crumb).toBeVisible();
+    await crumb.hover();
+    await expect(search.breadcrumbTooltip).toHaveText('Rooms / Availability');
+  });
+
+  test('a top-level folder shows no breadcrumb (it has no chain)', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('guests');
+
+    await expect(search.folderResults.first()).toContainText('Guests');
+    await expect(search.folderResults.first().getByTestId('search-result-breadcrumb')).toHaveCount(0);
+  });
+
+  test('a folder name no longer surfaces the requests inside it', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto(FIXTURE);
     await search.field.click();
     await search.field.fill('authentication'); // the folder Login lives under
 
+    await expect(search.folderResults.first()).toContainText('Authentication');
+    await expect(search.panel).not.toContainText('Login');
+  });
+
+  test('folders rank above requests that match the same query', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('bookings');
+
     await expect(search.results.first()).toBeVisible();
-    await expect(search.panel).toContainText('Login');
+    await expect(search.results.first()).toContainText('Bookings');
+    await expect(search.results.first()).toContainText('8 requests');
+  });
+
+  test('selecting a folder result opens that folder page', async ({ page, search, folderPage }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('availability');
+    await search.folderResults.first().click();
+
+    await expect(search.openPanel).toHaveCount(0);
+    await expect(folderPage.title).toHaveText('Availability');
+    await expect(folderPage.requestCount).toHaveText('3 requests');
+  });
+
+  test('an active method chip hides folders (a folder has no method)', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('bookings');
+    await expect(search.folderResults.first()).toBeVisible();
+
+    await search.methodChip('GET').click();
+    await expect(search.results.first()).toBeVisible();
+    await expect(search.folderResults).toHaveCount(0);
   });
 
   test('a single character keeps the initial prompt (below the match threshold)', async ({ page, search }) => {
@@ -137,7 +207,7 @@ test.describe('Search palette', () => {
     await search.field.click();
     await search.field.fill('zzzqqq-nomatch');
 
-    await expect(search.panel).toContainText('No matching requests');
+    await expect(search.panel).toContainText('No matches');
     await expect(search.resultsList).toHaveCount(0);
   });
 
@@ -237,6 +307,19 @@ test.describe('Search palette', () => {
 
     await expect(search.panel).toContainText('Login');
     await expect(search.panel).not.toContainText('Create Booking');
+  });
+
+  test('the filtered folder appears as its own result, ahead of its contents', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+
+    await search.folderButton.click();
+    await search.folderOption('Bookings').click();
+
+    await expect(search.folderResults).toHaveCount(3);
+    await expect(search.folderResults.nth(0)).toContainText('Bookings');
+    await expect(search.results.first()).toContainText('Bookings');
   });
 
   test('tablet: the toggle reveals a panel that stays within the viewport', async ({ page, search }) => {
