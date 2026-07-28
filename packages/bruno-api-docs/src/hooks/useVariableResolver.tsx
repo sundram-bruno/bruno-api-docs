@@ -222,9 +222,10 @@ export const ItemVariableResolverProvider: React.FC<{
         if (itemUuid) dispatch(setPlaygroundVariable({ scope, name: varName, value, itemUuid }));
       } else if (scope === 'folder') {
         // Innermost-first: the model resolves folders last-wins, so edit the folder the card showed.
-        const owner = [...ancestry]
-          .reverse()
-          .find((folder) => folderVariables(folder).some((v) => v.name === varName && !isSecretVariable(v)));
+        // Disabled entries are skipped here too, or the edit targets a folder the reducer will skip.
+        const owner = [...ancestry].reverse().find((folder) =>
+          folderVariables(folder).some((v) => v.name === varName && !v.disabled && !isSecretVariable(v))
+        );
         const itemUuid = getItemUuid(owner);
         if (itemUuid) dispatch(setPlaygroundVariable({ scope, name: varName, value, itemUuid }));
       }

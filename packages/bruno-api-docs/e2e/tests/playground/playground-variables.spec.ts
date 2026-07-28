@@ -20,6 +20,30 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playgroundVariable.monacoValid.first()).toBeVisible();
   });
 
+  test('hovering a body variable shows its card with scope and resolved value', async ({
+    playground,
+    playgroundVariable
+  }) => {
+    await playground.selectTab('body');
+    await playgroundVariable.hoverMonacoToken('host');
+    await expect(playgroundVariable.name).toHaveText('host');
+    await expect(playgroundVariable.scopeBadge).toHaveText('Environment');
+    await expect(playgroundVariable.value).toHaveText('https://api.dev.example.com');
+  });
+
+  test('the body card stays clear of its token as the edit field grows', async ({
+    playground,
+    playgroundVariable
+  }) => {
+    await playground.selectTab('body');
+    await playgroundVariable.hoverMonacoToken('host');
+
+    await playgroundVariable.value.click();
+    await playgroundVariable.editField.fill('one\ntwo\nthree\nfour\nfive');
+
+    await expect.poll(() => playgroundVariable.overlapsMonacoToken('host')).toBe(false);
+  });
+
   test('hovering a URL variable shows its card with scope and resolved value', async ({ playgroundVariable }) => {
     await playgroundVariable.hoverInputToken('host');
     await expect(playgroundVariable.name).toHaveText('host');

@@ -78,6 +78,14 @@ export const createVariableHover = (
     }
   };
 
+  // Monaco pins a content widget's top when it lays it out, so a card that grows after the fact —
+  // the edit field expanding with its content — would extend down over the token it belongs to.
+  // Re-layout on every size change so the anchor is recomputed against the new height.
+  const sizeObserver = new ResizeObserver(() => {
+    if (visible) editorInstance.layoutContentWidget(widget);
+  });
+  sizeObserver.observe(node);
+
   const show = (hit: TokenHit) => {
     current = hit;
     visible = true;
@@ -156,6 +164,7 @@ export const createVariableHover = (
     dispose: () => {
       cancelOpen();
       cancelClose();
+      sizeObserver.disconnect();
       moveDisposable.dispose();
       leaveDisposable.dispose();
       node.removeEventListener('mouseenter', onCardEnter);
