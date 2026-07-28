@@ -1,8 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { VariableCardComponent } from '../variable-card/variable-card.component';
 
-/** The hover card over playground request fields. Scoped to the playground view so tokens resolve
- *  there and not to the docs page rendered behind the drawer. */
 export class PlaygroundVariableComponent extends VariableCardComponent {
   readonly editField = this.card.getByTestId('variable-info-card-edit');
   readonly monacoValid = this.page.locator('.monaco-editor .variable-valid');
@@ -12,7 +10,6 @@ export class PlaygroundVariableComponent extends VariableCardComponent {
     super(page, page.getByTestId('playground-view'));
   }
 
-  /** Editor tokens are inline decorations with no test id of their own. */
   monacoToken(name: string): Locator {
     return this.page
       .locator('.monaco-editor .variable-valid, .monaco-editor .variable-invalid')
@@ -20,8 +17,6 @@ export class PlaygroundVariableComponent extends VariableCardComponent {
       .first();
   }
 
-  /** Tokens in an input mirror sit behind a transparent field and editor tokens behind Monaco's
-   *  own mouse handling, so both are hovered by coordinate rather than through `hover()`. */
   async hoverInputToken(name: string): Promise<void> {
     await this.movePointerToToken(this.token(name), name);
   }
@@ -30,8 +25,6 @@ export class PlaygroundVariableComponent extends VariableCardComponent {
     await this.movePointerToToken(this.monacoToken(name), name);
   }
 
-  /** True when the card covers the token it is anchored to, which is what a stale content-widget
-   *  layout looks like. */
   async overlapsMonacoToken(name: string): Promise<boolean> {
     const card = await this.card.boundingBox();
     const token = await this.monacoToken(name).boundingBox();
