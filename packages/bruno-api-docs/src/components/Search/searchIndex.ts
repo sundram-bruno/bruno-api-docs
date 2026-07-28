@@ -25,7 +25,8 @@ interface SearchRecordBase {
   /** Route target slug. */
   slug: string;
   name: string;
-  breadcrumb: string;
+  /** Ancestor folder names, outermost first; joined for display, never searched. */
+  ancestorNames: string[];
   /** Ancestor folder slugs, for the folder filter chip. */
   ancestorSlugs: string[];
 }
@@ -62,7 +63,7 @@ export const buildSearchRecords = (entries: NavEntry[]): SearchRecord[] => {
       id,
       slug: entry.slug,
       name: entry.name,
-      breadcrumb: entry.ancestors.map((a) => a.name).join(BREADCRUMB_SEPARATOR),
+      ancestorNames: entry.ancestors.map((a) => a.name),
       ancestorSlugs: entry.ancestors.map((a) => a.slug),
     };
 
@@ -86,11 +87,24 @@ export const buildSearchRecords = (entries: NavEntry[]): SearchRecord[] => {
 
 const MAX_BREADCRUMB_SEGMENTS = 3;
 
-/** "A / B / C / D / E" → "A / … / E"; shorter chains are returned unchanged. */
-export const elideBreadcrumb = (breadcrumb: string): string => {
-  const segments = breadcrumb.split(BREADCRUMB_SEPARATOR);
-  if (segments.length <= MAX_BREADCRUMB_SEGMENTS) return breadcrumb;
-  return [segments[0], '…', segments[segments.length - 1]].join(BREADCRUMB_SEPARATOR);
+export interface BreadcrumbText {
+  /** Every ancestor, for the accessible name and the tooltip. */
+  full: string;
+  /** What the row paints; equals `full` until the chain is too long. */
+  display: string;
+}
+
+/**
+ * Render the ancestor chain, collapsing the middle of a long one:
+ * ["A","B","C","D"] → "A / … / D". Folder names are free text and may contain
+ * the separator themselves, so the chain is only ever joined here — never
+ * split back apart.
+ */
+export const formatBreadcrumb = (ancestorNames: string[]): BreadcrumbText => {
+  const full = ancestorNames.join(BREADCRUMB_SEPARATOR);
+  if (ancestorNames.length <= MAX_BREADCRUMB_SEGMENTS) return { full, display: full };
+  const ends = [ancestorNames[0], '…', ancestorNames[ancestorNames.length - 1]];
+  return { full, display: ends.join(BREADCRUMB_SEPARATOR) };
 };
 
 /** Top-level folders, for the folder filter dropdown. */

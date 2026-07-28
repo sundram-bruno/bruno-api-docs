@@ -99,6 +99,35 @@ test.describe('Search palette', () => {
     await expect(search.folderResults.first().getByTestId('search-result-breadcrumb')).toHaveText('Rooms');
   });
 
+  test('hovering an elided breadcrumb reveals the chain it hides', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('snapshots'); // Guests / Profiles / Archive / Legacy
+
+    const crumb = search.folderResults.first().getByTestId('search-result-breadcrumb');
+    await expect(crumb).toHaveText('Guests / … / Legacy');
+    await crumb.hover();
+    await expect(search.breadcrumbTooltip).toHaveText('Guests / Profiles / Archive / Legacy');
+  });
+
+  test('leaving a breadcrumb before the dwell elapses cancels the tooltip', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('snapshots');
+
+    const crumb = search.folderResults.first().getByTestId('search-result-breadcrumb');
+    await expect(crumb).toHaveText('Guests / … / Legacy');
+    await crumb.hover();
+    await search.field.hover(); // away again well inside the 500ms dwell
+
+    // Past the dwell: an uncancelled timer would open a bubble with the pointer
+    // elsewhere, and nothing left to close it.
+    await page.waitForTimeout(900);
+    await expect(search.breadcrumbTooltip).toHaveCount(0);
+  });
+
   test('a breadcrumb shown whole gets no tooltip on hover', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto(FIXTURE);

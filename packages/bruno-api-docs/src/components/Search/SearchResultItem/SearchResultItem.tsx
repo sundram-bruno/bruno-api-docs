@@ -4,7 +4,7 @@ import { getShortMethod } from '../../../utils/request';
 import { FolderIcon } from '../../../assets/icons';
 import { Tooltip } from '../../../ui/Tooltip/Tooltip';
 import { requestCountLabel } from '../../../utils/folder';
-import { elideBreadcrumb, type SearchRecord, type FieldMatches } from '../searchIndex';
+import { formatBreadcrumb, type SearchRecord, type FieldMatches } from '../searchIndex';
 import { StyledWrapper } from './StyledWrapper';
 
 interface SearchResultItemProps {
@@ -66,8 +66,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   onSelect,
   testId = 'search-result',
 }) => {
-  const fullBreadcrumb = record.breadcrumb;
-  const breadcrumb = elideBreadcrumb(fullBreadcrumb);
+  const { full: fullBreadcrumb, display: breadcrumb } = formatBreadcrumb(record.ancestorNames);
   const isElided = breadcrumb !== fullBreadcrumb;
 
   // The anchor is a plain span inside the row button, so it never takes focus

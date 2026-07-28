@@ -4,7 +4,7 @@ import {
   collectTopLevelFolders,
   collectMethods,
   createSearchIndex,
-  elideBreadcrumb,
+  formatBreadcrumb,
   orderFoldersFirst,
   searchHits,
   type SearchRecord,
@@ -64,7 +64,7 @@ describe('buildSearchRecords', () => {
     expect(recs[0].id).toBe('u1');
     expect(recs[0].slug).toBe('hotels/get-all');
     expect(recs[0].method).toBe('GET');
-    expect(recs[0].breadcrumb).toBe('Hotels');
+    expect(recs[0].ancestorNames).toEqual(['Hotels']);
     expect(recs[0].url).toContain('/api/v1/hotels');
   });
 
@@ -74,7 +74,7 @@ describe('buildSearchRecords', () => {
     expect(recs[0]).not.toHaveProperty('description');
   });
 
-  it('joins the ancestor chain into a breadcrumb', () => {
+  it('carries the ancestor chain as names and slugs', () => {
     const entry = requestEntry({
       uuid: 'u1',
       ancestors: [
@@ -82,7 +82,7 @@ describe('buildSearchRecords', () => {
         { name: 'Lookups', slug: 'billing/lookups' },
       ],
     });
-    expect(requestRecords([entry])[0].breadcrumb).toBe('Billing / Lookups');
+    expect(requestRecords([entry])[0].ancestorNames).toEqual(['Billing', 'Lookups']);
     expect(requestRecords([entry])[0].ancestorSlugs).toEqual(['billing', 'billing/lookups']);
   });
 
@@ -122,9 +122,9 @@ describe('buildSearchRecords', () => {
       ],
       depth: 2,
     });
-    expect(folderRecords([billingAuth, productsAuth]).map((r) => r.breadcrumb)).toEqual([
-      'Billing / Customers',
-      'Products / Users',
+    expect(folderRecords([billingAuth, productsAuth]).map((r) => r.ancestorNames)).toEqual([
+      ['Billing', 'Customers'],
+      ['Products', 'Users'],
     ]);
   });
 
@@ -165,17 +165,34 @@ describe('buildSearchRecords', () => {
   });
 });
 
-describe('elideBreadcrumb', () => {
-  it('leaves a chain of three or fewer segments untouched', () => {
-    expect(elideBreadcrumb('')).toBe('');
-    expect(elideBreadcrumb('Hotels')).toBe('Hotels');
-    expect(elideBreadcrumb('Hotels / Auth')).toBe('Hotels / Auth');
-    expect(elideBreadcrumb('Hotels / Auth / Auth 2')).toBe('Hotels / Auth / Auth 2');
+describe('formatBreadcrumb', () => {
+  it('paints a chain of three or fewer folders whole', () => {
+    expect(formatBreadcrumb([])).toEqual({ full: '', display: '' });
+    expect(formatBreadcrumb(['Hotels'])).toEqual({ full: 'Hotels', display: 'Hotels' });
+    expect(formatBreadcrumb(['Hotels', 'Auth', 'Auth 2'])).toEqual({
+      full: 'Hotels / Auth / Auth 2',
+      display: 'Hotels / Auth / Auth 2',
+    });
   });
 
   it('collapses the middle of a deeper chain, keeping the first and last folder', () => {
-    expect(elideBreadcrumb('Hotels / Auth / Auth 2 / Legacy')).toBe('Hotels / … / Legacy');
-    expect(elideBreadcrumb('Hotels / Auth / Auth 2 / Legacy / v3')).toBe('Hotels / … / v3');
+    expect(formatBreadcrumb(['Hotels', 'Auth', 'Auth 2', 'Legacy'])).toEqual({
+      full: 'Hotels / Auth / Auth 2 / Legacy',
+      display: 'Hotels / … / Legacy',
+    });
+  });
+
+  it('counts folders, not separators, so a name holding " / " cannot mis-segment', () => {
+    // Three folders, the middle one carrying a separator inside its own name.
+    expect(formatBreadcrumb(['Billing', 'A / B', 'Payments'])).toEqual({
+      full: 'Billing / A / B / Payments',
+      display: 'Billing / A / B / Payments',
+    });
+    // Four folders elide from the ends, however many separators the names hold.
+    expect(formatBreadcrumb(['Billing', 'A / B', 'Payments', 'v3'])).toEqual({
+      full: 'Billing / A / B / Payments / v3',
+      display: 'Billing / … / v3',
+    });
   });
 });
 
@@ -205,11 +222,11 @@ describe('collectMethods', () => {
 });
 
 const rec = (over: Partial<RequestSearchRecord>): RequestSearchRecord => ({
-  type: 'request', id: 'id', slug: 's', name: '', method: 'GET', breadcrumb: '', ancestorSlugs: [], url: '', ...over,
+  type: 'request', id: 'id', slug: 's', name: '', method: 'GET', ancestorNames: [], ancestorSlugs: [], url: '', ...over,
 });
 
 const folderRec = (over: Partial<FolderSearchRecord>): FolderSearchRecord => ({
-  type: 'folder', id: 'fid', slug: 'f', name: '', breadcrumb: '', ancestorSlugs: [], requestCount: 0, ...over,
+  type: 'folder', id: 'fid', slug: 'f', name: '', ancestorNames: [], ancestorSlugs: [], requestCount: 0, ...over,
 });
 
 /** Substrings the reported ranges actually cover, for match-locality assertions. */
@@ -220,11 +237,11 @@ const ids = (hits: ReturnType<typeof searchHits>): string[] => hits.map((h) => h
 
 // A small, representative billing collection reused across the matching tests.
 const BILLING: RequestSearchRecord[] = [
-  rec({ id: 'payments', name: 'Get All Payments', breadcrumb: 'Billing', url: '{{baseUrl}}/billing/payments' }),
-  rec({ id: 'invoices', name: 'Get All Invoices', breadcrumb: 'Billing', url: '{{baseUrl}}/billing/invoices' }),
-  rec({ id: 'customers', name: 'Get All Customers', breadcrumb: 'Billing', url: '{{baseUrl}}/billing/customers' }),
-  rec({ id: 'subs', name: 'Get All Subscriptions', breadcrumb: 'Billing', url: '{{baseUrl}}/billing/subscriptions' }),
-  rec({ id: 'currencies', name: 'Get Currencies', breadcrumb: 'Billing / Lookups', url: '{{baseUrl}}/billing/lookups/currencies' }),
+  rec({ id: 'payments', name: 'Get All Payments', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/payments' }),
+  rec({ id: 'invoices', name: 'Get All Invoices', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/invoices' }),
+  rec({ id: 'customers', name: 'Get All Customers', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/customers' }),
+  rec({ id: 'subs', name: 'Get All Subscriptions', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/subscriptions' }),
+  rec({ id: 'currencies', name: 'Get Currencies', ancestorNames: ['Billing', 'Lookups'], url: '{{baseUrl}}/billing/lookups/currencies' }),
 ];
 
 describe('searchHits - empty & degenerate queries', () => {
@@ -263,7 +280,7 @@ describe('searchHits - exact matches per field', () => {
   });
 
   it('does not match on the breadcrumb: the folder chain is shown, not searched', () => {
-    const fuse = createSearchIndex([rec({ id: 'x', name: 'Get item', breadcrumb: 'Billing / Lookups' })]);
+    const fuse = createSearchIndex([rec({ id: 'x', name: 'Get item', ancestorNames: ['Billing', 'Lookups'] })]);
     expect(searchHits(fuse, 'lookups')).toEqual([]);
   });
 

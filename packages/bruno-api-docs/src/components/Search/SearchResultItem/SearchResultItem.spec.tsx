@@ -15,7 +15,7 @@ const record: RequestSearchRecord = {
   slug: 'hotels/get-all',
   name: 'Get All Hotels',
   method: 'GET',
-  breadcrumb: 'Hotels / Browse & search',
+  ancestorNames: ['Hotels', 'Browse & search'],
   ancestorSlugs: ['hotels'],
   url: '{{baseUrl}}/api/v1/hotels',
 };
@@ -25,7 +25,7 @@ const folder: FolderSearchRecord = {
   id: 'f1',
   slug: 'billing/customers/basic-auth',
   name: 'Basic Auth',
-  breadcrumb: 'Billing / Customers',
+  ancestorNames: ['Billing', 'Customers'],
   ancestorSlugs: ['billing', 'billing/customers'],
   requestCount: 12,
 };
@@ -58,7 +58,7 @@ describe('SearchResultItem', () => {
   });
 
   it('shows a deep breadcrumb elided, naming the node with the whole chain', () => {
-    const deep = { ...record, breadcrumb: 'Hotels / Auth / Auth 2 / Legacy / v3' };
+    const deep = { ...record, ancestorNames: ['Hotels', 'Auth', 'Auth 2', 'Legacy', 'v3'] };
     const html = renderToStaticMarkup(<SearchResultItem record={deep} onSelect={() => {}} />);
     expect(html).toContain('Hotels / … / v3');
     // The hidden folders are unreachable by pointer for keyboard and AT users,
@@ -103,14 +103,14 @@ describe('SearchResultItem - folder variant', () => {
   it('shows its breadcrumb, so two same-named folders can be told apart', () => {
     const billing = renderToStaticMarkup(<SearchResultItem record={folder} onSelect={() => {}} />);
     const products = renderToStaticMarkup(
-      <SearchResultItem record={{ ...folder, breadcrumb: 'Products / Users' }} onSelect={() => {}} />,
+      <SearchResultItem record={{ ...folder, ancestorNames: ['Products', 'Users'] }} onSelect={() => {}} />,
     );
     expect(billing).toContain('Billing / Customers');
     expect(products).toContain('Products / Users');
   });
 
   it('elides a deep folder breadcrumb the same way a request one is elided', () => {
-    const deep = { ...folder, breadcrumb: 'Billing / Customers / Payment / Legacy' };
+    const deep = { ...folder, ancestorNames: ['Billing', 'Customers', 'Payment', 'Legacy'] };
     const html = renderToStaticMarkup(<SearchResultItem record={deep} onSelect={() => {}} />);
     expect(html).toContain('Billing / … / Legacy');
     expect(html).toContain('aria-label="Billing / Customers / Payment / Legacy"');
@@ -118,7 +118,7 @@ describe('SearchResultItem - folder variant', () => {
 
   it('omits the breadcrumb for a top-level folder (there is no chain)', () => {
     const html = renderToStaticMarkup(
-      <SearchResultItem record={{ ...folder, breadcrumb: '' }} onSelect={() => {}} />,
+      <SearchResultItem record={{ ...folder, ancestorNames: [] }} onSelect={() => {}} />,
     );
     expect(html).not.toContain('class="search-result-breadcrumb"');
   });
