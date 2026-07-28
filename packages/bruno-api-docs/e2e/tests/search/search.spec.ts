@@ -99,16 +99,17 @@ test.describe('Search palette', () => {
     await expect(search.folderResults.first().getByTestId('search-result-breadcrumb')).toHaveText('Rooms');
   });
 
-  test('hovering a breadcrumb reveals the full chain in a tooltip', async ({ page, search }) => {
+  test('a breadcrumb shown whole gets no tooltip on hover', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto(FIXTURE);
     await search.field.click();
     await search.field.fill('check availability'); // sits at Rooms / Availability
 
     const crumb = search.results.first().getByTestId('search-result-breadcrumb');
-    await expect(crumb).toBeVisible();
+    await expect(crumb).toHaveText('Rooms / Availability');
     await crumb.hover();
-    await expect(search.breadcrumbTooltip).toHaveText('Rooms / Availability');
+    // Nothing is hidden, so a bubble would only repeat the visible text.
+    await expect(search.breadcrumbTooltip).toHaveCount(0);
   });
 
   test('a top-level folder shows no breadcrumb (it has no chain)', async ({ page, search }) => {

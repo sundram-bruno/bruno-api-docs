@@ -55,11 +55,9 @@ const highlightRanges = (text: string, ranges?: Array<[number, number]>): React.
  * folder variant names its kind in text for screen readers.
  *
  * Both variants show the same breadcrumb: same-named folders in different
- * branches are otherwise indistinguishable. A long chain is elided on screen,
- * and hovering it reveals the whole of it.
- *
- * `record.breadcrumb` is the full chain; `elideBreadcrumb` only shortens what
- * is painted, so the tooltip always has the whole path to show.
+ * branches are otherwise indistinguishable. Only a chain long enough to be
+ * elided gets a tooltip — on a chain shown whole, the bubble would just repeat
+ * what is already on screen.
  */
 export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   record,
@@ -68,7 +66,22 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   onSelect,
   testId = 'search-result',
 }) => {
-  const breadcrumb = elideBreadcrumb(record.breadcrumb);
+  const fullBreadcrumb = record.breadcrumb;
+  const breadcrumb = elideBreadcrumb(fullBreadcrumb);
+  const isElided = breadcrumb !== fullBreadcrumb;
+
+  // The anchor is a plain span inside the row button, so it never takes focus
+  // and the tooltip alone would leave the hidden folders unreachable. Naming
+  // the node wins over its text when the button's name is computed.
+  const breadcrumbNode = breadcrumb ? (
+    <span
+      className="search-result-breadcrumb"
+      data-testid={`${testId}-breadcrumb`}
+      aria-label={isElided ? fullBreadcrumb : undefined}
+    >
+      {breadcrumb}
+    </span>
+  ) : null;
 
   return (
     <StyledWrapper type="button" data-active={active} data-testid={testId} onClick={() => onSelect(record)}>
@@ -93,16 +106,16 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
             {record.type === 'folder' && <span className="search-result-kind">Folder: </span>}
             {highlightRanges(record.name, matches?.name)}
           </span>
-          {breadcrumb && (
+          {isElided && breadcrumbNode ? (
             <Tooltip
-              content={record.breadcrumb}
+              content={fullBreadcrumb}
               openDelay={BREADCRUMB_TOOLTIP_DELAY_MS}
               testId={`${testId}-breadcrumb-tooltip`}
             >
-              <span className="search-result-breadcrumb" data-testid={`${testId}-breadcrumb`}>
-                {breadcrumb}
-              </span>
+              {breadcrumbNode}
             </Tooltip>
+          ) : (
+            breadcrumbNode
           )}
         </span>
         {record.type === 'folder' ? (

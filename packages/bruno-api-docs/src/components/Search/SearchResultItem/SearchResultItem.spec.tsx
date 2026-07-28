@@ -57,11 +57,19 @@ describe('SearchResultItem', () => {
     expect(boldedText(html)).toHaveLength(0);
   });
 
-  it('shows a deep breadcrumb elided (the full chain lives in its tooltip)', () => {
+  it('shows a deep breadcrumb elided, naming the node with the whole chain', () => {
     const deep = { ...record, breadcrumb: 'Hotels / Auth / Auth 2 / Legacy / v3' };
     const html = renderToStaticMarkup(<SearchResultItem record={deep} onSelect={() => {}} />);
     expect(html).toContain('Hotels / … / v3');
-    expect(html).not.toContain('Hotels / Auth / Auth 2');
+    // The hidden folders are unreachable by pointer for keyboard and AT users,
+    // so the label has to carry them.
+    expect(html).toContain('aria-label="Hotels / Auth / Auth 2 / Legacy / v3"');
+  });
+
+  it('leaves a chain shown whole unlabelled (its text is already the full path)', () => {
+    const html = renderToStaticMarkup(<SearchResultItem record={record} onSelect={() => {}} />);
+    expect(html).toContain('Hotels / Browse &amp; search');
+    expect(html).not.toContain('aria-label=');
   });
 });
 
@@ -105,7 +113,7 @@ describe('SearchResultItem - folder variant', () => {
     const deep = { ...folder, breadcrumb: 'Billing / Customers / Payment / Legacy' };
     const html = renderToStaticMarkup(<SearchResultItem record={deep} onSelect={() => {}} />);
     expect(html).toContain('Billing / … / Legacy');
-    expect(html).not.toContain('Billing / Customers / Payment');
+    expect(html).toContain('aria-label="Billing / Customers / Payment / Legacy"');
   });
 
   it('omits the breadcrumb for a top-level folder (there is no chain)', () => {
