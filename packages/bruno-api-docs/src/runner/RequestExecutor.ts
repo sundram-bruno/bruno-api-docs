@@ -8,6 +8,9 @@ import { detectContentTypeFromBytes, isByteFormatContentType } from '../utils/re
 import { RESPONSE_LARGE_THRESHOLD } from '../constants';
 import stripJsonComments from 'strip-json-comments';
 
+/** Methods `fetch` refuses to attach a request body to. */
+const BODYLESS_METHODS = ['GET', 'HEAD'];
+
 export const applyApiKeyToUrl = (url: string, auth: Record<string, unknown> | undefined): string => {
   if (auth?.type !== 'apikey' || auth.placement !== 'query' || !auth.key) {
     return url;
@@ -75,8 +78,11 @@ export class RequestExecutor {
       signal: AbortSignal.timeout(timeout)
     };
 
+    // Send the body for anything other than GET/HEAD, which `fetch` forbids a
+    // body on. An allowlist would silently drop the body of a custom method
+    // (PURGE, REPORT, …) that the reader can now enter in the method selector.
     const body = getHttpBody(request);
-    if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
+    if (body && !BODYLESS_METHODS.includes(method.toUpperCase())) {
       options.body = await this.buildBody(request);
     }
 

@@ -528,13 +528,15 @@ describe('getCollectionVariables', () => {
 });
 
 describe('getShortMethod', () => {
-  it('abbreviates DELETE and OPTIONS', () => {
+  it('abbreviates DELETE, OPTIONS and CONNECT', () => {
     expect(getShortMethod('DELETE')).toBe('DEL');
     expect(getShortMethod('OPTIONS')).toBe('OPT');
+    expect(getShortMethod('CONNECT')).toBe('CON');
   });
   it('uppercases and passes other methods through', () => {
     expect(getShortMethod('get')).toBe('GET');
     expect(getShortMethod('PATCH')).toBe('PATCH');
+    expect(getShortMethod('trace')).toBe('TRACE');
     expect(getShortMethod('purge')).toBe('PURGE');
   });
 });

@@ -109,4 +109,24 @@ describe('classifyRequestError', () => {
       expect(result.message).toBe('The request could not be completed.');
     });
   });
+
+  // A forbidden method (TRACE/CONNECT/TRACK) is rejected before any connection,
+  // and the browser explains why — so its own message must survive rather than
+  // being relabelled as CORS. Messages below are the real ones each engine
+  // throws, captured from Chromium/Firefox/WebKit.
+  describe('forbidden method -> the browser explanation, not a CORS guess', () => {
+    const crossOrigin = { pageUrl: 'https://docs.example.com/', requestUrl: 'https://api.example.com/users' };
+
+    it.each([
+      ["Failed to execute 'fetch' on 'Window': 'TRACE' HTTP method is unsupported.", 'Chromium TRACE'],
+      ["Failed to execute 'fetch' on 'Window': 'CONNECT' HTTP method is unsupported.", 'Chromium CONNECT'],
+      ['Window.fetch: Invalid request method TRACE.', 'Firefox TRACE'],
+      ['Window.fetch: Invalid request method CONNECT.', 'Firefox CONNECT'],
+      ['Method is forbidden.', 'WebKit TRACE/CONNECT']
+    ])('surfaces %s (%s)', (message) => {
+      const result = classifyRequestError(failedToFetch(message), crossOrigin);
+      expect(result.type).toBe('unknown');
+      expect(result.message).toBe(message);
+    });
+  });
 });

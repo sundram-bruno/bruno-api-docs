@@ -59,4 +59,45 @@ describe('RequestExecutor', () => {
 
     expect(fetchMock.mock.calls[0][0]).toBe('https://api.example.com/data?api_key=secret123');
   });
+
+  describe('request body', () => {
+    const sendWithBody = async (method: string) => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        status: 200,
+        statusText: 'OK',
+        url: 'https://api.example.com/data',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        text: async () => '{}'
+      });
+      global.fetch = fetchMock as unknown as typeof fetch;
+
+      const request = {
+        name: `${method} with body`,
+        type: 'http',
+        http: {
+          method,
+          url: 'https://api.example.com/data',
+          body: { type: 'json', data: '{"hello":"world"}' }
+        }
+      } as unknown as Parameters<RequestExecutor['executeRequest']>[0];
+
+      await new RequestExecutor().executeRequest(request);
+
+      return fetchMock.mock.calls[0][1];
+    };
+
+    it.each(['POST', 'PUT', 'PATCH'])('sends the body for %s', async (method) => {
+      expect((await sendWithBody(method)).body).toBe('{"hello":"world"}');
+    });
+
+    // A custom method the reader typed must carry its body like any other.
+    it.each(['PURGE', 'REPORT', 'DELETE', 'OPTIONS'])('sends the body for %s', async (method) => {
+      expect((await sendWithBody(method)).body).toBe('{"hello":"world"}');
+    });
+
+    // fetch throws if a body is attached to these.
+    it.each(['GET', 'HEAD'])('omits the body for %s', async (method) => {
+      expect((await sendWithBody(method)).body).toBeUndefined();
+    });
+  });
 });

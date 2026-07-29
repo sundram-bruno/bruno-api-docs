@@ -31,9 +31,11 @@ const offeredMethods = (): string[] => {
   return capturedItems[0].map((item) => String(item.id));
 };
 
+// The full option list is asserted in HttpMethodSelector.spec.tsx; these cover
+// the query bar actually reaching that selector.
 describe('QueryBar method select', () => {
-  it('offers exactly the seven HTTP methods, in order', () => {
-    expect(offeredMethods()).toEqual(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
+  it.each(['TRACE', 'CONNECT', 'add-custom'])('offers %s', (id) => {
+    expect(offeredMethods()).toContain(id);
   });
 
   // The query bar drives an HTTP client, so non-HTTP protocols must never be
