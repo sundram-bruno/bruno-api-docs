@@ -148,7 +148,9 @@ test.describe('Search palette', () => {
     // The name is the primary label, so the chain yields the width, not it.
     const nameBox = await row.getByTestId('search-result-name').boundingBox();
     const crumbBox = await row.getByTestId('search-result-breadcrumb').boundingBox();
-    expect(nameBox?.width ?? 0).toBeGreaterThan(crumbBox?.width ?? 0);
+    expect(nameBox, 'name has no bounding box').not.toBeNull();
+    expect(crumbBox, 'breadcrumb has no bounding box').not.toBeNull();
+    expect(nameBox!.width).toBeGreaterThan(crumbBox!.width);
   });
 
   test('hovering a clipped result name reveals it in full', async ({ page, search }) => {
