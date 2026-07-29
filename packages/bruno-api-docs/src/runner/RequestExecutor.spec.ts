@@ -86,13 +86,16 @@ describe('RequestExecutor', () => {
       return fetchMock.mock.calls[0][1];
     };
 
-    it.each(['POST', 'PUT', 'PATCH'])('sends the body for %s', async (method) => {
+    it.each(['POST', 'PUT', 'PATCH'])('sends the body for the standard method %s', async (method) => {
       expect((await sendWithBody(method)).body).toBe('{"hello":"world"}');
     });
 
-    it.each(['PURGE', 'REPORT', 'DELETE', 'OPTIONS'])('sends the body for %s', async (method) => {
-      expect((await sendWithBody(method)).body).toBe('{"hello":"world"}');
-    });
+    it.each(['PURGE', 'REPORT', 'DELETE', 'OPTIONS'])(
+      'sends the body for %s, which the old allowlist dropped',
+      async (method) => {
+        expect((await sendWithBody(method)).body).toBe('{"hello":"world"}');
+      }
+    );
 
     // fetch throws if a body is attached to these.
     it.each(['GET', 'HEAD'])('omits the body for %s', async (method) => {

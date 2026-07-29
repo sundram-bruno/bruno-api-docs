@@ -88,7 +88,11 @@ describe('HttpMethodSelector trigger', () => {
     expect(render('PURGE')).toContain('PURGE');
   });
 
-  it('labels the trigger for assistive tech', () => {
-    expect(render('GET')).toContain('aria-label="HTTP method"');
+  it('announces the current method to assistive tech', () => {
+    expect(render('TRACE')).toContain('aria-label="HTTP method: TRACE"');
+  });
+
+  it('tooltips the resolved method, not the raw stored value', () => {
+    expect(render('purge')).toContain('title="PURGE"');
   });
 });

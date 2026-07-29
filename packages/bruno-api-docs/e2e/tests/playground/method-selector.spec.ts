@@ -73,6 +73,27 @@ test.describe('Playground method selector', () => {
       await expect(methodSelector.trigger).toHaveText('PUT');
     });
 
+    test('trims a padded method so it stays a valid HTTP method', async ({ methodSelector }) => {
+      await methodSelector.enterCustom('  purge  ');
+
+      await expect(methodSelector.trigger).toHaveText('PURGE');
+      await expect(methodSelector.trigger).toHaveAttribute('title', 'PURGE');
+    });
+
+    test('returns focus to the trigger after committing with Enter', async ({ methodSelector }) => {
+      await methodSelector.startCustom('REPORT');
+      await methodSelector.customInput.press('Enter');
+
+      await expect(methodSelector.trigger).toBeFocused();
+    });
+
+    test('returns focus to the trigger after Escape', async ({ methodSelector }) => {
+      await methodSelector.startCustom('REPORT');
+      await methodSelector.customInput.press('Escape');
+
+      await expect(methodSelector.trigger).toBeFocused();
+    });
+
     test('shows a long method in full via the title, clipped on screen', async ({ methodSelector }) => {
       await methodSelector.enterCustom('LONG_NOTE_METHOD_NAME');
 

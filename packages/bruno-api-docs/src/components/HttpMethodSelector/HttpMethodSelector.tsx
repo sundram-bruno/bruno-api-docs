@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MenuDropdown from '../../ui/MenuDropdown';
 import type { MenuDropdownItem } from '../../ui/MenuDropdown';
 import { STANDARD_HTTP_METHODS } from '../../constants/request';
@@ -29,6 +29,23 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
   // keystroke: a request cannot carry a half-typed or empty method (an empty one
   // reads back as GET), which would fight the field as the reader types.
   const [draftMethod, setDraftMethod] = useState('');
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const returnFocusToTrigger = useRef(false);
+  const displayMethod = (method || 'GET').toUpperCase();
+
+  // Leaving custom entry unmounts the input, which would drop focus to the body
+  // and strand a keyboard reader, so hand it back to the trigger that replaces it.
+  useEffect(() => {
+    if (!isCustomMode && returnFocusToTrigger.current) {
+      returnFocusToTrigger.current = false;
+      triggerRef.current?.focus();
+    }
+  }, [isCustomMode]);
+
+  const leaveCustomMode = useCallback(() => {
+    returnFocusToTrigger.current = true;
+    setIsCustomMode(false);
+  }, []);
 
   const commitMethod = useCallback(
     (value: string) => {
@@ -48,15 +65,21 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
   };
 
   const endCustomMode = () => {
-    if (draftMethod) {
-      commitMethod(draftMethod);
+    const typed = draftMethod.trim();
+    if (typed) {
+      returnFocusToTrigger.current = true;
+      commitMethod(typed);
       return;
     }
-    setIsCustomMode(false);
+    leaveCustomMode();
   };
 
   const handleCustomInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
+      // Without this the same keypress reaches the trigger that replaces this
+      // input once focus moves back to it, re-opening the menu.
+      event.preventDefault();
+      event.stopPropagation();
       endCustomMode();
       return;
     }
@@ -64,7 +87,7 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
-      setIsCustomMode(false);
+      leaveCustomMode();
     }
   };
 
@@ -124,7 +147,13 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
         size="sm"
         testId={testId}
       >
-        <button type="button" className="method-select" aria-label="HTTP method" title={method}>
+        <button
+          ref={triggerRef}
+          type="button"
+          className="method-select"
+          aria-label={`HTTP method: ${displayMethod}`}
+          title={displayMethod}
+        >
           <MethodBadge method={method} />
         </button>
       </MenuDropdown>

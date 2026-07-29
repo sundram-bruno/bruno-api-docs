@@ -103,6 +103,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
           <span
             className="search-result-method"
             data-testid={`${testId}-method`}
+            title={record.method.toUpperCase()}
             style={{ ['--method-color' as string]: getMethodColorVar(record.method) }}
           >
             {getShortMethod(record.method)}
