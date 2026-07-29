@@ -24,7 +24,14 @@ const collection: any = {
           { name: 'host', value: 'https://dev.test' },
           { name: 'endpoint', value: '{{host}}/v1' },
           { name: 'bearer_token', value: 'super-secret', secret: true },
-          { name: 'emptyValue', value: '' }
+          { name: 'emptyValue', value: '' },
+          {
+            name: 'variantValue',
+            value: [
+              { title: 'first', selected: true, value: 'one' },
+              { title: 'second', value: 'two' }
+            ]
+          }
         ]
       }
     ]
@@ -185,5 +192,17 @@ describe('VariableInfoCard (editable)', () => {
     const root = useRenderToDom(editableCardTree('process.env.HOME'));
     expect(part(root, 'note').text).toBe('read-only');
     expect(part(root, 'value').classList.contains('var-value-editable')).toBe(false);
+  });
+
+  // Editing these as text would drop the stored shape, so they stay read-only.
+  it('never makes an object-typed value editable', () => {
+    const value = part(useRenderToDom(editableCardTree('profile')), 'value');
+    expect(value.classList.contains('var-value-editable')).toBe(false);
+  });
+
+  it('never makes a value with multiple variants editable', () => {
+    const value = part(useRenderToDom(editableCardTree('variantValue')), 'value');
+    expect(value.text).toBe('one');
+    expect(value.classList.contains('var-value-editable')).toBe(false);
   });
 });
