@@ -97,7 +97,7 @@ export const foldersFixtureCollection = {
               name: 'Consolidated Retention and Deletion Policy Configuration',
               type: 'folder',
               seq: 2,
-              items: [],
+              items: []
             },
             {
               name: 'Archive',
@@ -110,12 +110,12 @@ export const foldersFixtureCollection = {
                   name: 'Legacy',
                   type: 'folder',
                   seq: 1,
-                  items: [{ name: 'Snapshots v2', type: 'folder', seq: 1, items: [] }],
-                },
-              ],
-            },
-          ],
-        },
+                  items: [{ name: 'Snapshots v2', type: 'folder', seq: 1, items: [] }]
+                }
+              ]
+            }
+          ]
+        }
       ],
     },
     { name: 'Health Check', type: 'http', seq: 5, method: 'GET', url: '{{host}}/ping' },

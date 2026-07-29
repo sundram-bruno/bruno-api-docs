@@ -9,7 +9,7 @@ import {
   searchHits,
   type SearchRecord,
   type RequestSearchRecord,
-  type FolderSearchRecord,
+  type FolderSearchRecord
 } from './searchIndex';
 import type { NavEntry } from '../../routing/types';
 
@@ -35,7 +35,7 @@ const requestEntry = (over: Partial<NavEntry> & { uuid: string }): NavEntry => {
 const childItem = (name: string, type: 'http' | 'folder' | 'script', items?: unknown[]) => ({
   uuid: `${type}-${name}`,
   info: { name, type },
-  ...(items ? { items } : {}),
+  ...(items ? { items } : {})
 });
 
 const folderEntry = (over: Partial<NavEntry> & { uuid: string; items?: unknown[] }): NavEntry => {
@@ -47,7 +47,7 @@ const folderEntry = (over: Partial<NavEntry> & { uuid: string; items?: unknown[]
     ancestors: [],
     depth: 0,
     item: { uuid, info: { name: 'Hotels', type: 'folder' }, items: items ?? [] } as never,
-    ...rest,
+    ...rest
   };
 };
 
@@ -93,7 +93,7 @@ describe('buildSearchRecords', () => {
       slug: 'hotels/rooms',
       name: 'Rooms',
       ancestors: [{ name: 'Hotels', slug: 'hotels' }],
-      depth: 1,
+      depth: 1
     });
     const recs = folderRecords([top, nested]);
     expect(recs.map((r) => r.id)).toEqual(['f1', 'f2']);
@@ -108,9 +108,9 @@ describe('buildSearchRecords', () => {
       name: 'Auth',
       ancestors: [
         { name: 'Billing', slug: 'billing' },
-        { name: 'Customers', slug: 'billing/customers' },
+        { name: 'Customers', slug: 'billing/customers' }
       ],
-      depth: 2,
+      depth: 2
     });
     const productsAuth = folderEntry({
       uuid: 'f2',
@@ -118,13 +118,13 @@ describe('buildSearchRecords', () => {
       name: 'Auth',
       ancestors: [
         { name: 'Products', slug: 'products' },
-        { name: 'Users', slug: 'products/users' },
+        { name: 'Users', slug: 'products/users' }
       ],
-      depth: 2,
+      depth: 2
     });
     expect(folderRecords([billingAuth, productsAuth]).map((r) => r.ancestorNames)).toEqual([
       ['Billing', 'Customers'],
-      ['Products', 'Users'],
+      ['Products', 'Users']
     ]);
   });
 
@@ -134,8 +134,8 @@ describe('buildSearchRecords', () => {
       items: [
         childItem('List', 'http'),
         childItem('Create', 'http'),
-        childItem('Nested', 'folder', [childItem('Deep', 'http'), childItem('Deeper', 'folder', [childItem('Deepest', 'http')])]),
-      ],
+        childItem('Nested', 'folder', [childItem('Deep', 'http'), childItem('Deeper', 'folder', [childItem('Deepest', 'http')])])
+      ]
     });
     expect(folderRecords([entry])[0].requestCount).toBe(4);
   });
@@ -143,7 +143,7 @@ describe('buildSearchRecords', () => {
   it('does not count script files as requests', () => {
     const entry = folderEntry({
       uuid: 'f1',
-      items: [childItem('List', 'http'), childItem('setup', 'script')],
+      items: [childItem('List', 'http'), childItem('setup', 'script')]
     });
     expect(folderRecords([entry])[0].requestCount).toBe(1);
   });
@@ -153,7 +153,7 @@ describe('buildSearchRecords', () => {
       slug: '', type: 'overview', name: 'Overview', item: null, ancestors: [], depth: -1,
     };
     const environments: NavEntry = {
-      slug: '~environments', type: 'environments', name: 'Environments', item: null, ancestors: [], depth: -1,
+      slug: '~environments', type: 'environments', name: 'Environments', item: null, ancestors: [], depth: -1
     };
     expect(buildSearchRecords([overview, environments])).toHaveLength(0);
   });
@@ -171,14 +171,14 @@ describe('formatBreadcrumb', () => {
     expect(formatBreadcrumb(['Hotels'])).toEqual({ full: 'Hotels', display: 'Hotels' });
     expect(formatBreadcrumb(['Hotels', 'Auth', 'Auth 2'])).toEqual({
       full: 'Hotels / Auth / Auth 2',
-      display: 'Hotels / Auth / Auth 2',
+      display: 'Hotels / Auth / Auth 2'
     });
   });
 
   it('collapses the middle of a deeper chain, keeping the first and last folder', () => {
     expect(formatBreadcrumb(['Hotels', 'Auth', 'Auth 2', 'Legacy'])).toEqual({
       full: 'Hotels / Auth / Auth 2 / Legacy',
-      display: 'Hotels / … / Legacy',
+      display: 'Hotels / … / Legacy'
     });
   });
 
@@ -186,12 +186,12 @@ describe('formatBreadcrumb', () => {
     // Three folders, the middle one carrying a separator inside its own name.
     expect(formatBreadcrumb(['Billing', 'A / B', 'Payments'])).toEqual({
       full: 'Billing / A / B / Payments',
-      display: 'Billing / A / B / Payments',
+      display: 'Billing / A / B / Payments'
     });
     // Four folders elide from the ends, however many separators the names hold.
     expect(formatBreadcrumb(['Billing', 'A / B', 'Payments', 'v3'])).toEqual({
       full: 'Billing / A / B / Payments / v3',
-      display: 'Billing / … / v3',
+      display: 'Billing / … / v3'
     });
   });
 });
@@ -222,11 +222,11 @@ describe('collectMethods', () => {
 });
 
 const rec = (over: Partial<RequestSearchRecord>): RequestSearchRecord => ({
-  type: 'request', id: 'id', slug: 's', name: '', method: 'GET', ancestorNames: [], ancestorSlugs: [], url: '', ...over,
+  type: 'request', id: 'id', slug: 's', name: '', method: 'GET', ancestorNames: [], ancestorSlugs: [], url: '', ...over
 });
 
 const folderRec = (over: Partial<FolderSearchRecord>): FolderSearchRecord => ({
-  type: 'folder', id: 'fid', slug: 'f', name: '', ancestorNames: [], ancestorSlugs: [], requestCount: 0, ...over,
+  type: 'folder', id: 'fid', slug: 'f', name: '', ancestorNames: [], ancestorSlugs: [], requestCount: 0, ...over
 });
 
 /** Substrings the reported ranges actually cover, for match-locality assertions. */
@@ -241,7 +241,7 @@ const BILLING: RequestSearchRecord[] = [
   rec({ id: 'invoices', name: 'Get All Invoices', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/invoices' }),
   rec({ id: 'customers', name: 'Get All Customers', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/customers' }),
   rec({ id: 'subs', name: 'Get All Subscriptions', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/subscriptions' }),
-  rec({ id: 'currencies', name: 'Get Currencies', ancestorNames: ['Billing', 'Lookups'], url: '{{baseUrl}}/billing/lookups/currencies' }),
+  rec({ id: 'currencies', name: 'Get Currencies', ancestorNames: ['Billing', 'Lookups'], url: '{{baseUrl}}/billing/lookups/currencies' })
 ];
 
 describe('searchHits - empty & degenerate queries', () => {
@@ -367,7 +367,7 @@ describe('orderFoldersFirst', () => {
       hit(rec({ id: 'r1' })),
       hit(folderRec({ id: 'f1' })),
       hit(rec({ id: 'r2' })),
-      hit(folderRec({ id: 'f2' })),
+      hit(folderRec({ id: 'f2' }))
     ]);
     expect(ordered.map((h) => h.record.id)).toEqual(['f1', 'f2', 'r1', 'r2']);
   });

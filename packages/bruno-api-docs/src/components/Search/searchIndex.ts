@@ -71,14 +71,14 @@ export const buildSearchRecords = (entries: NavEntry[]): SearchRecord[] => {
       records.push({
         type: 'folder',
         ...common,
-        requestCount: countFolderRequests(entry.item as Folder),
+        requestCount: countFolderRequests(entry.item as Folder)
       });
     } else if (entry.type === 'request') {
       records.push({
         type: 'request',
         ...common,
         method: entry.method,
-        url: getRequestUrl(entry.item as never),
+        url: getRequestUrl(entry.item as never)
       });
     }
   }

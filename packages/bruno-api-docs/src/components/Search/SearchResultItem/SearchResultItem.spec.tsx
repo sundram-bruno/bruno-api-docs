@@ -27,7 +27,7 @@ const folder: FolderSearchRecord = {
   name: 'Basic Auth',
   ancestorNames: ['Billing', 'Customers'],
   ancestorSlugs: ['billing', 'billing/customers'],
-  requestCount: 12,
+  requestCount: 12
 };
 
 describe('SearchResultItem', () => {
@@ -88,7 +88,7 @@ describe('SearchResultItem - folder variant', () => {
 
   it('singularises a folder holding one request', () => {
     const html = renderToStaticMarkup(
-      <SearchResultItem record={{ ...folder, requestCount: 1 }} onSelect={() => {}} />,
+      <SearchResultItem record={{ ...folder, requestCount: 1 }} onSelect={() => {}} />
     );
     expect(html).toContain('1 request');
     expect(html).not.toContain('1 requests');
@@ -103,7 +103,7 @@ describe('SearchResultItem - folder variant', () => {
   it('shows its breadcrumb, so two same-named folders can be told apart', () => {
     const billing = renderToStaticMarkup(<SearchResultItem record={folder} onSelect={() => {}} />);
     const products = renderToStaticMarkup(
-      <SearchResultItem record={{ ...folder, ancestorNames: ['Products', 'Users'] }} onSelect={() => {}} />,
+      <SearchResultItem record={{ ...folder, ancestorNames: ['Products', 'Users'] }} onSelect={() => {}} />
     );
     expect(billing).toContain('Billing / Customers');
     expect(products).toContain('Products / Users');
@@ -118,7 +118,7 @@ describe('SearchResultItem - folder variant', () => {
 
   it('omits the breadcrumb for a top-level folder (there is no chain)', () => {
     const html = renderToStaticMarkup(
-      <SearchResultItem record={{ ...folder, ancestorNames: [] }} onSelect={() => {}} />,
+      <SearchResultItem record={{ ...folder, ancestorNames: [] }} onSelect={() => {}} />
     );
     expect(html).not.toContain('class="search-result-breadcrumb"');
   });
@@ -126,7 +126,7 @@ describe('SearchResultItem - folder variant', () => {
   it('bolds the matched range of the folder name', () => {
     // "Auth" sits at indices 6-9 of "Basic Auth".
     const html = renderToStaticMarkup(
-      <SearchResultItem record={folder} matches={{ name: [[6, 9]] }} onSelect={() => {}} />,
+      <SearchResultItem record={folder} matches={{ name: [[6, 9]] }} onSelect={() => {}} />
     );
     expect(boldedText(html)).toContain('Auth');
   });

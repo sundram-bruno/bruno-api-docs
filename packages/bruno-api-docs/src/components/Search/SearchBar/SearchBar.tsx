@@ -84,8 +84,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
         : [];
     const filtered = base.filter(({ record: r }) => {
       // A folder carries no method, so any active method chip excludes them all.
-      const passesMethod =
-        methods.size === 0 || (r.type === 'request' && !!r.method && methods.has(r.method.toUpperCase()));
+      const passesMethod
+        = methods.size === 0 || (r.type === 'request' && !!r.method && methods.has(r.method.toUpperCase()));
       // The filtered folder matches itself, not only the items beneath it.
       const passesFolder = folder === null || r.ancestorSlugs.includes(folder) || r.slug === folder;
       return passesMethod && passesFolder;

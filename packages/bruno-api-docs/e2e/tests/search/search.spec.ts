@@ -141,7 +141,7 @@ test.describe('Search palette', () => {
     // row's hover background at the container edge.
     const { scrollWidth, clientWidth } = await search.resultsScroll.evaluate((el) => ({
       scrollWidth: el.scrollWidth,
-      clientWidth: el.clientWidth,
+      clientWidth: el.clientWidth
     }));
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
 

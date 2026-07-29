@@ -18,17 +18,17 @@ export const qaFixtureCollection = {
         name: 'Dev',
         variables: [
           { name: 'host', value: 'https://api.qa.dev' },
-          { name: 'api_key', value: 'dev-key-123' },
-        ],
+          { name: 'api_key', value: 'dev-key-123' }
+        ]
       },
       {
         name: 'Prod',
         variables: [
           { name: 'host', value: 'https://api.qa.com' },
-          { name: 'api_key', value: 'prod-key-abc' },
-        ],
-      },
-    ],
+          { name: 'api_key', value: 'prod-key-abc' }
+        ]
+      }
+    ]
   },
   items: [
     {
@@ -74,19 +74,19 @@ export const qaFixtureCollection = {
                               type: 'http',
                               seq: 2,
                               method: 'POST',
-                              url: '{{host}}/billing/auth/token/legacy/rotate-signing-key?scope=all&dry_run=false',
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
+                              url: '{{host}}/billing/auth/token/legacy/rotate-signing-key?scope=all&dry_run=false'
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       name: 'Products',
@@ -106,12 +106,12 @@ export const qaFixtureCollection = {
               seq: 1,
               items: [
                 { name: 'Login', type: 'http', seq: 1, method: 'POST', url: '{{host}}/products/auth/login' },
-                { name: 'Logout', type: 'http', seq: 2, method: 'POST', url: '{{host}}/products/auth/logout' },
-              ],
-            },
-          ],
-        },
-      ],
+                { name: 'Logout', type: 'http', seq: 2, method: 'POST', url: '{{host}}/products/auth/logout' }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       name: 'Enterprise Customer Identity and Access Management',
@@ -133,14 +133,14 @@ export const qaFixtureCollection = {
                   type: 'http',
                   seq: 1,
                   method: 'PATCH',
-                  url: '{{host}}/enterprise/identity/federated-directory/members/synchronise?provider=okta&include_deactivated=true',
+                  url: '{{host}}/enterprise/identity/federated-directory/members/synchronise?provider=okta&include_deactivated=true'
                 },
-                { name: 'Get SAML Metadata', type: 'http', seq: 2, method: 'GET', url: '{{host}}/enterprise/identity/saml/metadata' },
-              ],
-            },
-          ],
-        },
-      ],
+                { name: 'Get SAML Metadata', type: 'http', seq: 2, method: 'GET', url: '{{host}}/enterprise/identity/saml/metadata' }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       name: 'Edge Cases',
@@ -154,7 +154,7 @@ export const qaFixtureCollection = {
           name: 'Scripts Only',
           type: 'folder',
           seq: 2,
-          items: [{ name: 'Setup Script', type: 'script', seq: 1, script: "bru.setVar('startedAt', 1);" }],
+          items: [{ name: 'Setup Script', type: 'script', seq: 1, script: 'bru.setVar(\'startedAt\', 1);' }]
         },
         {
           // Holds no request directly; the count comes from its subfolders.
@@ -166,22 +166,22 @@ export const qaFixtureCollection = {
               name: 'Nested A',
               type: 'folder',
               seq: 1,
-              items: [{ name: 'Ping A', type: 'http', seq: 1, method: 'GET', url: '{{host}}/edge/a/ping' }],
+              items: [{ name: 'Ping A', type: 'http', seq: 1, method: 'GET', url: '{{host}}/edge/a/ping' }]
             },
             {
               name: 'Nested B',
               type: 'folder',
               seq: 2,
-              items: [{ name: 'Ping B', type: 'http', seq: 1, method: 'GET', url: '{{host}}/edge/b/ping' }],
-            },
-          ],
+              items: [{ name: 'Ping B', type: 'http', seq: 1, method: 'GET', url: '{{host}}/edge/b/ping' }]
+            }
+          ]
         },
         {
           // Singular label: "1 request".
           name: 'Exactly One',
           type: 'folder',
           seq: 4,
-          items: [{ name: 'Only Child', type: 'http', seq: 1, method: 'PUT', url: '{{host}}/edge/only' }],
+          items: [{ name: 'Only Child', type: 'http', seq: 1, method: 'PUT', url: '{{host}}/edge/only' }]
         },
         {
           // The folder name itself contains the breadcrumb separator. Its
@@ -201,16 +201,16 @@ export const qaFixtureCollection = {
                   type: 'http',
                   seq: 1,
                   method: 'POST',
-                  url: '{{host}}/edge/reports/archive/quarterly/export',
-                },
-              ],
-            },
-          ],
-        },
-      ],
+                  url: '{{host}}/edge/reports/archive/quarterly/export'
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
-    { name: 'Health Check', type: 'http', seq: 5, method: 'GET', url: '{{host}}/ping' },
-  ],
+    { name: 'Health Check', type: 'http', seq: 5, method: 'GET', url: '{{host}}/ping' }
+  ]
 } as unknown as OpenCollection;
 
 export default qaFixtureCollection;
