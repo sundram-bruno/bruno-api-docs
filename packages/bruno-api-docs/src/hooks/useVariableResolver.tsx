@@ -5,7 +5,7 @@ import type { Item } from '@opencollection/types/collection/item';
 import type { Variable, SecretVariable } from '@opencollection/types/common/variables';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { selectDocsCollection } from '../store/slices/docs';
-import { setPlaygroundVariable } from '../store/slices/playground';
+import { setPlaygroundVariable } from '@/store/slices/playground';
 import { selectActiveEnvName, selectShowVars } from '../store/slices/env';
 import { getRequestVariables, isFolder } from '../utils/schemaHelpers';
 import { getItemUuid } from '../utils/itemUtils';
@@ -83,7 +83,8 @@ const lookupVariable = (rawName: string, model: ScopedVariableModel): VariableLo
   const safeValue = formatEntryValue(entry, model.values);
   const secret = entry.secret || model.secretNames.has(name) || referencesSecret(safeValue, model.secretNames);
   const value = secret ? formatEntryValue(entry, model.fullValues) : safeValue;
-  return { name, scope: entry.scope, value, rawValue: entry.value, secret, valid: true, simpleString: entry.simpleString };
+  const { scope, value: rawValue, simpleString } = entry;
+  return { name, scope, value, rawValue, secret, valid: true, simpleString };
 };
 
 const makeResolver = (

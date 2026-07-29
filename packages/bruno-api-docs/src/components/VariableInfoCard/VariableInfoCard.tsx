@@ -37,14 +37,14 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     el.style.height = `${el.scrollHeight}px`;
   }, [editing, draft]);
 
-  const canEdit =
-    editable &&
-    canWrite &&
-    info.valid &&
-    !info.secret &&
-    info.simpleString &&
-    EDITABLE_SCOPES.has(info.scope) &&
-    (info.scope !== 'environment' || !!activeEnvName);
+  const canEdit
+    = editable
+      && canWrite
+      && info.valid
+      && !info.secret
+      && info.simpleString
+      && EDITABLE_SCOPES.has(info.scope)
+      && (info.scope !== 'environment' || !!activeEnvName);
 
   const startEditing = () => {
     setDraft(info.rawValue);

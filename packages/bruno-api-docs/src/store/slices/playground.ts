@@ -247,8 +247,8 @@ const playgroundSlice = createSlice({
           setInList(collection.request?.variables as (Variable | SecretVariable)[] | undefined);
         } else if (itemUuid && collection.items) {
           findAndUpdateItem(collection.items, itemUuid, (item) => {
-            const list =
-              scope === 'folder'
+            const list
+              = scope === 'folder'
                 ? (item.request?.variables as (Variable | SecretVariable)[] | undefined)
                 : (getRequestVariables(item) as (Variable | SecretVariable)[]);
             setInList(list);
@@ -257,7 +257,7 @@ const playgroundSlice = createSlice({
       };
       apply(state.hydratedCollection);
       apply(state.collection);
-    },
+    }
   }
 });
 

@@ -126,11 +126,11 @@ export const createVariableHover = (
     }
     cancelClose();
     if (
-      visible &&
-      current &&
-      current.name === hit.name &&
-      current.startColumn === hit.startColumn &&
-      current.lineNumber === hit.lineNumber
+      visible
+      && current
+      && current.name === hit.name
+      && current.startColumn === hit.startColumn
+      && current.lineNumber === hit.lineNumber
     )
       return;
     cancelOpen();
