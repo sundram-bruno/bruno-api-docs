@@ -7,12 +7,8 @@ import { MethodBadge } from '../MethodBadge/MethodBadge';
 import { StyledWrapper } from './StyledWrapper';
 
 const ADD_CUSTOM_ITEM_ID = 'add-custom';
-const DEFAULT_METHOD = 'GET';
 
-/**
- * The custom-method input grows with what is typed, between a width that keeps
- * an empty field clickable and the same cap the app uses before it ellipsizes.
- */
+/** Width bounds for the custom-method input, in characters; the cap matches the app. */
 const MIN_METHOD_WIDTH_CH = 4;
 const MAX_METHOD_WIDTH_CH = 16;
 
@@ -51,9 +47,17 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
     setDraftMethod(event.target.value.toUpperCase());
   };
 
+  const endCustomMode = () => {
+    if (draftMethod) {
+      commitMethod(draftMethod);
+      return;
+    }
+    setIsCustomMode(false);
+  };
+
   const handleCustomInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      commitMethod(draftMethod || DEFAULT_METHOD);
+      endCustomMode();
       return;
     }
 
@@ -62,15 +66,6 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
       event.stopPropagation();
       setIsCustomMode(false);
     }
-  };
-
-  // Blurring keeps whatever was typed; an untouched field leaves the method as it was.
-  const handleCustomInputBlur = () => {
-    if (draftMethod) {
-      commitMethod(draftMethod);
-      return;
-    }
-    setIsCustomMode(false);
   };
 
   const items = useMemo<MenuDropdownItem[]>(
@@ -92,7 +87,6 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
     [commitMethod, startCustomMode]
   );
 
-  // A custom method matches no row, so nothing is ticked same as in the app.
   const selectedItemId = useMemo(() => {
     const normalized = method.toUpperCase();
     return STANDARD_HTTP_METHODS.includes(normalized) ? normalized : null;
@@ -110,7 +104,7 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
           value={draftMethod}
           onChange={handleCustomInputChange}
           onKeyDown={handleCustomInputKeyDown}
-          onBlur={handleCustomInputBlur}
+          onBlur={endCustomMode}
           aria-label="Custom HTTP method"
           title={draftMethod}
           data-testid={testId ? `${testId}-custom-input` : undefined}

@@ -21,7 +21,6 @@ describe('getMethodColorVar', () => {
     expect(getMethodColorVar(undefined)).toBe(MUTED);
   });
 
-  // TRACE and CONNECT are selectable but have no colour token, matching the app.
   it.each(['TRACE', 'CONNECT'])('falls back to the muted token for %s', (method) => {
     expect(getMethodColorVar(method)).toBe(MUTED);
   });

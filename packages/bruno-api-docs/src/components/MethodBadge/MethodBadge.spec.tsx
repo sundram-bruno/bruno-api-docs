@@ -18,7 +18,6 @@ describe('MethodBadge', () => {
     expect(renderToStaticMarkup(<MethodBadge method="" />)).toContain('GET');
   });
 
-  // Only the sidebar abbreviates; every badge site spells the method out.
   it.each(['DELETE', 'OPTIONS', 'TRACE', 'CONNECT', 'PURGE'])('spells %s out in full', (method) => {
     expect(badgeText(<MethodBadge method={method} />)).toBe(method);
   });

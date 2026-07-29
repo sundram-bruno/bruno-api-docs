@@ -90,7 +90,6 @@ describe('RequestExecutor', () => {
       expect((await sendWithBody(method)).body).toBe('{"hello":"world"}');
     });
 
-    // A custom method the reader typed must carry its body like any other.
     it.each(['PURGE', 'REPORT', 'DELETE', 'OPTIONS'])('sends the body for %s', async (method) => {
       expect((await sendWithBody(method)).body).toBe('{"hello":"world"}');
     });

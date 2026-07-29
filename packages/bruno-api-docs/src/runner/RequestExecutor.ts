@@ -78,9 +78,6 @@ export class RequestExecutor {
       signal: AbortSignal.timeout(timeout)
     };
 
-    // Send the body for anything other than GET/HEAD, which `fetch` forbids a
-    // body on. An allowlist would silently drop the body of a custom method
-    // (PURGE, REPORT, …) that the reader can now enter in the method selector.
     const body = getHttpBody(request);
     if (body && !BODYLESS_METHODS.includes(method.toUpperCase())) {
       options.body = await this.buildBody(request);

@@ -31,8 +31,6 @@ const offeredMethods = (): string[] => {
   return capturedItems[0].map((item) => String(item.id));
 };
 
-// The full option list is asserted in HttpMethodSelector.spec.tsx; these cover
-// the query bar actually reaching that selector.
 describe('QueryBar method select', () => {
   it.each(['TRACE', 'CONNECT', 'add-custom'])('offers %s', (id) => {
     expect(offeredMethods()).toContain(id);

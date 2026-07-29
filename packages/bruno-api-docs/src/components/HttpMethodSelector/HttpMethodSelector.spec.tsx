@@ -43,8 +43,7 @@ describe('HttpMethodSelector options', () => {
     expect(methodIds).toEqual(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD', 'TRACE', 'CONNECT']);
   });
 
-  // Styled as a link row, with no separator above it, matching the app.
-  it('offers an "+ Add Custom" link row last', () => {
+  it('offers an "+ Add Custom" link row last, with no separator above it', () => {
     render('GET');
     const items = capturedProps[0].items;
     const addCustom = items[items.length - 1];
@@ -80,8 +79,7 @@ describe('HttpMethodSelector selected row', () => {
 });
 
 describe('HttpMethodSelector trigger', () => {
-  // The app spells the method out here; only the sidebar abbreviates it.
-  it('shows the method in full', () => {
+  it('shows the method in full, unabbreviated', () => {
     expect(render('DELETE')).toContain('DELETE');
     expect(render('OPTIONS')).toContain('OPTIONS');
   });

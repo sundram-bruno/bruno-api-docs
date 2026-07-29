@@ -65,6 +65,14 @@ test.describe('Playground method selector', () => {
       await expect(methodSelector.trigger).toHaveText('PUT');
     });
 
+    test('keeps the previous method when Enter is pressed on an empty field', async ({ methodSelector }) => {
+      await methodSelector.select('PUT');
+      await methodSelector.startCustom('');
+      await methodSelector.customInput.press('Enter');
+
+      await expect(methodSelector.trigger).toHaveText('PUT');
+    });
+
     test('shows a long method in full via the title, clipped on screen', async ({ methodSelector }) => {
       await methodSelector.enterCustom('LONG_NOTE_METHOD_NAME');
 
