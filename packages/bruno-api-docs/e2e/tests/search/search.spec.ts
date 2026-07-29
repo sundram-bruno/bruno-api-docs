@@ -172,6 +172,10 @@ test.describe('Search palette', () => {
     const name = search.results.first().getByTestId('search-result-name');
     await expect(name).toBeVisible();
     await name.hover();
+
+    // Past the dwell, or the assertion passes on the first poll simply because
+    // nothing has opened yet and a regression would ship uncaught.
+    await page.waitForTimeout(900);
     await expect(search.nameTooltip).toHaveCount(0);
   });
 
@@ -184,7 +188,10 @@ test.describe('Search palette', () => {
     const crumb = search.results.first().getByTestId('search-result-breadcrumb');
     await expect(crumb).toHaveText('Rooms / Availability');
     await crumb.hover();
-    // Nothing is hidden, so a bubble would only repeat the visible text.
+
+    // Nothing is hidden, so a bubble would only repeat the visible text. Wait
+    // past the dwell first: asserting straight after hover passes trivially.
+    await page.waitForTimeout(900);
     await expect(search.breadcrumbTooltip).toHaveCount(0);
   });
 
