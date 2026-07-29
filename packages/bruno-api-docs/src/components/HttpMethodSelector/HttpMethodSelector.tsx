@@ -42,11 +42,6 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
     }
   }, [isCustomMode]);
 
-  const leaveCustomMode = useCallback(() => {
-    returnFocusToTrigger.current = true;
-    setIsCustomMode(false);
-  }, []);
-
   const commitMethod = useCallback(
     (value: string) => {
       setIsCustomMode(false);
@@ -64,14 +59,18 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
     setDraftMethod(event.target.value.toUpperCase());
   };
 
-  const endCustomMode = () => {
+  /**
+   * `restoreFocus` only for keyboard exits: a pointer exit has already chosen
+   * where focus goes, and pulling it back to the trigger would fight the reader.
+   */
+  const exitCustomMode = (restoreFocus: boolean) => {
+    returnFocusToTrigger.current = restoreFocus;
     const typed = draftMethod.trim();
     if (typed) {
-      returnFocusToTrigger.current = true;
       commitMethod(typed);
       return;
     }
-    leaveCustomMode();
+    setIsCustomMode(false);
   };
 
   const handleCustomInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -80,14 +79,15 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
       // input once focus moves back to it, re-opening the menu.
       event.preventDefault();
       event.stopPropagation();
-      endCustomMode();
+      exitCustomMode(true);
       return;
     }
 
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
-      leaveCustomMode();
+      returnFocusToTrigger.current = true;
+      setIsCustomMode(false);
     }
   };
 
@@ -110,10 +110,10 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
     [commitMethod, startCustomMode]
   );
 
-  const selectedItemId = useMemo(() => {
-    const normalized = method.toUpperCase();
-    return STANDARD_HTTP_METHODS.includes(normalized) ? normalized : null;
-  }, [method]);
+  const selectedItemId = useMemo(
+    () => (STANDARD_HTTP_METHODS.includes(displayMethod) ? displayMethod : null),
+    [displayMethod]
+  );
 
   if (isCustomMode) {
     const widthCh = Math.min(Math.max(draftMethod.length + 1, MIN_METHOD_WIDTH_CH), MAX_METHOD_WIDTH_CH);
@@ -127,7 +127,7 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
           value={draftMethod}
           onChange={handleCustomInputChange}
           onKeyDown={handleCustomInputKeyDown}
-          onBlur={endCustomMode}
+          onBlur={() => exitCustomMode(false)}
           aria-label="Custom HTTP method"
           title={draftMethod}
           data-testid={testId ? `${testId}-custom-input` : undefined}

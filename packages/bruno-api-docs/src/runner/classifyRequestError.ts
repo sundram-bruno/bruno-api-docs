@@ -53,7 +53,8 @@ const isTimeoutError = (error: unknown): boolean => {
 };
 
 /**
- * The browser's opaque network failure, one phrase per engine.
+ * The opaque network failure, one phrase per engine (plus undici's `fetch
+ * failed`, for a non-DOM runtime).
  *
  * Matched as whole phrases rather than by sniffing for "fetch", because not
  * every `TypeError` mentioning fetch is a network failure. A forbidden method
@@ -66,7 +67,8 @@ const isTimeoutError = (error: unknown): boolean => {
 const OPAQUE_FETCH_FAILURE_MESSAGES = [
   'failed to fetch',
   'networkerror when attempting to fetch resource',
-  'load failed'
+  'load failed',
+  'fetch failed'
 ];
 
 const isOpaqueFetchFailure = (error: unknown): boolean => {

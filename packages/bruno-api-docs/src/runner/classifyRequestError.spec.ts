@@ -46,6 +46,23 @@ describe('classifyRequestError', () => {
     });
   });
 
+  // One phrase per engine, plus undici's, so a non-DOM runtime still gets the
+  // scheme/origin guidance rather than a bare message.
+  describe('every engine wording counts as the opaque failure', () => {
+    it.each([
+      ['Failed to fetch', 'Chromium'],
+      ['NetworkError when attempting to fetch resource.', 'Firefox'],
+      ['Load failed', 'WebKit'],
+      ['fetch failed', 'undici']
+    ])('classifies %s (%s)', (message) => {
+      const result = classifyRequestError(failedToFetch(message), {
+        pageUrl: 'https://docs.example.com/',
+        requestUrl: 'https://api.example.com/users'
+      });
+      expect(result.type).toBe('browser-blocked');
+    });
+  });
+
   describe('browser-blocked (CORS — cross-origin or opened from a file)', () => {
     it('classifies a cross-origin request (different host, same site)', () => {
       const result = classifyRequestError(failedToFetch(), {

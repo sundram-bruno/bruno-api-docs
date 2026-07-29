@@ -94,6 +94,17 @@ test.describe('Playground method selector', () => {
       await expect(methodSelector.trigger).toBeFocused();
     });
 
+    // A pointer exit has already chosen where focus goes; taking it back to the
+    // trigger would move the caret out of whatever the reader just clicked.
+    for (const [label, typed] of [['a typed', 'REPORT'], ['an empty', '']]) {
+      test(`leaves focus alone when ${label} field is clicked away from`, async ({ page, methodSelector }) => {
+        await methodSelector.startCustom(typed);
+        await page.getByTestId('query-bar-url').click();
+
+        await expect(methodSelector.trigger).not.toBeFocused();
+      });
+    }
+
     test('shows a long method in full via the title, clipped on screen', async ({ methodSelector }) => {
       await methodSelector.enterCustom('LONG_NOTE_METHOD_NAME');
 
