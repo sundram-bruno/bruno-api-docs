@@ -9,6 +9,7 @@ import type { DockMode } from '../../src/utils/playgroundDock';
 
 export class PlaygroundComponent extends BaseComponent {
   readonly keyValueTable = new KeyValueTableComponent(this.page);
+  readonly preRequestVars = new KeyValueTableComponent(this.page, 'variables-pre-request');
   // The Auth tab lives inside the playground request pane; open it with selectTab('auth').
   readonly auth = new RequestAuthComponent(this.page);
   readonly preRequestScriptEditor = new CodeEditorComponent(this.page, 'scripts-editor-pre-request');
@@ -61,6 +62,11 @@ export class PlaygroundComponent extends BaseComponent {
     return this.sidebarPanel.getByTestId('sidebar-example').filter({ hasText: exampleName });
   }
 
+  async open(dock: DockMode = 'bottom'): Promise<void> {
+    await this.page.goto(`/#/?pg=1&dock=${dock}`);
+    await this.runner.waitFor({ state: 'visible' });
+  }
+
   sidebarItem(name: string): Locator {
     return this.treeItems.filter({ hasText: name }).first();
   }
@@ -89,11 +95,6 @@ export class PlaygroundComponent extends BaseComponent {
 
   panel(mode: DockMode): Locator {
     return this.page.getByTestId(`playground-dock-${mode}-panel`);
-  }
-
-  async open(dock: DockMode = 'bottom'): Promise<void> {
-    await this.page.goto(`/#/?pg=1&dock=${dock}`);
-    await this.runner.waitFor({ state: 'visible' });
   }
 
   async openRequest(name: string): Promise<void> {

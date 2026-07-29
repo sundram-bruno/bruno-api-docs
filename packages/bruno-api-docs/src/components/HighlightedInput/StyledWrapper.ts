@@ -90,6 +90,17 @@ export const StyledWrapper = styled.div`
     white-space: pre-wrap;
     overflow-wrap: break-word;
   }
+
+  &.highlight-input--nowrap .text-input {
+    overflow-x: auto;
+    white-space: pre;
+    overflow-wrap: normal;
+  }
+
+  &.highlight-input--nowrap .highlight-input-mirror {
+    white-space: pre;
+    overflow-wrap: normal;
+  }
 `;
 
 export const HoverCard = styled.div`

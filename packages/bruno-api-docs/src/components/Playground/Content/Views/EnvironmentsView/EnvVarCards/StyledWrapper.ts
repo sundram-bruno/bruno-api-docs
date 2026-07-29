@@ -62,12 +62,12 @@ export const StyledWrapper = styled.div`
 
   .env-card .value .value-secret .secret-value-input {
     font-size: var(--oc-font-size-sm);
+    font-family: 'Fira Code', var(--font-mono);
   }
 
-  .env-card .value-input {
-    flex: 0 1 auto;
+  .env-card .value-input,
+  .env-card .description-input {
     field-sizing: content;
-    max-width: 100%;
     border: none;
     outline: none;
     background: transparent;
@@ -82,8 +82,19 @@ export const StyledWrapper = styled.div`
     line-height: 1.5;
   }
 
+  .env-card .value-input {
+    flex: 0 1 auto;
+    max-width: 100%;
+    font-family: 'Fira Code', var(--font-mono);
+  }
+
+  .env-card .description-input {
+    width: 100%;
+  }
+
   .env-card .name::placeholder,
-  .env-card .value-input::placeholder {
+  .env-card .value-input::placeholder,
+  .env-card .description-input::placeholder {
     color: var(--oc-colors-text-subtext0);
     opacity: 0.6;
   }

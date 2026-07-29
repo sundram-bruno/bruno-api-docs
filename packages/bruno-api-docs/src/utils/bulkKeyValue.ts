@@ -1,4 +1,4 @@
-import { KeyValueRow } from 'src/components/KeyValueTable/KeyValueTable';
+import type { KeyValueRow } from '../components/KeyValueTable/KeyValueTable';
 
 export type BulkKeyValueItem = Pick<KeyValueRow, 'name' | 'value' | 'enabled'>;
 
@@ -30,4 +30,31 @@ export function parseBulkKeyValue(value: string): BulkKeyValueItem[] {
  */
 export function serializeBulkKeyValue(items: BulkKeyValueItem[]): string {
   return items.map((item) => `${item.enabled ? '' : '//'}${item.name}:${item.value}`).join('\n');
+}
+
+/**
+ * Re-attach descriptions to freshly-parsed bulk rows. The bulk text only carries name/value/enabled,
+ * so each row's description is reclaimed from `original` — a snapshot of the rows taken when bulk edit
+ * was entered — by exact name, in order (first-in-first-out among same-named rows), consuming each
+ * original once. A reordered row keeps its description, while a renamed key or an extra duplicate gets
+ * none. `original` is not mutated.
+ */
+export function preserveDescriptions(
+  parsed: BulkKeyValueItem[],
+  original: KeyValueRow[],
+  idPrefix: string
+): KeyValueRow[] {
+  const descriptionsByName = new Map<string, unknown[]>();
+  original.forEach((row) => {
+    const name = row.name || '';
+    const list = descriptionsByName.get(name) ?? [];
+    list.push(row.description);
+    descriptionsByName.set(name, list);
+  });
+
+  return parsed.map((item, index) => {
+    const row: KeyValueRow = { id: `${idPrefix}-${index}`, name: item.name, value: item.value, enabled: item.enabled };
+    const description = descriptionsByName.get(item.name || '')?.shift();
+    return description ? { ...row, description } : row;
+  });
 }

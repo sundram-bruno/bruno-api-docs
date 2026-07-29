@@ -6,14 +6,27 @@ import TestResultsTab from '../../Common/TestResultsTab';
 import ErrorBanner from '../../../../../../ui/ErrorBanner/ErrorBanner';
 import { SendIconWrapper, StyledWrapper } from './StyledWrapper';
 import { SendIcon } from '../../../../../../assets/icons';
+import ResponseFormatSelector from './ResponseFormatter/ResponseFormatter';
+import { useResponseFormatter } from './ResponseFormatter/hooks/useResponseFormatter';
+import type { RunRequestResponse } from '../../../../../../runner';
+import type { ResponseBodyFormat } from '../../../../../../constants';
+
 
 interface ResponsePaneProps {
-  response: any;
+  response: RunRequestResponse;
   isLoading: boolean;
 }
 
 const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading }) => {
   const [activeTab, setActiveTab] = useState('response');
+  const {
+    selectedFormat,
+    showPreview,
+    handleFormatChange,
+    handleViewChange,
+    contentType,
+    allowedFormats
+  } = useResponseFormatter(response);
 
   const getStatusColor = (status?: number) => {
     if (!status) return 'var(--oc-request-tab-panel-response-status)';
@@ -24,26 +37,25 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading }) => {
     return 'var(--oc-request-tab-panel-response-status)';
   };
 
-  // Handle loading, empty, and error states
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <StyledWrapper className="flex items-center justify-center">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span style={{ color: 'var(--text-secondary)' }}>Sending request...</span>
+          <span className="loading-text">Sending request...</span>
         </div>
-      </div>
+      </StyledWrapper>
     );
   }
 
   if (!response) {
     return (
-      <div className="h-full flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <StyledWrapper className="flex flex-col items-center justify-center">
         <SendIconWrapper className="mb-4 send-icon">
           <SendIcon width={26} height={24} />
         </SendIconWrapper>
-        <p style={{ color: 'var(--oc-tabs-secondary-inactive-color)' }}>Click Send to make a request</p>
-      </div>
+        <p className="empty-hint">Click Send to make a request</p>
+      </StyledWrapper>
     );
   }
 
@@ -53,13 +65,20 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading }) => {
     <div className="p-4">
       <ErrorBanner
         title={response.errorTitle || 'Request Failed'}
-        message={response.error}
+        message={response.error ?? ''}
       />
     </div>
   );
 
   const renderResponseBody = () =>
-    response.error ? renderErrorBanner() : <ResponseBodyTab response={response} />;
+    response.error ? renderErrorBanner() : (
+      <ResponseBodyTab
+        response={response}
+        selectedFormat={selectedFormat}
+        showPreview={showPreview}
+        contentType={contentType}
+      />
+    );
   const renderHeaders = () => <ResponseHeadersTab headers={response.headers} />;
   const renderTestResults = () => (
     <TestResultsTab 
@@ -68,7 +87,6 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading }) => {
     />
   );
 
-  // Calculate content indicators
   const headersCount = response.headers ? Object.keys(response.headers).length : 0;
   const hasTestResults = response.testResults && response.testResults.results.length > 0;
   const hasAssertionResults = response.assertionResults && response.assertionResults.results.length > 0;
@@ -96,31 +114,38 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading }) => {
 
   const statusInfo = (
     <div className="flex items-center gap-3 flex-wrap text-xs">
+      {activeTab === 'response' && (
+        <ResponseFormatSelector
+          selectedFormat={selectedFormat}
+          allowedFormats={allowedFormats}
+          handleSelection={(value: ResponseBodyFormat) => handleFormatChange(value)}
+          showPreview={showPreview}
+          onPreviewToggle={handleViewChange}
+        />
+      )}
       <div className="flex items-center gap-2">
-        <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
-        <span 
+        <span className="status-meta-label">Status:</span>
+        <span
           className="font-mono font-medium"
-          style={{
-            color: getStatusColor(response.status),
-          }}
+          style={{ color: getStatusColor(response.status) }}
         >
           {response.status} {response.statusText}
         </span>
       </div>
-      
+
       {response.duration && (
         <div className="flex items-center gap-1">
-          <span style={{ color: 'var(--text-secondary)' }}>Time:</span>
-          <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
+          <span className="status-meta-label">Time:</span>
+          <span className="font-mono status-meta-value">
             {response.duration}ms
           </span>
         </div>
       )}
-      
+
       {response.size && (
         <div className="flex items-center gap-1">
-          <span style={{ color: 'var(--text-secondary)' }}>Size:</span>
-          <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
+          <span className="status-meta-label">Size:</span>
+          <span className="font-mono status-meta-value">
             {(response.size / 1024).toFixed(2)} KB
           </span>
         </div>

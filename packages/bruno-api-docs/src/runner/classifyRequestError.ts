@@ -136,6 +136,7 @@ export const classifyRequestError = (
   // Anything else (or an unparseable URL): surface the underlying error message.
   const rawMessage =
     error instanceof Error && error.message ? error.message : 'The request could not be completed.';
+
   return {
     type: 'unknown',
     title: "Couldn't complete the request",

@@ -1,6 +1,6 @@
-# Contributing to bruno-api-docs
+# Contributing to Bruno API Docs
 
-Thanks for your interest. This repo holds `@opencollection/docs`, the interactive API documentation site and request playground for the [OpenCollection](https://www.opencollection.com) format.
+Thanks for your interest. This repo holds the Bruno API Docs renderer: the interactive API documentation site and embedded Bruno Playground that [Bruno](https://www.usebruno.com) generates from a collection. See the [README](./README.md) for what the project is and where it's headed.
 
 ## Prerequisites
 

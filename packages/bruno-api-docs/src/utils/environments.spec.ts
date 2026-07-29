@@ -222,4 +222,55 @@ describe('envVariableToRow / envRowToVariable round-trip', () => {
     const out = envRowToVariable({ id: 'var-0', name: 'retries', value: '3', enabled: true, dataType: 'number' });
     expect(out).toEqual({ name: 'retries', value: { type: 'number', data: '3' }, disabled: false });
   });
+
+  it('carries a plain variable description into the row and writes back the edited text', () => {
+    const row = envVariableToRow({ name: 'host', value: 'localhost', description: 'The API host' } as any, 0);
+    expect(row.description).toBe('The API host');
+
+    row.description = 'Updated host';
+    expect((envRowToVariable(row) as any).description).toBe('Updated host');
+
+    // Clearing the description drops the field entirely, matching how the app omits empty descriptions.
+    row.description = '';
+    expect('description' in (envRowToVariable(row) as any)).toBe(false);
+  });
+
+  it('carries and writes a secret variable description without emitting a value', () => {
+    const row = envVariableToRow({ name: 'token', secret: true, type: 'string', description: 'Bearer token' } as any, 0);
+    expect(row.description).toBe('Bearer token');
+
+    row.description = 'Rotated token';
+    const out = envRowToVariable(row) as any;
+    expect(out.description).toBe('Rotated token');
+    expect('value' in out).toBe(false);
+
+    row.description = '';
+    expect('description' in (envRowToVariable(row) as any)).toBe(false);
+  });
+
+  it('preserves a { content, type } description verbatim when another field is edited', () => {
+    const source = { name: 'host', value: 'localhost', description: { content: 'The **API** host', type: 'text/markdown' } };
+    const row = envVariableToRow(source as any, 0);
+    expect(row.description).toBe('The **API** host'); // flattened to text for the editor
+
+    // Editing the value (not the description) must not flatten the typed description to a bare string.
+    row.value = 'example.com';
+    expect((envRowToVariable(row) as any).description).toEqual({ content: 'The **API** host', type: 'text/markdown' });
+  });
+
+  it('flattens a { content, type } description to a plain string only when its text is actually edited', () => {
+    const source = { name: 'host', value: 'localhost', description: { content: 'Original', type: 'text/markdown' } };
+    const row = envVariableToRow(source as any, 0);
+    row.description = 'Rewritten as plain text';
+    expect((envRowToVariable(row) as any).description).toBe('Rewritten as plain text');
+  });
+
+  it('preserves a { content, type } description on a secret when another field is edited', () => {
+    const source = { name: 'token', secret: true, type: 'string', description: { content: 'Bearer *token*', type: 'text/markdown' } };
+    const row = envVariableToRow(source as any, 0);
+    row.value = 'new-token';
+    const out = envRowToVariable(row) as any;
+    expect(out.description).toEqual({ content: 'Bearer *token*', type: 'text/markdown' });
+    expect(out.value).toBe('new-token');
+  });
 });
