@@ -234,28 +234,29 @@ const playgroundSlice = createSlice({
       }>
     ) => {
       const { scope, name, value, envName, itemUuid } = action.payload;
-      const collection = state.hydratedCollection;
-      if (!collection) return;
-
       const setInList = (list: (Variable | SecretVariable)[] | undefined): void => {
         const enabled = (list ?? []).filter((v) => v.name === name && !v.disabled);
         const variable = enabled[enabled.length - 1];
         if (variable && !isSecretVariable(variable)) variable.value = value;
       };
-
-      if (scope === 'environment') {
-        setInList(readEnvironments(collection)?.find((env) => env.name === envName)?.variables);
-      } else if (scope === 'collection') {
-        setInList(collection.request?.variables as (Variable | SecretVariable)[] | undefined);
-      } else if (itemUuid && collection.items) {
-        findAndUpdateItem(collection.items, itemUuid, (item) => {
-          const list =
-            scope === 'folder'
-              ? (item.request?.variables as (Variable | SecretVariable)[] | undefined)
-              : (getRequestVariables(item) as (Variable | SecretVariable)[]);
-          setInList(list);
-        });
-      }
+      const apply = (collection: OpenCollectionCollection | null) => {
+        if (!collection) return;
+        if (scope === 'environment') {
+          setInList(readEnvironments(collection)?.find((env) => env.name === envName)?.variables);
+        } else if (scope === 'collection') {
+          setInList(collection.request?.variables as (Variable | SecretVariable)[] | undefined);
+        } else if (itemUuid && collection.items) {
+          findAndUpdateItem(collection.items, itemUuid, (item) => {
+            const list =
+              scope === 'folder'
+                ? (item.request?.variables as (Variable | SecretVariable)[] | undefined)
+                : (getRequestVariables(item) as (Variable | SecretVariable)[]);
+            setInList(list);
+          });
+        }
+      };
+      apply(state.hydratedCollection);
+      apply(state.collection);
     },
   }
 });

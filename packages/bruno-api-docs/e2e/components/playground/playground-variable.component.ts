@@ -3,6 +3,7 @@ import { VariableCardComponent } from '../variable-card/variable-card.component'
 
 export class PlaygroundVariableComponent extends VariableCardComponent {
   readonly editField = this.card.getByTestId('variable-info-card-edit');
+  // Monaco paints its own tokens, so we can't put a test id on them. Match the class instead.
   readonly monacoValid = this.page.locator('.monaco-editor .variable-valid');
   readonly monacoInvalid = this.page.locator('.monaco-editor .variable-invalid');
 
@@ -33,9 +34,13 @@ export class PlaygroundVariableComponent extends VariableCardComponent {
   }
 
   async editTo(text: string): Promise<void> {
+    await this.startEditing(text);
+    await this.editField.press('Enter');
+  }
+
+  async startEditing(text: string): Promise<void> {
     await this.value.click();
     await this.editField.fill(text);
-    await this.editField.press('Enter');
   }
 
   private async movePointerToToken(token: Locator, name: string): Promise<void> {

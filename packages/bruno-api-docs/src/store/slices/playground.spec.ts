@@ -98,13 +98,15 @@ describe('updatePlaygroundItem', () => {
 });
 
 describe('setPlaygroundVariable', () => {
-  it('edits an environment variable in the hydrated collection', () => {
+  it('edits an environment variable in both the hydrated and base collections', () => {
     const store = createOpenCollectionStore();
     store.dispatch(setPlaygroundCollection(makeCollection()));
 
     store.dispatch(setPlaygroundVariable({ scope: 'environment', name: 'a', value: '99', envName: 'Dev' }));
 
     expect(envVariables(store).find((v: any) => v.name === 'a').value).toBe('99');
+    const base = selectPlaygroundCollection(store.getState())!.config!.environments![0].variables!;
+    expect(base.find((v: any) => v.name === 'a').value).toBe('99');
   });
 
   it('edits the last enabled duplicate, matching the resolver', () => {

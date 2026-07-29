@@ -2,6 +2,7 @@ import React from 'react';
 import type { HttpRequest } from '@opencollection/types/requests/http';
 import CodeEditor from '../../../../../ui/CodeEditor/CodeEditor';
 import KeyValueTable, { type KeyValueRow } from '../../../../../components/KeyValueTable/KeyValueTable';
+import { VariableInfoCard } from '../../../../VariableInfoCard/VariableInfoCard';
 import type { RequestBody } from '../../../../../utils/schemaHelpers';
 
 interface BodyTabProps {
@@ -85,6 +86,7 @@ export const BodyTab: React.FC<BodyTabProps> = ({
             }
             height={fillHeight ? '100%' : '300px'}
             variableAware
+            renderVariableCard={(name) => <VariableInfoCard name={name} editable />}
             testId="body-editor"
           />
         </div>

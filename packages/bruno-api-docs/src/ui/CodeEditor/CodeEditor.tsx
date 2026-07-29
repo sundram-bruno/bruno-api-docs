@@ -4,7 +4,6 @@ import { useAppSelector } from '../../store/hooks';
 import { useResolvedVariables } from '../../hooks/useVariableResolver';
 import { CopyButton } from '../CopyButton/CopyButton';
 import { Portal } from '../Portal/Portal';
-import { VariableInfoCard } from '../../components/VariableInfoCard/VariableInfoCard';
 import { ensureScriptApiCompletions, setModelHints } from './scriptApiCompletions';
 import { createVariableDecorator, type VariableDecorator } from './variableDecorations';
 import { createVariableHover, type VariableHover } from './variableHoverWidget';
@@ -27,6 +26,8 @@ interface CodeEditorProps {
   active?: boolean;
   /** Highlight `{{var}}` tokens (green resolved / red unresolved) against the active environment. */
   variableAware?: boolean;
+  /** Renders the card shown when a `{{var}}` token is hovered. Without it, tokens only highlight. */
+  renderVariableCard?: (name: string) => React.ReactNode;
   testId?: string;
 }
 
@@ -59,6 +60,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   showCopy = true,
   active = true,
   variableAware = false,
+  renderVariableCard,
   testId
 }) => {
   const mode = useAppSelector((s) => s.theme.mode);
@@ -191,9 +193,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           testId={testId ? `${testId}-copy` : undefined}
         />
       ) : null}
-      {hoveredVariable ? (
+      {hoveredVariable && renderVariableCard ? (
         <Portal container={hoveredVariable.node}>
-          <VariableInfoCard key={hoveredVariable.name} name={hoveredVariable.name} editable={!readOnly} />
+          <React.Fragment key={hoveredVariable.name}>{renderVariableCard(hoveredVariable.name)}</React.Fragment>
         </Portal>
       ) : null}
     </StyledWrapper>

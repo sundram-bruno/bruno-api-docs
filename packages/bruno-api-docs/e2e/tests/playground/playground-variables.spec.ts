@@ -51,6 +51,31 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.value).toHaveText('https://edited.example.com');
   });
 
+  test('Escape discards an edit', async ({ playground }) => {
+    await playground.variable.hoverInputToken('host');
+    await playground.variable.startEditing('https://discarded.example.com');
+    await playground.variable.editField.press('Escape');
+
+    await expect(playground.variable.value).toHaveText('https://api.dev.example.com');
+  });
+
+  test('clicking away saves the edit', async ({ page, playground }) => {
+    await playground.variable.hoverInputToken('host');
+    await playground.variable.startEditing('https://blurred.example.com');
+    await page.keyboard.press('Tab');
+
+    await expect(playground.variable.value).toHaveText('https://blurred.example.com');
+  });
+
+  test('Shift-Enter adds a newline instead of saving', async ({ playground }) => {
+    await playground.variable.hoverInputToken('host');
+    await playground.variable.startEditing('first');
+    await playground.variable.editField.press('Shift+Enter');
+    await playground.variable.editField.press('s');
+
+    await expect(playground.variable.editField).toHaveValue('first\ns');
+  });
+
   test('a read-only scope is not editable', async ({ playground }) => {
     await playground.selectTab('headers');
     await playground.variable.hoverInputToken('process.env.HOME');
