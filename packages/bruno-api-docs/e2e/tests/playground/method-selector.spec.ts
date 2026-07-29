@@ -35,6 +35,22 @@ test.describe('Playground method selector', () => {
     await expect(playground.sidebarItem('get users').locator('.navlink-method')).toHaveText('TRACE');
   });
 
+  // The sidebar badge shows up to five characters in full and cuts anything
+  // longer to three, so a custom method can never overrun the request name.
+  test('abbreviates a custom method only when it is longer than five characters', async ({
+    methodSelector,
+    playground
+  }) => {
+    const badge = playground.sidebarItem('get users').locator('.navlink-method');
+
+    await methodSelector.enterCustom('PURGE');
+    await expect(badge).toHaveText('PURGE');
+
+    await methodSelector.enterCustom('PROPFIND');
+    await expect(badge).toHaveText('PRO');
+    await expect(badge).toHaveAttribute('title', 'PROPFIND');
+  });
+
   test.describe('custom method', () => {
     test('accepts a typed method, upper-casing it, and ticks no row', async ({ methodSelector }) => {
       await methodSelector.enterCustom('purge');

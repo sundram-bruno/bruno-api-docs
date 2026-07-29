@@ -528,16 +528,27 @@ describe('getCollectionVariables', () => {
 });
 
 describe('getShortMethod', () => {
-  it('abbreviates DELETE, OPTIONS and CONNECT', () => {
+  it('abbreviates the standard methods longer than five characters', () => {
     expect(getShortMethod('DELETE')).toBe('DEL');
     expect(getShortMethod('OPTIONS')).toBe('OPT');
     expect(getShortMethod('CONNECT')).toBe('CON');
   });
-  it('uppercases and passes other methods through', () => {
+
+  it('uppercases and shows methods of five characters or fewer in full', () => {
     expect(getShortMethod('get')).toBe('GET');
     expect(getShortMethod('PATCH')).toBe('PATCH');
     expect(getShortMethod('trace')).toBe('TRACE');
     expect(getShortMethod('purge')).toBe('PURGE');
+    expect(getShortMethod('  purge  ')).toBe('PURGE');
+  });
+
+  // Custom methods follow the same rule, so a long one can't overrun the badge.
+  it.each([
+    ['REPORT', 'REP'],
+    ['PROPFIND', 'PRO'],
+    ['ASDALKHDAFLKASJDH', 'ASD']
+  ])('cuts the custom method %s to %s', (method, expected) => {
+    expect(getShortMethod(method)).toBe(expected);
   });
 });
 

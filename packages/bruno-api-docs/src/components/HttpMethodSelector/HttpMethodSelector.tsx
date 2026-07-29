@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import MenuDropdown from '../../ui/MenuDropdown';
 import type { MenuDropdownItem } from '../../ui/MenuDropdown';
 import { STANDARD_HTTP_METHODS } from '../../constants/request';
@@ -30,17 +30,17 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
   // reads back as GET), which would fight the field as the reader types.
   const [draftMethod, setDraftMethod] = useState('');
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const returnFocusToTrigger = useRef(false);
   const displayMethod = (method || 'GET').toUpperCase();
 
-  // Leaving custom entry unmounts the input, which would drop focus to the body
-  // and strand a keyboard reader, so hand it back to the trigger that replaces it.
-  useEffect(() => {
-    if (!isCustomMode && returnFocusToTrigger.current) {
-      returnFocusToTrigger.current = false;
-      triggerRef.current?.focus();
-    }
-  }, [isCustomMode]);
+  /**
+   * Both the menu rows and the custom-method input disappear once used — the rows
+   * live in a popover that unmounts, and the input is replaced by the trigger.
+   * Either way focus would fall to the body, where the next Tab restarts at the
+   * top of the page, so put it on the trigger once the DOM has settled.
+   */
+  const focusTrigger = useCallback(() => {
+    requestAnimationFrame(() => triggerRef.current?.focus());
+  }, []);
 
   const commitMethod = useCallback(
     (value: string) => {
@@ -48,6 +48,14 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
       onMethodChange(value);
     },
     [onMethodChange]
+  );
+
+  const selectMethod = useCallback(
+    (value: string) => {
+      commitMethod(value);
+      focusTrigger();
+    },
+    [commitMethod, focusTrigger]
   );
 
   const startCustomMode = useCallback(() => {
@@ -59,18 +67,25 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
     setDraftMethod(event.target.value.toUpperCase());
   };
 
-  /**
-   * `restoreFocus` only for keyboard exits: a pointer exit has already chosen
-   * where focus goes, and pulling it back to the trigger would fight the reader.
-   */
-  const exitCustomMode = (restoreFocus: boolean) => {
-    returnFocusToTrigger.current = restoreFocus;
+  // `restoreFocus` is for keyboard exits only: a pointer exit has already chosen
+  // where focus goes, and pulling it back to the trigger would fight the reader.
+  const discardCustomMode = (restoreFocus: boolean) => {
+    setIsCustomMode(false);
+    if (restoreFocus) {
+      focusTrigger();
+    }
+  };
+
+  const commitCustomMode = (restoreFocus: boolean) => {
     const typed = draftMethod.trim();
-    if (typed) {
-      commitMethod(typed);
+    if (!typed) {
+      discardCustomMode(restoreFocus);
       return;
     }
-    setIsCustomMode(false);
+    commitMethod(typed);
+    if (restoreFocus) {
+      focusTrigger();
+    }
   };
 
   const handleCustomInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -79,15 +94,14 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
       // input once focus moves back to it, re-opening the menu.
       event.preventDefault();
       event.stopPropagation();
-      exitCustomMode(true);
+      commitCustomMode(true);
       return;
     }
 
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
-      returnFocusToTrigger.current = true;
-      setIsCustomMode(false);
+      discardCustomMode(true);
     }
   };
 
@@ -97,7 +111,7 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
         id: standardMethod,
         label: <MethodBadge method={standardMethod} />,
         ariaLabel: standardMethod,
-        onClick: () => commitMethod(standardMethod)
+        onClick: () => selectMethod(standardMethod)
       })),
       {
         id: ADD_CUSTOM_ITEM_ID,
@@ -107,7 +121,7 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
         onClick: startCustomMode
       }
     ],
-    [commitMethod, startCustomMode]
+    [selectMethod, startCustomMode]
   );
 
   const selectedItemId = useMemo(
@@ -127,7 +141,7 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
           value={draftMethod}
           onChange={handleCustomInputChange}
           onKeyDown={handleCustomInputKeyDown}
-          onBlur={() => exitCustomMode(false)}
+          onBlur={() => commitCustomMode(false)}
           aria-label="Custom HTTP method"
           title={draftMethod}
           data-testid={testId ? `${testId}-custom-input` : undefined}
