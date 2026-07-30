@@ -103,7 +103,8 @@ export type VariableScope =
   | '$secrets'
   | 'undefined';
 
-export type ConcreteScope = 'collection' | 'environment' | 'folder' | 'request';
+/** Scopes a variable can actually be declared in, `$secrets` being an environment's external secrets. */
+export type ConcreteScope = 'collection' | 'environment' | 'folder' | 'request' | '$secrets';
 
 export interface VariableSource {
   scope: ConcreteScope;
