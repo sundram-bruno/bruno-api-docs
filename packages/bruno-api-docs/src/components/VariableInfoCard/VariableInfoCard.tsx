@@ -122,7 +122,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   const emptyLabel = info.value === '' ? '(empty)' : null;
   const placeholder = info.secret ? '(Secret)' : canEdit ? null : emptyLabel;
 
-  const copyButton = (
+  const copyButton = info.value !== '' && (
     <div className="var-icons">
       <CopyButton
         text={info.value}

@@ -75,14 +75,14 @@ test.describe('Variable hover card', () => {
     await expect(variableCard.copyButton).toHaveCount(1);
   });
 
-  test('shows an (empty) placeholder for a defined variable that has no value', async ({ requestPage }) => {
+  test('shows an (empty) placeholder with no copy for a defined variable that has no value', async ({ requestPage }) => {
     const { variableCard } = requestPage;
     await variableCard.hoverToken('emptyValue');
 
     await expect(variableCard.card).toBeVisible();
     await expect(variableCard.scopeBadge).toHaveText('Environment');
     await expect(variableCard.value).toHaveText('(empty)');
-    await expect(variableCard.copyButton).toHaveCount(1);
+    await expect(variableCard.copyButton).toHaveCount(0);
   });
 
   test('pretty-prints an object-typed value', async ({ requestPage }) => {

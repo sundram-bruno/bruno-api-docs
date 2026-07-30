@@ -76,22 +76,15 @@ describe('VariableInfoCard', () => {
     expect(root.querySelector(selector('reveal'))).toBeNull();
   });
 
-  it('shows an (empty) placeholder when the value is blank', () => {
+  it('shows an (empty) placeholder with no copy control when the value is blank', () => {
     const root = useRenderToDom(cardTree('emptyValue'));
     expect(part(root, 'scope').text).toBe('Environment');
     expect(part(root, 'value').text).toBe('(empty)');
+    expect(root.querySelector(selector('copy'))).toBeNull();
   });
 
-  it('offers the copy control alongside a resolved value', () => {
-    expect(useRenderToDom(cardTree('host')).querySelector(selector('copy'))).not.toBeNull();
-  });
-
-  it('offers the copy control on the secret placeholder', () => {
+  it('offers the copy control on the secret placeholder, which has a value to copy', () => {
     expect(useRenderToDom(cardTree('bearer_token')).querySelector(selector('copy'))).not.toBeNull();
-  });
-
-  it('offers the copy control on the empty placeholder', () => {
-    expect(useRenderToDom(cardTree('emptyValue')).querySelector(selector('copy'))).not.toBeNull();
   });
 
   it('pretty-prints an object-typed value', () => {
