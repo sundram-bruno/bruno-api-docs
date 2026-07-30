@@ -101,7 +101,8 @@ export class RequestRunner {
         processEnvVars,
         collectionVariables,
         folderVariables,
-        requestVariables
+        requestVariables,
+        externalSecrets: this.getExternalSecrets(environment)
       };
       
       // Get scripts in object format for easier access
@@ -227,6 +228,23 @@ export class RequestRunner {
     }, {} as Record<string, any>);
   }
 
+
+  /**
+   * External secrets are pointers to a provider the browser cannot reach, so only a
+   * value typed into the playground this session can resolve `{{$secrets.name}}`.
+   */
+  private getExternalSecrets(environment?: Environment): Record<string, string> {
+    const variables = (environment?.externalSecrets?.variables ?? []) as {
+      name?: string;
+      disabled?: boolean;
+      value?: string;
+    }[];
+
+    return variables.reduce((secrets, variable) => {
+      if (variable.name && !variable.disabled && variable.value) secrets[variable.name] = variable.value;
+      return secrets;
+    }, {} as Record<string, string>);
+  }
 
   private async preprocessRequest(
     item: HttpRequest, 

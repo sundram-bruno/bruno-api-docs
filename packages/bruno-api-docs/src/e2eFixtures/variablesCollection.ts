@@ -11,8 +11,13 @@ export const variablesFixtureCollection = {
           { name: 'host', value: 'https://api.dev.example.com' },
           { name: 'endpoint', value: '{{host}}/v1' },
           { name: 'bearer_token', value: 'super-secret-token', secret: true },
+          { name: 'unsetSecret', secret: true },
           { name: 'emptyValue', value: '' }
-        ]
+        ],
+        externalSecrets: {
+          type: 'aws-secrets-manager',
+          variables: [{ name: 'vaultKey', secretName: 'prod/payment/api-key' }]
+        }
       }
     ]
   },
@@ -48,7 +53,7 @@ export const variablesFixtureCollection = {
           type: 'http',
           seq: 1,
           method: 'GET',
-          url: '{{host}}/customers/{{userId}}?v={{apiVersion}}',
+          url: '{{host}}/customers/{{userId}}?v={{apiVersion}}&k={{$secrets.vaultKey}}&s={{unsetSecret}}',
           auth: { type: 'bearer', token: '{{bearer_token}}' },
           headers: [
             { name: 'Authorization', value: 'Bearer {{bearer_token}}' },

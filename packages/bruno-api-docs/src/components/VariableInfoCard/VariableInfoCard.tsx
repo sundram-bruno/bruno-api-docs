@@ -1,11 +1,15 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useResolvedVariables } from '../../hooks';
 import { CopyButton } from '../../ui/CopyButton/CopyButton';
+import { EyeIcon, EyeOffIcon } from '../../assets/icons';
 import { SCOPE_LABELS, INVALID_NAME_WARNING } from '../../constants';
 import type { VariableScope } from '../../utils/variableResolution';
 import { StyledWrapper } from './StyledWrapper';
 
-const EDITABLE_SCOPES = new Set<VariableScope>(['environment', 'collection', 'folder', 'request']);
+const EDITABLE_SCOPES = new Set<VariableScope>(['environment', 'collection', 'folder', 'request', '$secrets']);
+
+/** Scopes whose value the active environment supplies, so editing needs one selected. */
+const ENV_BOUND_SCOPES = new Set<VariableScope>(['environment', '$secrets']);
 
 interface VariableInfoCardProps {
   name: string;
@@ -14,10 +18,13 @@ interface VariableInfoCardProps {
 }
 
 const getReadOnlyNote = (scope: VariableScope, activeEnvName: string | null): string | null => {
-  if (scope === 'process.env' || scope === 'oauth2' || scope === '$secrets') return 'read-only';
+  if (scope === 'process.env' || scope === 'oauth2') return 'read-only';
   if (scope === 'undefined') return activeEnvName ? 'Variable is not defined' : 'No active environment';
   return null;
 };
+
+/** Masks per character so newlines survive and the mask lines up with the value. */
+const maskValue = (value: string): string => value.replace(/[^\n]/g, '*');
 
 export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   name,
@@ -27,6 +34,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   const { lookup, activeEnvName, updateVariable, canWrite } = useResolvedVariables();
   const info = lookup(name);
   const [editing, setEditing] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const [draft, setDraft] = useState('');
   const editRef = useRef<HTMLTextAreaElement>(null);
 
@@ -48,10 +56,12 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     = editable
       && canWrite
       && info.valid
-      && !info.secret
       && info.simpleString
       && EDITABLE_SCOPES.has(info.scope)
-      && (info.scope !== 'environment' || !!activeEnvName);
+      && (!ENV_BOUND_SCOPES.has(info.scope) || !!activeEnvName);
+
+  const masked = info.secret && !revealed;
+  const displayValue = masked ? maskValue(info.value) : info.value;
 
   const startEditing = () => {
     setDraft(info.rawValue);
@@ -119,18 +129,33 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   }
 
   const readOnlyNote = getReadOnlyNote(info.scope, activeEnvName);
-  const emptyLabel = info.value === '' ? '(empty)' : null;
-  const placeholder = info.secret ? '(Secret)' : canEdit ? null : emptyLabel;
+  const emptyLabel = !info.secret && info.value === '' ? '(empty)' : null;
+  const placeholder = canEdit ? null : emptyLabel;
 
-  const icons = info.value !== '' && (
+  const icons = (info.value !== '' || info.secret) && (
     <div className="var-icons">
-      <CopyButton
-        text={info.value}
-        label="Copy value"
-        resetAfterMs={1000}
-        className="copy-button"
-        testId={`${testId}-copy`}
-      />
+      {info.secret && (
+        <button
+          type="button"
+          className="reveal-button"
+          aria-label={revealed ? 'Hide value' : 'Show value'}
+          aria-pressed={revealed}
+          data-testid={`${testId}-reveal`}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => setRevealed((previous) => !previous)}
+        >
+          {revealed ? <EyeOffIcon /> : <EyeIcon />}
+        </button>
+      )}
+      {info.value !== '' && (
+        <CopyButton
+          text={info.value}
+          label="Copy value"
+          resetAfterMs={1000}
+          className="copy-button"
+          testId={`${testId}-copy`}
+        />
+      )}
     </div>
   );
 
@@ -141,19 +166,24 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   );
 
   const editFieldNode = (
-    <textarea
-      ref={editRef}
-      className="var-value-edit"
-      data-testid={`${testId}-edit`}
-      aria-label={`Edit ${info.name}`}
-      value={draft}
-      autoFocus
-      rows={1}
-      spellCheck={false}
-      onChange={(event) => setDraft(event.target.value)}
-      onKeyDown={handleEditKeyDown}
-      onBlur={commit}
-    />
+    <div className={`var-value-editor${masked ? ' var-value-editor--masked' : ''}`}>
+      <div className="var-value-mirror" aria-hidden="true">
+        {maskValue(draft)}
+      </div>
+      <textarea
+        ref={editRef}
+        className="var-value-edit"
+        data-testid={`${testId}-edit`}
+        aria-label={`Edit ${info.name}`}
+        value={draft}
+        autoFocus
+        rows={1}
+        spellCheck={false}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={handleEditKeyDown}
+        onBlur={commit}
+      />
+    </div>
   );
 
   const editableDisplayNode = (
@@ -173,13 +203,13 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
         startEditing();
       }}
     >
-      {emptyLabel ?? info.value}
+      {emptyLabel ?? displayValue}
     </div>
   );
 
   const readOnlyDisplayNode = (
     <div className="var-value-display" data-testid={`${testId}-value`}>
-      {info.value}
+      {displayValue}
     </div>
   );
 

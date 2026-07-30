@@ -107,4 +107,36 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.editField).toBeVisible();
     await expect(playground.variable.copyButton).toHaveCount(1);
   });
+
+  test('an unset secret starts blank with a reveal control and takes a typed value', async ({ playground }) => {
+    await playground.variable.hoverInputToken('unsetSecret');
+
+    await expect(playground.variable.value).toHaveText('');
+    await expect(playground.variable.revealToggle).toHaveCount(1);
+
+    await playground.variable.editTo('typed-secret');
+
+    await expect(playground.variable.value).toHaveText('*'.repeat('typed-secret'.length));
+
+    await playground.variable.revealToggle.click();
+    await expect(playground.variable.value).toHaveText('typed-secret');
+  });
+
+  test('an external secret is editable and keeps its Secret scope', async ({ playground }) => {
+    await playground.variable.hoverInputToken('$secrets.vaultKey');
+
+    await expect(playground.variable.scopeBadge).toHaveText('Secret');
+    await expect(playground.variable.value).toHaveText('');
+
+    await playground.variable.editTo('vault-value');
+
+    await expect(playground.variable.value).toHaveText('*'.repeat('vault-value'.length));
+  });
+
+  test('a typed secret never reaches the generated code snippet', async ({ playground }) => {
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.editTo('typed-secret');
+
+    await expect(playground.view).not.toContainText('typed-secret');
+  });
 });

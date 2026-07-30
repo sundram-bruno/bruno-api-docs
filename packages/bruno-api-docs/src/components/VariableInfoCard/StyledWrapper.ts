@@ -66,6 +66,7 @@ export const StyledWrapper = styled.div`
   }
 
   .var-value-display {
+    min-height: 1.25rem;
     padding-right: 1.5rem;
     font-family: var(--font-sans);
     font-size: 0.8125rem;
@@ -113,6 +114,35 @@ export const StyledWrapper = styled.div`
     outline: none;
   }
 
+  .var-value-editor {
+    position: relative;
+  }
+
+  .var-value-mirror {
+    position: absolute;
+    top: 0;
+    right: 1.5rem;
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.25rem;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .var-value-editor--masked .var-value-mirror {
+    visibility: visible;
+  }
+
+  .var-value-editor--masked .var-value-edit {
+    color: transparent;
+    caret-color: var(--text-primary);
+  }
+
   .var-icons {
     position: absolute;
     top: 50%;
@@ -152,6 +182,31 @@ export const StyledWrapper = styled.div`
   .var-icons .copy-button[data-copied] {
     opacity: 1;
     cursor: default;
+  }
+
+  .var-icons .reveal-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.125rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: var(--oc-radius);
+    opacity: 0.7;
+    cursor: pointer;
+    transition: opacity 0.15s ease, color 0.15s ease;
+  }
+
+  .var-icons .reveal-button:hover {
+    opacity: 1;
+    color: var(--text-primary);
+  }
+
+  .var-icons .reveal-button:focus-visible {
+    outline: 0.125rem solid var(--primary-color);
+    outline-offset: 0.0625rem;
   }
 
   .var-icons .copy-button:focus-visible {

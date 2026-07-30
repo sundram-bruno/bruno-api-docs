@@ -155,16 +155,37 @@ describe('setPlaygroundVariable', () => {
     expect(item.variables.find((v) => v.name === 'rv').value).toBe('2');
   });
 
-  it('never writes to a secret variable', () => {
+  // The value lives only on this in-memory copy, so a request can be sent with a
+  // secret the published collection never carries.
+  it('writes a session value to a secret variable, keeping it marked secret', () => {
     const collection = makeCollection();
     collection.config.environments[0].variables.push({ name: 'sec', secret: true });
     const store = createOpenCollectionStore();
     store.dispatch(setPlaygroundCollection(collection));
 
-    store.dispatch(setPlaygroundVariable({ scope: 'environment', name: 'sec', value: 'leak', envName: 'Dev' }));
+    store.dispatch(setPlaygroundVariable({ scope: 'environment', name: 'sec', value: 'typed', envName: 'Dev' }));
 
-    const sec = envVariables(store).find((v: any) => v.name === 'sec');
-    expect((sec as any).value).toBeUndefined();
+    const sec = envVariables(store).find((v) => v.name === 'sec') as { value: string; secret: boolean };
+    expect(sec.value).toBe('typed');
+    expect(sec.secret).toBe(true);
+  });
+
+  it('writes a session value to an external secret pointer', () => {
+    const collection = makeCollection();
+    collection.config.environments[0].externalSecrets = {
+      type: 'aws-secrets-manager',
+      variables: [{ name: 'vaultKey', secretName: 'prod/api-key' }]
+    };
+    const store = createOpenCollectionStore();
+    store.dispatch(setPlaygroundCollection(collection));
+
+    store.dispatch(setPlaygroundVariable({ scope: '$secrets', name: 'vaultKey', value: 'typed', envName: 'Dev' }));
+
+    const env = selectHydratedCollection(store.getState())!.config!.environments![0] as unknown as {
+      externalSecrets: { variables: { value: string; secretName: string }[] };
+    };
+    expect(env.externalSecrets.variables[0].value).toBe('typed');
+    expect(env.externalSecrets.variables[0].secretName).toBe('prod/api-key');
   });
 });
 
