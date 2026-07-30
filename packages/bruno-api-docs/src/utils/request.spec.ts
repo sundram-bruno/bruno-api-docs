@@ -542,7 +542,6 @@ describe('getShortMethod', () => {
     expect(getShortMethod('  purge  ')).toBe('PURGE');
   });
 
-  // Custom methods follow the same rule, so a long one can't overrun the badge.
   it.each([
     ['REPORT', 'REP'],
     ['PROPFIND', 'PRO'],

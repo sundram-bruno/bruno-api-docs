@@ -504,11 +504,11 @@ const SHORT_METHOD_LENGTH = 3;
 
 /**
  * Short, uppercased method name for the narrow badges (sidebar tree, search
- * results, filter chips). Methods up to five characters show in full — GET,
- * PATCH, TRACE, and a custom PURGE — and longer ones keep their first three
- * letters, which is what the design asks for (DELETE -> DEL, OPTIONS -> OPT,
- * CONNECT -> CON) and what a custom PROPFIND -> PRO needs too. Single source for
- * every badge so the abbreviations can't drift between components.
+ * results, filter chips). Methods of up to five characters show in full, so GET,
+ * PATCH, TRACE and a custom PURGE are untouched. Longer ones keep their first
+ * three letters, which is what the design asks for (DELETE to DEL, OPTIONS to
+ * OPT, CONNECT to CON) and what a custom PROPFIND to PRO needs too. Single
+ * source for every badge so the abbreviations can't drift between components.
  */
 export const getShortMethod = (method: string): string => {
   const m = method.trim().toUpperCase();

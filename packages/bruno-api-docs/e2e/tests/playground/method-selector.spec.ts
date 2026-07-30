@@ -35,8 +35,6 @@ test.describe('Playground method selector', () => {
     await expect(playground.sidebarItem('get users').locator('.navlink-method')).toHaveText('TRACE');
   });
 
-  // The sidebar badge shows up to five characters in full and cuts anything
-  // longer to three, so a custom method can never overrun the request name.
   test('abbreviates a custom method only when it is longer than five characters', async ({ playground }) => {
     const badge = playground.sidebarItem('get users').locator('.navlink-method');
 
@@ -107,8 +105,8 @@ test.describe('Playground method selector', () => {
       await expect(playground.methodSelector.trigger).toBeFocused();
     });
 
-    // A pointer exit has already chosen where focus goes; taking it back to the
-    // trigger would move the caret out of whatever the reader just clicked.
+    // A pointer exit has already chosen where focus goes; taking it back would
+    // move the caret out of whatever the reader just clicked.
     for (const [label, typed] of [['a typed', 'REPORT'], ['an empty', '']]) {
       test(`leaves focus alone when ${label} field is clicked away from`, async ({ page, playground }) => {
         await playground.methodSelector.startCustom(typed);
@@ -130,9 +128,8 @@ test.describe('Playground method selector', () => {
     });
   });
 
-  // Browsers reject TRACE/CONNECT before any connection is made and say why. That
-  // explanation must reach the reader instead of the generic CORS text the runner
-  // shows for an opaque network failure.
+  // The browser refuses these before connecting and says why, so its wording must
+  // reach the reader instead of the generic CORS text used for network failures.
   test.describe('sending a method the browser forbids', () => {
     for (const method of ['TRACE', 'CONNECT']) {
       test(`surfaces the browser's own explanation for ${method}`, async ({ page, playground }) => {

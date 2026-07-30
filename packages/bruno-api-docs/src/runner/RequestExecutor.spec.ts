@@ -98,8 +98,6 @@ describe('RequestExecutor', () => {
     );
 
     // fetch throws if a body is attached to these.
-    // `fetch` normalises only the methods it knows, so a stored `purge` would
-    // otherwise reach the wire lower-cased while the badge reads PURGE.
     it.each([['purge', 'PURGE'], ['  purge  ', 'PURGE'], ['DeLeTe', 'DELETE']])(
       'sends %s as %s',
       async (stored, expected) => {

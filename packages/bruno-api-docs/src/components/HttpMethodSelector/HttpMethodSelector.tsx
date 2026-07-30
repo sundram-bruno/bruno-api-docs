@@ -21,7 +21,7 @@ interface HttpMethodSelectorProps {
 /**
  * The request method picker: the nine standard HTTP methods plus an "+ Add
  * Custom" row that swaps the trigger for an input, so readers can send methods
- * the list doesn't cover (PURGE, REPORT, …). Mirrors the app's selector.
+ * the list doesn't cover, such as PURGE or REPORT. Mirrors the app's selector.
  */
 export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, onMethodChange, testId }) => {
   const [isCustomMode, setIsCustomMode] = useState(false);
@@ -33,7 +33,7 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
   const displayMethod = (method || 'GET').toUpperCase();
 
   /**
-   * Both the menu rows and the custom-method input disappear once used — the rows
+   * Both the menu rows and the custom-method input disappear once used: the rows
    * live in a popover that unmounts, and the input is replaced by the trigger.
    * Either way focus would fall to the body, where the next Tab restarts at the
    * top of the page, so put it on the trigger once the DOM has settled.

@@ -59,7 +59,7 @@ const isTimeoutError = (error: unknown): boolean => {
  * Matched as whole phrases rather than by sniffing for "fetch", because not
  * every `TypeError` mentioning fetch is a network failure. A forbidden method
  * (TRACE/CONNECT/TRACK) is rejected before any connection is made, and the
- * browser says exactly why — "Failed to execute 'fetch' on 'Window': 'TRACE'
+ * browser says exactly why: "Failed to execute 'fetch' on 'Window': 'TRACE'
  * HTTP method is unsupported." (Chrome), "Window.fetch: Invalid request method
  * TRACE." (Firefox), "Method is forbidden." (Safari). Those must reach the
  * reader rather than be replaced by a guess about CORS.

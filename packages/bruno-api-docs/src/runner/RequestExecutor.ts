@@ -72,8 +72,7 @@ export class RequestExecutor {
 
   private async buildFetchOptions(request: HttpRequest, timeout = DEFAULT_TIMEOUT_MS): Promise<RequestInit> {
     // `fetch` upper-cases only the methods it knows, so a collection storing
-    // `purge` would go out lower-cased while the badge shows PURGE. The app
-    // normalises before sending too.
+    // `purge` would go out lower-cased while the badge shows PURGE.
     const method = getHttpMethod(request).trim().toUpperCase();
     const options: RequestInit = {
       method,

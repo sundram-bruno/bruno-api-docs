@@ -128,9 +128,9 @@ describe('classifyRequestError', () => {
   });
 
   // A forbidden method (TRACE/CONNECT/TRACK) is rejected before any connection,
-  // and the browser explains why — so its own message must survive rather than
-  // being relabelled as CORS. Messages below are the real ones each engine
-  // throws, captured from Chromium/Firefox/WebKit.
+  // and the browser explains why, so its own message must survive rather than
+  // being relabelled as CORS. The messages below are the real ones each engine
+  // throws, captured from Chromium, Firefox and WebKit.
   describe('forbidden method -> the browser explanation, not a CORS guess', () => {
     const crossOrigin = { pageUrl: 'https://docs.example.com/', requestUrl: 'https://api.example.com/users' };
 
