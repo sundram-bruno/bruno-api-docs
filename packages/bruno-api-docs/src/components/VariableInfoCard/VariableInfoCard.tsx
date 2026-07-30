@@ -60,8 +60,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
       && EDITABLE_SCOPES.has(info.scope)
       && (!ENV_BOUND_SCOPES.has(info.scope) || !!activeEnvName);
 
-  // Only the playground fills secrets in; the rendered docs keep the original
-  // opaque "(Secret)" treatment, with no mask, reveal or copy.
+  // Docs keep the opaque "(Secret)" treatment; only the playground fills them in.
   const secretFillable = editable && info.secret;
   const masked = secretFillable && !revealed;
   const displayValue = masked ? maskValue(info.value) : info.value;

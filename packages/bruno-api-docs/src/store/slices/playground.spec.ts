@@ -155,8 +155,6 @@ describe('setPlaygroundVariable', () => {
     expect(item.variables.find((v) => v.name === 'rv').value).toBe('2');
   });
 
-  // The value lives only on this in-memory copy, so a request can be sent with a
-  // secret the published collection never carries.
   it('writes a session value to a secret variable, keeping it marked secret', () => {
     const collection = makeCollection();
     collection.config.environments[0].variables.push({ name: 'sec', secret: true });

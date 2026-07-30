@@ -110,22 +110,17 @@ const makeResolver = (
 };
 
 /**
- * External secrets are `{ name, secretName }` pointers: `name` is the variable
- * the collection references as `{{name}}`, `secretName` only says where the
- * provider would fetch it. The browser cannot reach the provider, so they carry
- * whatever value was typed into the playground this session.
+ * External secrets are `{ name, secretName }` pointers: `name` is what the
+ * collection references as `{{name}}`, `secretName` only says where a provider
+ * would fetch it. The browser cannot reach the provider, so the only value they
+ * can carry is one typed into the playground this session.
  */
 const externalSecretVariables = (environment: Environment | undefined): SecretVariable[] =>
   ((environment?.externalSecrets?.variables ?? []) as { name?: string; disabled?: boolean; value?: string }[])
     .filter((entry) => entry.name && entry.disabled !== true)
     .map((entry) => ({ name: entry.name, secret: true, value: entry.value ?? '' }) as unknown as SecretVariable);
 
-/**
- * `withExternalSecrets` is playground-only: the rendered docs leave external
- * secrets unresolved, exactly as they were before they became fillable.
- * They sit below the environment's own variables, so an explicitly declared
- * variable of the same name is the more specific answer.
- */
+/** `withExternalSecrets` is playground-only; the docs leave them unresolved. */
 const collectionAndEnvSources = (
   collection: OpenCollection | null,
   activeEnvName: string | null,

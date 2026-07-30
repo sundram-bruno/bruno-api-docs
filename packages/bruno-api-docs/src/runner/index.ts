@@ -213,9 +213,8 @@ export class RequestRunner {
   private getEnvironmentVariables(environment?: Environment): Record<string, any> {
     if (!environment) return {};
 
-    // External secrets are ordinary `{{name}}` references whose value a provider
-    // would supply; the browser can't reach one, so only a value typed into the
-    // playground resolves them. An explicit variable of the same name wins.
+    // External secrets resolve as ordinary `{{name}}` references. An explicitly
+    // declared variable of the same name wins.
     const externalSecrets = ((environment.externalSecrets?.variables ?? []) as {
       name?: string;
       disabled?: boolean;

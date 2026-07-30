@@ -202,7 +202,6 @@ describe('VariableInfoCard (editable)', () => {
     expect(root.querySelector(selector('copy'))).not.toBeNull();
   });
 
-  // An external secret is referenced by its bare name, like any other variable.
   it('shows a declared external secret as blank, editable, with reveal but no copy', () => {
     const root = useRenderToDom(editableCardTree('vaultKey'));
     expect(part(root, 'scope').text).toBe('Secret');
