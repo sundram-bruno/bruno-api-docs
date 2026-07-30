@@ -65,14 +65,14 @@ test.describe('Variable hover card', () => {
     await expect(variableCard.value).toHaveText('https://api.dev.example.com');
   });
 
-  test('masks a secret referenced in the request body', async ({ requestPage }) => {
+  test('shows a (Secret) placeholder for a secret referenced in the request body', async ({ requestPage }) => {
     const { bodyVariableCard: variableCard } = requestPage;
     await variableCard.hoverToken('bearer_token');
 
     await expect(variableCard.card).toBeVisible();
     await expect(variableCard.scopeBadge).toHaveText('Environment');
-    await expect(variableCard.value).toHaveText('*'.repeat('super-secret-token'.length));
-    await expect(variableCard.copyButton).toHaveCount(1);
+    await expect(variableCard.value).toHaveText('(Secret)');
+    await expect(variableCard.copyButton).toHaveCount(0);
   });
 
   test('shows an (empty) placeholder with no copy for a defined variable that has no value', async ({ requestPage }) => {
@@ -110,19 +110,16 @@ test.describe('Variable hover card', () => {
     await expect(variableCard.note).toContainText('random value');
   });
 
-  test('masks a secret until the reveal control is used', async ({ requestPage }) => {
+  test('shows a (Secret) placeholder with no reveal or copy, never exposing the value', async ({ requestPage }) => {
     const { variableCard } = requestPage;
     await variableCard.pinToken('bearer_token');
 
     await expect(variableCard.card).toBeVisible();
     await expect(variableCard.scopeBadge).toHaveText('Environment');
-    await expect(variableCard.value).toHaveText('*'.repeat('super-secret-token'.length));
+    await expect(variableCard.value).toHaveText('(Secret)');
     await expect(variableCard.card).not.toContainText('super-secret-token');
-    await expect(variableCard.copyButton).toHaveCount(1);
-
-    await variableCard.revealToggle.click();
-
-    await expect(variableCard.value).toHaveText('super-secret-token');
+    await expect(variableCard.revealToggle).toHaveCount(0);
+    await expect(variableCard.copyButton).toHaveCount(0);
   });
 
   test('copies the resolved value from the copy button', async ({ page, requestPage }) => {
@@ -243,13 +240,13 @@ test.describe('Variable hover card — Overview page', () => {
     await expect(variableCard.value).toHaveText('2024-01');
   });
 
-  test('masks a secret referenced in a collection header', async ({ overviewPage }) => {
+  test('shows a (Secret) placeholder for a secret referenced in a collection header', async ({ overviewPage }) => {
     const { variableCard } = overviewPage;
     await variableCard.hoverToken('bearer_token');
 
     await expect(variableCard.card).toBeVisible();
     await expect(variableCard.scopeBadge).toHaveText('Environment');
-    await expect(variableCard.value).toHaveText('*'.repeat('super-secret-token'.length));
+    await expect(variableCard.value).toHaveText('(Secret)');
   });
 });
 

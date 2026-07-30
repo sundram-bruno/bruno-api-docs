@@ -74,11 +74,12 @@ describe('VariableInfoCard', () => {
     expect(part(useRenderToDom(cardTree('endpoint')), 'value').text).toBe('https://dev.test/v1');
   });
 
-  it('masks a secret by length and offers reveal, without printing the plaintext', () => {
+  it('shows a (Secret) placeholder with no reveal/copy and never prints the plaintext', () => {
     const root = useRenderToDom(cardTree('bearer_token'));
-    expect(part(root, 'value').text).toBe('*'.repeat('super-secret'.length));
+    expect(part(root, 'value').text).toBe('(Secret)');
     expect(root.toString()).not.toContain('super-secret');
-    expect(root.querySelector(selector('reveal'))).not.toBeNull();
+    expect(root.querySelector(selector('reveal'))).toBeNull();
+    expect(root.querySelector(selector('copy'))).toBeNull();
   });
 
   it('shows an (empty) placeholder with no copy control when the value is blank', () => {
@@ -88,18 +89,9 @@ describe('VariableInfoCard', () => {
     expect(root.querySelector(selector('copy'))).toBeNull();
   });
 
-  it('offers the copy control on a secret, which has a value to copy', () => {
-    expect(useRenderToDom(cardTree('bearer_token')).querySelector(selector('copy'))).not.toBeNull();
-  });
-
-  // An external secret is referenced by its bare name, like any other variable.
-  it('shows a declared external secret as blank with a reveal and no copy', () => {
-    const root = useRenderToDom(cardTree('vaultKey'));
-    expect(part(root, 'scope').text).toBe('Secret');
-    expect(part(root, 'value').text).toBe('');
-    expect(root.querySelector(selector('reveal'))).not.toBeNull();
-    expect(root.querySelector(selector('copy'))).toBeNull();
-    expect(root.querySelector(selector('note'))).toBeNull();
+  // External secrets are a playground affordance; the docs leave them unresolved.
+  it('does not resolve an external secret', () => {
+    expect(part(useRenderToDom(cardTree('vaultKey')), 'scope').text).toBe('Undefined');
   });
 
   it('pretty-prints an object-typed value', () => {
@@ -200,10 +192,25 @@ describe('VariableInfoCard (editable)', () => {
     expect(value.classList.contains('var-value-placeholder')).toBe(false);
   });
 
-  it('makes a secret editable so a value can be supplied for the request', () => {
-    const value = part(useRenderToDom(editableCardTree('bearer_token')), 'value');
+  it('masks a secret, offers reveal and copy, and makes it editable', () => {
+    const root = useRenderToDom(editableCardTree('bearer_token'));
+    const value = part(root, 'value');
     expect(value.text).toBe('*'.repeat('super-secret'.length));
+    expect(root.toString()).not.toContain('super-secret');
     expect(value.classList.contains('var-value-editable')).toBe(true);
+    expect(root.querySelector(selector('reveal'))).not.toBeNull();
+    expect(root.querySelector(selector('copy'))).not.toBeNull();
+  });
+
+  // An external secret is referenced by its bare name, like any other variable.
+  it('shows a declared external secret as blank, editable, with reveal but no copy', () => {
+    const root = useRenderToDom(editableCardTree('vaultKey'));
+    expect(part(root, 'scope').text).toBe('Secret');
+    expect(part(root, 'value').text).toBe('');
+    expect(part(root, 'value').classList.contains('var-value-editable')).toBe(true);
+    expect(root.querySelector(selector('reveal'))).not.toBeNull();
+    expect(root.querySelector(selector('copy'))).toBeNull();
+    expect(root.querySelector(selector('note'))).toBeNull();
   });
 
   it('never makes a read-only scope (process.env) editable', () => {

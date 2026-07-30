@@ -120,17 +120,26 @@ const externalSecretVariables = (environment: Environment | undefined): SecretVa
     .filter((entry) => entry.name && entry.disabled !== true)
     .map((entry) => ({ name: entry.name, secret: true, value: entry.value ?? '' }) as unknown as SecretVariable);
 
-const collectionAndEnvSources = (collection: OpenCollection | null, activeEnvName: string | null): VariableSource[] => {
+/**
+ * `withExternalSecrets` is playground-only: the rendered docs leave external
+ * secrets unresolved, exactly as they were before they became fillable.
+ * They sit below the environment's own variables, so an explicitly declared
+ * variable of the same name is the more specific answer.
+ */
+const collectionAndEnvSources = (
+  collection: OpenCollection | null,
+  activeEnvName: string | null,
+  withExternalSecrets = false
+): VariableSource[] => {
   const collectionVariables = (collection?.request?.variables ?? []) as (Variable | SecretVariable)[];
   const environments = (collection?.config?.environments ?? []) as Environment[];
   const activeEnvironment = environments.find((environment) => environment.name === activeEnvName);
-  // External secrets sit below the environment's own variables: an explicitly
-  // declared variable of the same name is the more specific answer.
-  return [
-    { scope: 'collection', variables: collectionVariables },
-    { scope: '$secrets', variables: externalSecretVariables(activeEnvironment) },
-    { scope: 'environment', variables: activeEnvironment?.variables }
-  ];
+  const sources: VariableSource[] = [{ scope: 'collection', variables: collectionVariables }];
+  if (withExternalSecrets) {
+    sources.push({ scope: '$secrets', variables: externalSecretVariables(activeEnvironment) });
+  }
+  sources.push({ scope: 'environment', variables: activeEnvironment?.variables });
+  return sources;
 };
 
 const folderVariables = (folder: Item): (Variable | SecretVariable)[] =>
@@ -208,7 +217,7 @@ export const ItemVariableResolverProvider: React.FC<{
   const showVars = useAppSelector(selectShowVars);
 
   const model = useMemo(() => {
-    const sources: VariableSource[] = collectionAndEnvSources(collection, activeEnvName);
+    const sources: VariableSource[] = collectionAndEnvSources(collection, activeEnvName, true);
     for (const folder of ancestry) {
       sources.push({ scope: 'folder', variables: folderVariables(folder) });
     }

@@ -60,7 +60,10 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
       && EDITABLE_SCOPES.has(info.scope)
       && (!ENV_BOUND_SCOPES.has(info.scope) || !!activeEnvName);
 
-  const masked = info.secret && !revealed;
+  // Only the playground fills secrets in; the rendered docs keep the original
+  // opaque "(Secret)" treatment, with no mask, reveal or copy.
+  const secretFillable = editable && info.secret;
+  const masked = secretFillable && !revealed;
   const displayValue = masked ? maskValue(info.value) : info.value;
 
   const startEditing = () => {
@@ -129,12 +132,14 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   }
 
   const readOnlyNote = getReadOnlyNote(info.scope, activeEnvName);
-  const emptyLabel = !info.secret && info.value === '' ? '(empty)' : null;
-  const placeholder = canEdit ? null : emptyLabel;
+  const emptyLabel = !secretFillable && info.value === '' ? '(empty)' : null;
+  const placeholder = info.secret && !editable ? '(Secret)' : canEdit ? null : emptyLabel;
 
-  const icons = (info.value !== '' || info.secret) && (
+  const showCopy = info.value !== '' && !(info.secret && !editable);
+
+  const icons = (showCopy || secretFillable) && (
     <div className="var-icons">
-      {info.secret && (
+      {secretFillable && (
         <button
           type="button"
           className="reveal-button"
@@ -147,7 +152,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
           {revealed ? <EyeOffIcon /> : <EyeIcon />}
         </button>
       )}
-      {info.value !== '' && (
+      {showCopy && (
         <CopyButton
           text={info.value}
           label="Copy value"
