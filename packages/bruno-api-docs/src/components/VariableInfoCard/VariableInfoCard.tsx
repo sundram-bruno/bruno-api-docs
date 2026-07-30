@@ -122,7 +122,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   const emptyLabel = info.value === '' ? '(empty)' : null;
   const placeholder = info.secret ? '(Secret)' : canEdit ? null : emptyLabel;
 
-  const copyButton = info.value !== '' && (
+  const icons = info.value !== '' && (
     <div className="var-icons">
       <CopyButton
         text={info.value}
@@ -191,7 +191,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
       {header}
       <div className="var-value-container">
         {valueNode}
-        {copyButton}
+        {icons}
       </div>
       {readOnlyNote && (
         <div className="var-readonly-note" data-testid={`${testId}-note`}>

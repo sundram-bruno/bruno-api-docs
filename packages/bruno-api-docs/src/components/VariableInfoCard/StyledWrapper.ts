@@ -149,8 +149,7 @@ export const StyledWrapper = styled.div`
     background: transparent;
   }
 
-  .var-icons .copy-button[data-copied],
-  .var-icons .copy-button[data-copied]:hover {
+  .var-icons .copy-button[data-copied] {
     opacity: 1;
     cursor: default;
   }
