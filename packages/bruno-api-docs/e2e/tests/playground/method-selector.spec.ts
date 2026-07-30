@@ -8,124 +8,121 @@ test.describe('Playground method selector', () => {
     await playground.openRequest('get users');
   });
 
-  test('offers the nine standard methods in the app order, then "+ Add Custom"', async ({ methodSelector }) => {
-    expect(await methodSelector.optionIds()).toEqual([...STANDARD_METHODS, 'add-custom']);
+  test('offers the nine standard methods in the app order, then "+ Add Custom"', async ({ playground }) => {
+    expect(await playground.methodSelector.optionIds()).toEqual([...STANDARD_METHODS, 'add-custom']);
   });
 
-  test('selects TRACE and marks it as the chosen row', async ({ methodSelector }) => {
-    await methodSelector.select('TRACE');
-    await expect(methodSelector.trigger).toHaveText('TRACE');
+  test('selects TRACE and marks it as the chosen row', async ({ playground }) => {
+    await playground.methodSelector.select('TRACE');
+    await expect(playground.methodSelector.trigger).toHaveText('TRACE');
 
-    await methodSelector.open();
-    await expect(methodSelector.option('TRACE')).toHaveAttribute('aria-selected', 'true');
+    await playground.methodSelector.open();
+    await expect(playground.methodSelector.option('TRACE')).toHaveAttribute('aria-selected', 'true');
   });
 
-  test('spells the method out in full, unlike the abbreviated sidebar', async ({ methodSelector, playground }) => {
-    await methodSelector.select('DELETE');
-    await expect(methodSelector.trigger).toHaveText('DELETE');
+  test('spells the method out in full, unlike the abbreviated sidebar', async ({ playground }) => {
+    await playground.methodSelector.select('DELETE');
+    await expect(playground.methodSelector.trigger).toHaveText('DELETE');
     await expect(playground.sidebarItem('get users').locator('.navlink-method')).toHaveText('DEL');
 
-    await methodSelector.select('CONNECT');
-    await expect(methodSelector.trigger).toHaveText('CONNECT');
+    await playground.methodSelector.select('CONNECT');
+    await expect(playground.methodSelector.trigger).toHaveText('CONNECT');
     await expect(playground.sidebarItem('get users').locator('.navlink-method')).toHaveText('CON');
   });
 
-  test('keeps TRACE unabbreviated in the sidebar', async ({ methodSelector, playground }) => {
-    await methodSelector.select('TRACE');
+  test('keeps TRACE unabbreviated in the sidebar', async ({ playground }) => {
+    await playground.methodSelector.select('TRACE');
     await expect(playground.sidebarItem('get users').locator('.navlink-method')).toHaveText('TRACE');
   });
 
   // The sidebar badge shows up to five characters in full and cuts anything
   // longer to three, so a custom method can never overrun the request name.
-  test('abbreviates a custom method only when it is longer than five characters', async ({
-    methodSelector,
-    playground
-  }) => {
+  test('abbreviates a custom method only when it is longer than five characters', async ({ playground }) => {
     const badge = playground.sidebarItem('get users').locator('.navlink-method');
 
-    await methodSelector.enterCustom('PURGE');
+    await playground.methodSelector.enterCustom('PURGE');
     await expect(badge).toHaveText('PURGE');
 
-    await methodSelector.enterCustom('PROPFIND');
+    await playground.methodSelector.enterCustom('PROPFIND');
     await expect(badge).toHaveText('PRO');
     await expect(badge).toHaveAttribute('title', 'PROPFIND');
   });
 
   test.describe('custom method', () => {
-    test('accepts a typed method, upper-casing it, and ticks no row', async ({ methodSelector }) => {
-      await methodSelector.enterCustom('purge');
-      await expect(methodSelector.trigger).toHaveText('PURGE');
+    test('accepts a typed method, upper-casing it, and ticks no row', async ({ playground }) => {
+      await playground.methodSelector.enterCustom('purge');
+      await expect(playground.methodSelector.trigger).toHaveText('PURGE');
 
-      await methodSelector.open();
-      await expect(methodSelector.selectedOption).toHaveCount(0);
+      await playground.methodSelector.open();
+      await expect(playground.methodSelector.selectedOption).toHaveCount(0);
     });
 
-    test('opens an empty field so typing replaces the current method', async ({ methodSelector }) => {
-      await methodSelector.startCustom('');
-      await expect(methodSelector.customInput).toHaveValue('');
+    test('opens an empty field so typing replaces the current method', async ({ playground }) => {
+      await playground.methodSelector.startCustom('');
+      await expect(playground.methodSelector.customInput).toHaveValue('');
     });
 
-    test('discards the entry on Escape', async ({ methodSelector }) => {
-      await methodSelector.select('PATCH');
-      await methodSelector.startCustom('REPORT');
-      await methodSelector.customInput.press('Escape');
+    test('discards the entry on Escape', async ({ playground }) => {
+      await playground.methodSelector.select('PATCH');
+      await playground.methodSelector.startCustom('REPORT');
+      await playground.methodSelector.customInput.press('Escape');
 
-      await expect(methodSelector.trigger).toHaveText('PATCH');
+      await expect(playground.methodSelector.trigger).toHaveText('PATCH');
     });
 
-    test('keeps the previous method when the field is left empty', async ({ methodSelector, playground }) => {
-      await methodSelector.select('PUT');
-      await methodSelector.startCustom('');
+    test('keeps the previous method when the field is left empty', async ({ playground }) => {
+      await playground.methodSelector.select('PUT');
+      await playground.methodSelector.startCustom('');
       await playground.header.click();
 
-      await expect(methodSelector.trigger).toHaveText('PUT');
+      await expect(playground.methodSelector.trigger).toHaveText('PUT');
     });
 
-    test('keeps the previous method when Enter is pressed on an empty field', async ({ methodSelector }) => {
-      await methodSelector.select('PUT');
-      await methodSelector.startCustom('');
-      await methodSelector.customInput.press('Enter');
+    test('keeps the previous method when Enter is pressed on an empty field', async ({ playground }) => {
+      await playground.methodSelector.select('PUT');
+      await playground.methodSelector.startCustom('');
+      await playground.methodSelector.customInput.press('Enter');
 
-      await expect(methodSelector.trigger).toHaveText('PUT');
+      await expect(playground.methodSelector.trigger).toHaveText('PUT');
     });
 
-    test('trims a padded method so it stays a valid HTTP method', async ({ methodSelector }) => {
-      await methodSelector.enterCustom('  purge  ');
+    test('trims a padded method so it stays a valid HTTP method', async ({ playground }) => {
+      await playground.methodSelector.enterCustom('  purge  ');
 
-      await expect(methodSelector.trigger).toHaveText('PURGE');
-      await expect(methodSelector.trigger).toHaveAttribute('title', 'PURGE');
+      await expect(playground.methodSelector.trigger).toHaveText('PURGE');
+      await expect(playground.methodSelector.trigger).toHaveAttribute('title', 'PURGE');
     });
 
-    test('returns focus to the trigger after committing with Enter', async ({ methodSelector }) => {
-      await methodSelector.startCustom('REPORT');
-      await methodSelector.customInput.press('Enter');
+    test('returns focus to the trigger after committing with Enter', async ({ playground }) => {
+      await playground.methodSelector.startCustom('REPORT');
+      await playground.methodSelector.customInput.press('Enter');
 
-      await expect(methodSelector.trigger).toBeFocused();
+      await expect(playground.methodSelector.trigger).toBeFocused();
     });
 
-    test('returns focus to the trigger after Escape', async ({ methodSelector }) => {
-      await methodSelector.startCustom('REPORT');
-      await methodSelector.customInput.press('Escape');
+    test('returns focus to the trigger after Escape', async ({ playground }) => {
+      await playground.methodSelector.startCustom('REPORT');
+      await playground.methodSelector.customInput.press('Escape');
 
-      await expect(methodSelector.trigger).toBeFocused();
+      await expect(playground.methodSelector.trigger).toBeFocused();
     });
 
     // A pointer exit has already chosen where focus goes; taking it back to the
     // trigger would move the caret out of whatever the reader just clicked.
     for (const [label, typed] of [['a typed', 'REPORT'], ['an empty', '']]) {
-      test(`leaves focus alone when ${label} field is clicked away from`, async ({ page, methodSelector }) => {
-        await methodSelector.startCustom(typed);
+      test(`leaves focus alone when ${label} field is clicked away from`, async ({ page, playground }) => {
+        await playground.methodSelector.startCustom(typed);
         await page.getByTestId('query-bar-url').click();
 
-        await expect(methodSelector.trigger).not.toBeFocused();
+        await expect(playground.methodSelector.trigger).not.toBeFocused();
       });
     }
 
-    test('shows a long method in full via the title, clipped on screen', async ({ methodSelector }) => {
-      await methodSelector.enterCustom('LONG_NOTE_METHOD_NAME');
+    test('shows a long method in full via the title, clipped on screen', async ({ playground }) => {
+      await playground.methodSelector.enterCustom('LONG_NOTE_METHOD_NAME');
 
-      await expect(methodSelector.trigger).toHaveAttribute('title', 'LONG_NOTE_METHOD_NAME');
-      const clipped = await methodSelector.trigger.evaluate((button) => {
+      await expect(playground.methodSelector.trigger).toHaveAttribute('title', 'LONG_NOTE_METHOD_NAME');
+      const clipped = await playground.methodSelector.trigger.evaluate((button) => {
         const badge = button.querySelector('.method-badge') as HTMLElement;
         return badge.scrollWidth > badge.clientWidth;
       });
@@ -138,8 +135,8 @@ test.describe('Playground method selector', () => {
   // shows for an opaque network failure.
   test.describe('sending a method the browser forbids', () => {
     for (const method of ['TRACE', 'CONNECT']) {
-      test(`surfaces the browser's own explanation for ${method}`, async ({ page, methodSelector }) => {
-        await methodSelector.select(method);
+      test(`surfaces the browser's own explanation for ${method}`, async ({ page, playground }) => {
+        await playground.methodSelector.select(method);
         await page.getByRole('button', { name: 'Send' }).click();
 
         await expect(page.getByTestId('error-banner')).toBeVisible();

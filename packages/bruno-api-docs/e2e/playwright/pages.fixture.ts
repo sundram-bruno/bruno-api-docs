@@ -10,7 +10,6 @@ import { TooltipComponent } from '../components/tooltip.component';
 import { PlaygroundComponent } from '../components/playground.component';
 import { RequestBodyComponent } from '../components/playground/request-body.component';
 import { ResponsePaneComponent } from '../components/playground/response-pane.component';
-import { MethodSelectorComponent } from '../components/playground/method-selector.component';
 import { EnvEditorComponent } from '../components/environments/env-editor.component';
 import { CollectionSettingsComponent } from '../components/collection-settings/collection-settings.component';
 import { ThemeToggleComponent } from '../components/layout/theme-toggle.component';
@@ -30,7 +29,6 @@ type Fixtures = {
   playground: PlaygroundComponent;
   requestBody: RequestBodyComponent;
   responsePane: ResponsePaneComponent;
-  methodSelector: MethodSelectorComponent;
   envEditor: EnvEditorComponent;
   collectionSettings: CollectionSettingsComponent;
   pageHeader: PageHeaderComponent;
@@ -78,9 +76,6 @@ export const test = base.extend<Fixtures>({
   },
   responsePane: async ({ page }, use) => {
     await use(new ResponsePaneComponent(page));
-  },
-  methodSelector: async ({ page }, use) => {
-    await use(new MethodSelectorComponent(page));
   },
   envEditor: async ({ page }, use) => {
     await use(new EnvEditorComponent(page));
