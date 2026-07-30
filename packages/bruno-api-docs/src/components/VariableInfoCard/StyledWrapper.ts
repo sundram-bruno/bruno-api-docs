@@ -149,6 +149,12 @@ export const StyledWrapper = styled.div`
     background: transparent;
   }
 
+  .var-icons .copy-button[data-copied],
+  .var-icons .copy-button[data-copied]:hover {
+    opacity: 1;
+    cursor: default;
+  }
+
   .var-icons .copy-button:focus-visible {
     outline: 0.125rem solid var(--primary-color);
     outline-offset: 0.0625rem;

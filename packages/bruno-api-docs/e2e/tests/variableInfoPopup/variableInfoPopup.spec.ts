@@ -133,6 +133,27 @@ test.describe('Variable hover card', () => {
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('2024-01');
   });
 
+  test('turns the copy glyph into a green tick while copied, then reverts', async ({ page, requestPage }) => {
+    const { variableCard } = requestPage;
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    await variableCard.pinToken('apiVersion');
+    await expect(variableCard.card).toBeVisible();
+
+    const tick = variableCard.copyButton.locator('polyline');
+    await expect(tick).toHaveCount(0);
+
+    await variableCard.copyButton.click();
+
+    await expect(variableCard.copyButton).toHaveAttribute('data-copied', 'true');
+    await expect(tick).toHaveCount(1);
+    // The tick is stroke="currentColor", so the button's colour is the tick's colour.
+    await expect(variableCard.copyButton).toHaveAttribute('style', /--oc-status-success-text/);
+
+    await expect(variableCard.copyButton).not.toHaveAttribute('data-copied', 'true', { timeout: 3000 });
+    await expect(tick).toHaveCount(0);
+  });
+
   test('is read-only — no editor inside the card', async ({ requestPage }) => {
     const { variableCard } = requestPage;
     await variableCard.pinToken('host');

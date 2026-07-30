@@ -1,18 +1,31 @@
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
+import { useRenderToDom } from '../../hooks/useRenderToDom';
+import { getByTestId } from '../../test-utils/dom';
 import { CopyButton } from './CopyButton';
 
 describe('CopyButton', () => {
   it('renders an accessible button with the default copy label', () => {
-    const html = renderToStaticMarkup(<CopyButton text="hello" />);
-    expect(html).toContain('<button');
-    expect(html).toContain('type="button"');
-    expect(html).toContain('aria-label="Copy"');
+    const button = getByTestId(useRenderToDom(<CopyButton text="hello" />), 'copy-button');
+    expect(button.tagName.toLowerCase()).toBe('button');
+    expect(button.getAttribute('type')).toBe('button');
+    expect(button.getAttribute('aria-label')).toBe('Copy');
   });
 
   it('uses the provided label', () => {
-    const html = renderToStaticMarkup(<CopyButton text="hello" label="Copy code" />);
-    expect(html).toContain('aria-label="Copy code"');
+    const button = getByTestId(useRenderToDom(<CopyButton text="hello" label="Copy code" />), 'copy-button');
+    expect(button.getAttribute('aria-label')).toBe('Copy code');
+  });
+
+  it('is not marked copied on first render', () => {
+    const root = useRenderToDom(<CopyButton text="hello" />);
+    expect(getByTestId(root, 'copy-button').getAttribute('data-copied')).toBeFalsy();
+  });
+
+  it('renders rounded stroke ends so the glyph matches the desktop app', () => {
+    const root = useRenderToDom(<CopyButton text="hello" />);
+    const svg = getByTestId(root, 'copy-button').querySelector('svg');
+    expect(svg?.getAttribute('stroke-linecap')).toBe('round');
+    expect(svg?.getAttribute('stroke-linejoin')).toBe('round');
   });
 });

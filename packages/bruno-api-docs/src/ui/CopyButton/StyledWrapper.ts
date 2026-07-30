@@ -18,6 +18,10 @@ export const StyledWrapper = styled.button`
     background-color: var(--badge-bg);
   }
 
+  &[data-copied] {
+    cursor: default;
+  }
+
   &:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 1px;
