@@ -34,9 +34,7 @@ export class MethodSelectorComponent extends BaseComponent {
     await this.open();
     await this.addCustom.click();
     await this.customInput.waitFor({ state: 'visible' });
-    if (value) {
-      await this.customInput.fill(value);
-    }
+    await this.customInput.fill(value);
   }
 
   async enterCustom(value: string): Promise<void> {
