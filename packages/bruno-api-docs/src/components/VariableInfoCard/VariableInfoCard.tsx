@@ -37,6 +37,13 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     el.style.height = `${el.scrollHeight}px`;
   }, [editing, draft]);
 
+  useLayoutEffect(() => {
+    const el = editRef.current;
+    if (!editing || !el) return;
+    const end = el.value.length;
+    el.setSelectionRange(end, end);
+  }, [editing]);
+
   const canEdit
     = editable
       && canWrite

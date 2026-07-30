@@ -84,4 +84,17 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await playground.variable.value.click();
     await expect(playground.variable.editField).toHaveCount(0);
   });
+
+  test('clicking the value puts the caret at the end, not the start', async ({ playground }) => {
+    await playground.variable.hoverInputToken('host');
+    await playground.variable.value.click();
+
+    const caret = await playground.variable.editField.evaluate(
+      (el: HTMLTextAreaElement) => ({ start: el.selectionStart, end: el.selectionEnd, length: el.value.length })
+    );
+
+    expect(caret.length).toBeGreaterThan(0);
+    expect(caret.start).toBe(caret.length);
+    expect(caret.end).toBe(caret.length);
+  });
 });
