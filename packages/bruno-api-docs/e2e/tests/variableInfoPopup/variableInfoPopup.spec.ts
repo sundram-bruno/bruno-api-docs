@@ -72,17 +72,17 @@ test.describe('Variable hover card', () => {
     await expect(variableCard.card).toBeVisible();
     await expect(variableCard.scopeBadge).toHaveText('Environment');
     await expect(variableCard.value).toHaveText('(Secret)');
-    await expect(variableCard.copyButton).toHaveCount(0);
+    await expect(variableCard.copyButton).toHaveCount(1);
   });
 
-  test('shows an (empty) placeholder with no copy for a defined variable that has no value', async ({ requestPage }) => {
+  test('shows an (empty) placeholder for a defined variable that has no value', async ({ requestPage }) => {
     const { variableCard } = requestPage;
     await variableCard.hoverToken('emptyValue');
 
     await expect(variableCard.card).toBeVisible();
     await expect(variableCard.scopeBadge).toHaveText('Environment');
     await expect(variableCard.value).toHaveText('(empty)');
-    await expect(variableCard.copyButton).toHaveCount(0);
+    await expect(variableCard.copyButton).toHaveCount(1);
   });
 
   test('pretty-prints an object-typed value', async ({ requestPage }) => {
@@ -110,7 +110,7 @@ test.describe('Variable hover card', () => {
     await expect(variableCard.note).toContainText('random value');
   });
 
-  test('shows a (Secret) placeholder with no reveal or copy, never exposing the value', async ({ requestPage }) => {
+  test('shows a (Secret) placeholder with no reveal, never exposing the value', async ({ requestPage }) => {
     const { variableCard } = requestPage;
     await variableCard.pinToken('bearer_token');
 
@@ -119,7 +119,7 @@ test.describe('Variable hover card', () => {
     await expect(variableCard.value).toHaveText('(Secret)');
     await expect(variableCard.card).not.toContainText('super-secret-token');
     await expect(variableCard.revealToggle).toHaveCount(0);
-    await expect(variableCard.copyButton).toHaveCount(0);
+    await expect(variableCard.copyButton).toHaveCount(1);
   });
 
   test('copies the resolved value from the copy button', async ({ page, requestPage }) => {

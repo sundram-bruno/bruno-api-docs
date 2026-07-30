@@ -97,4 +97,14 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     expect(caret.start).toBe(caret.length);
     expect(caret.end).toBe(caret.length);
   });
+
+  test('the copy control stays available while the value is being edited', async ({ playground }) => {
+    await playground.variable.hoverInputToken('host');
+    await expect(playground.variable.copyButton).toHaveCount(1);
+
+    await playground.variable.startEditing('https://edited.example.com');
+
+    await expect(playground.variable.editField).toBeVisible();
+    await expect(playground.variable.copyButton).toHaveCount(1);
+  });
 });

@@ -157,36 +157,30 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   );
 
   const editableDisplayNode = (
-    <>
-      <div
-        className="var-value-display var-value-editable"
-        data-testid={`${testId}-value`}
-        role="button"
-        tabIndex={0}
-        title="Click to edit"
-        onMouseDown={(event) => {
-          event.preventDefault();
-          startEditing();
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          startEditing();
-        }}
-      >
-        {emptyLabel ?? info.value}
-      </div>
-      {copyButton}
-    </>
+    <div
+      className="var-value-display var-value-editable"
+      data-testid={`${testId}-value`}
+      role="button"
+      tabIndex={0}
+      title="Click to edit"
+      onMouseDown={(event) => {
+        event.preventDefault();
+        startEditing();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        startEditing();
+      }}
+    >
+      {emptyLabel ?? info.value}
+    </div>
   );
 
   const readOnlyDisplayNode = (
-    <>
-      <div className="var-value-display" data-testid={`${testId}-value`}>
-        {info.value}
-      </div>
-      {copyButton}
-    </>
+    <div className="var-value-display" data-testid={`${testId}-value`}>
+      {info.value}
+    </div>
   );
 
   const editableNode = editing ? editFieldNode : editableDisplayNode;
@@ -195,7 +189,10 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   return (
     <StyledWrapper className="variable-info-card" data-testid={testId}>
       {header}
-      <div className="var-value-container">{valueNode}</div>
+      <div className="var-value-container">
+        {valueNode}
+        {copyButton}
+      </div>
       {readOnlyNote && (
         <div className="var-readonly-note" data-testid={`${testId}-note`}>
           {readOnlyNote}
