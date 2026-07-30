@@ -42,11 +42,6 @@ export interface MenuDropdownItem {
   title?: string;
   testId?: string;
   disabled?: boolean;
-  /**
-   * Extra class on the row. `dropdown-item-link` styles it as a trailing link
-   * action (smaller, link-coloured, indented to line up with rows whose label is
-   * a badge rather than plain text). Used for "+ Add Custom" in the method picker.
-   */
   className?: string;
   /** Nested submenu items; the submenu opens on hover. */
   submenu?: MenuDropdownItem[];

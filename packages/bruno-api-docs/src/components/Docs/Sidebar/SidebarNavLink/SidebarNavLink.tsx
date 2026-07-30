@@ -36,11 +36,7 @@ const SidebarNavLink: React.FC<SidebarNavLinkProps> = ({
   const classes = [active ? 'active' : '', muted ? 'muted' : ''].filter(Boolean).join(' ');
 
   const leading = method ? (
-    <span
-      className="navlink-leading navlink-method"
-      title={method.toUpperCase()}
-      style={{ color: getMethodColorVar(method) }}
-    >
+    <span className="navlink-leading navlink-method" style={{ color: getMethodColorVar(method) }}>
       {getShortMethod(method)}
     </span>
   ) : script ? (

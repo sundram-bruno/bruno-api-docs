@@ -125,7 +125,7 @@ export const HttpMethodSelector: React.FC<HttpMethodSelectorProps> = ({ method, 
   );
 
   const selectedItemId = useMemo(
-    () => (STANDARD_HTTP_METHODS.includes(displayMethod) ? displayMethod : null),
+    () => (STANDARD_HTTP_METHODS.some((standard) => standard === displayMethod) ? displayMethod : null),
     [displayMethod]
   );
 

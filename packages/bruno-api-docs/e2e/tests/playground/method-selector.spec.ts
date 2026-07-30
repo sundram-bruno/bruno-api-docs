@@ -43,7 +43,6 @@ test.describe('Playground method selector', () => {
 
     await playground.methodSelector.enterCustom('PROPFIND');
     await expect(badge).toHaveText('PRO');
-    await expect(badge).toHaveAttribute('title', 'PROPFIND');
   });
 
   test.describe('custom method', () => {
