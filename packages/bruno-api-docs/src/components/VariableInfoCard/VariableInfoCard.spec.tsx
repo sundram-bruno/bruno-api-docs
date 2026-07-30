@@ -92,8 +92,9 @@ describe('VariableInfoCard', () => {
     expect(useRenderToDom(cardTree('bearer_token')).querySelector(selector('copy'))).not.toBeNull();
   });
 
+  // An external secret is referenced by its bare name, like any other variable.
   it('shows a declared external secret as blank with a reveal and no copy', () => {
-    const root = useRenderToDom(cardTree('$secrets.vaultKey'));
+    const root = useRenderToDom(cardTree('vaultKey'));
     expect(part(root, 'scope').text).toBe('Secret');
     expect(part(root, 'value').text).toBe('');
     expect(root.querySelector(selector('reveal'))).not.toBeNull();

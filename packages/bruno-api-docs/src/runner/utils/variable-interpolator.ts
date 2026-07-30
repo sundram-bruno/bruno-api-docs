@@ -126,7 +126,6 @@ export const interpolateVars = (
     runtimeVariables?: Record<string, any>;
     processEnvVars?: Record<string, any>;
     promptVariables?: Record<string, any>;
-    externalSecrets?: Record<string, string>;
   } = {}
 ): HttpRequest => {
   // Clone the request to avoid mutation
@@ -142,8 +141,7 @@ export const interpolateVars = (
     environmentVariables = {},
     runtimeVariables = {},
     processEnvVars = {},
-    promptVariables = {},
-    externalSecrets = {}
+    promptVariables = {}
   } = variableSources;
 
   const combinedVariables = {
@@ -159,10 +157,6 @@ export const interpolateVars = (
       env: {
         ...processEnvVars
       }
-    },
-    // `{{$secrets.name}}` resolves through the same dot-path lookup as process.env.
-    $secrets: {
-      ...externalSecrets
     }
   };
 

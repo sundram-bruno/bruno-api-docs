@@ -35,7 +35,8 @@ export const variablesFixtureCollection = {
     variables: [
       { name: 'apiVersion', value: '2024-01' },
       { name: 'profile', value: { type: 'object', data: { city: 'NYC', zip: 10001 } } },
-      { name: 'exampleOnly', value: 'example-value' }
+      { name: 'exampleOnly', value: 'example-value' },
+      { name: 'collectionSecret', value: 'collection-secret-value', secret: true }
     ]
   },
   items: [
@@ -45,7 +46,10 @@ export const variablesFixtureCollection = {
       seq: 1,
       request: {
         headers: [{ name: 'X-Folder-Scope', value: '{{folderScope}}' }],
-        variables: [{ name: 'folderScope', value: 'from-folder' }]
+        variables: [
+          { name: 'folderScope', value: 'from-folder' },
+          { name: 'folderSecret', value: 'folder-secret-value', secret: true }
+        ]
       },
       items: [
         {
@@ -53,7 +57,7 @@ export const variablesFixtureCollection = {
           type: 'http',
           seq: 1,
           method: 'GET',
-          url: '{{host}}/customers/{{userId}}?v={{apiVersion}}&k={{$secrets.vaultKey}}&s={{unsetSecret}}',
+          url: '{{host}}/customers/{{userId}}?v={{apiVersion}}&k={{vaultKey}}&s={{unsetSecret}}',
           auth: { type: 'bearer', token: '{{bearer_token}}' },
           headers: [
             { name: 'Authorization', value: 'Bearer {{bearer_token}}' },
@@ -62,7 +66,11 @@ export const variablesFixtureCollection = {
             { name: 'X-Profile', value: '{{profile}}' },
             { name: 'X-Home', value: '{{process.env.HOME}}' },
             { name: 'X-Random', value: '{{$randomInt}}' },
-            { name: 'X-Empty', value: '{{emptyValue}}' }
+            { name: 'X-Empty', value: '{{emptyValue}}' },
+            { name: 'X-Collection-Secret', value: '{{collectionSecret}}' },
+            { name: 'X-Folder-Secret', value: '{{folderSecret}}' },
+            { name: 'X-Vault-Key', value: '{{vaultKey}}' },
+            { name: 'X-Unset-Secret', value: '{{unsetSecret}}' }
           ],
           body: {
             type: 'json',

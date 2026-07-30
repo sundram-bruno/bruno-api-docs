@@ -101,8 +101,7 @@ export class RequestRunner {
         processEnvVars,
         collectionVariables,
         folderVariables,
-        requestVariables,
-        externalSecrets: this.getExternalSecrets(environment)
+        requestVariables
       };
       
       // Get scripts in object format for easier access
@@ -212,9 +211,21 @@ export class RequestRunner {
   }
 
   private getEnvironmentVariables(environment?: Environment): Record<string, any> {
-    if (!environment?.variables) return {};
-    
-    return environment.variables.reduce((vars, variable: any) => {
+    if (!environment) return {};
+
+    // External secrets are ordinary `{{name}}` references whose value a provider
+    // would supply; the browser can't reach one, so only a value typed into the
+    // playground resolves them. An explicit variable of the same name wins.
+    const externalSecrets = ((environment.externalSecrets?.variables ?? []) as {
+      name?: string;
+      disabled?: boolean;
+      value?: string;
+    }[]).reduce((vars, variable) => {
+      if (variable.name && !variable.disabled && variable.value) vars[variable.name] = variable.value;
+      return vars;
+    }, {} as Record<string, any>);
+
+    return (environment.variables ?? []).reduce((vars, variable: any) => {
       const name = variable.name;
       if (name && !variable.disabled) {
         // Coerce typed values (number/boolean/object) to native, like folder/collection/request vars.
@@ -225,25 +236,7 @@ export class RequestRunner {
           : coerceVariableValue(variable.value);
       }
       return vars;
-    }, {} as Record<string, any>);
-  }
-
-
-  /**
-   * External secrets are pointers to a provider the browser cannot reach, so only a
-   * value typed into the playground this session can resolve `{{$secrets.name}}`.
-   */
-  private getExternalSecrets(environment?: Environment): Record<string, string> {
-    const variables = (environment?.externalSecrets?.variables ?? []) as {
-      name?: string;
-      disabled?: boolean;
-      value?: string;
-    }[];
-
-    return variables.reduce((secrets, variable) => {
-      if (variable.name && !variable.disabled && variable.value) secrets[variable.name] = variable.value;
-      return secrets;
-    }, {} as Record<string, string>);
+    }, externalSecrets);
   }
 
   private async preprocessRequest(

@@ -73,12 +73,11 @@ const lookupVariable = (rawName: string, model: ScopedVariableModel): VariableLo
 
   const special = detectSpecialScope(name);
   if (special === 'dynamic') return { ...base, scope: 'dynamic', valid: true, dynamicKind: classifyDynamic(name) };
-  // `$secrets` falls through so a declared external secret can carry a session value.
-  if (special && special !== '$secrets') return { ...base, scope: special, valid: true };
-  if (!special && !isValidVariableName(name)) return { ...base, scope: 'undefined', valid: false };
+  if (special) return { ...base, scope: special, valid: true };
+  if (!isValidVariableName(name)) return { ...base, scope: 'undefined', valid: false };
 
   const entry = model.entries[name];
-  if (!entry) return { ...base, scope: special ?? 'undefined', valid: true };
+  if (!entry) return { ...base, scope: 'undefined', valid: true };
 
   const safeValue = formatEntryValue(entry, model.values);
   const secret = entry.secret || model.secretNames.has(name) || referencesSecret(safeValue, model.secretNames);
@@ -111,23 +110,26 @@ const makeResolver = (
 };
 
 /**
- * External secrets are declared as `{ name, secretName }` pointers with no value
- * of their own. They surface as `$secrets.<name>` entries so the hover card can
- * show and edit the session value typed into the in-memory collection.
+ * External secrets are `{ name, secretName }` pointers: `name` is the variable
+ * the collection references as `{{name}}`, `secretName` only says where the
+ * provider would fetch it. The browser cannot reach the provider, so they carry
+ * whatever value was typed into the playground this session.
  */
 const externalSecretVariables = (environment: Environment | undefined): SecretVariable[] =>
   ((environment?.externalSecrets?.variables ?? []) as { name?: string; disabled?: boolean; value?: string }[])
     .filter((entry) => entry.name && entry.disabled !== true)
-    .map((entry) => ({ name: `$secrets.${entry.name}`, secret: true, value: entry.value ?? '' }) as unknown as SecretVariable);
+    .map((entry) => ({ name: entry.name, secret: true, value: entry.value ?? '' }) as unknown as SecretVariable);
 
 const collectionAndEnvSources = (collection: OpenCollection | null, activeEnvName: string | null): VariableSource[] => {
   const collectionVariables = (collection?.request?.variables ?? []) as (Variable | SecretVariable)[];
   const environments = (collection?.config?.environments ?? []) as Environment[];
   const activeEnvironment = environments.find((environment) => environment.name === activeEnvName);
+  // External secrets sit below the environment's own variables: an explicitly
+  // declared variable of the same name is the more specific answer.
   return [
     { scope: 'collection', variables: collectionVariables },
-    { scope: 'environment', variables: activeEnvironment?.variables },
-    { scope: '$secrets', variables: externalSecretVariables(activeEnvironment) }
+    { scope: '$secrets', variables: externalSecretVariables(activeEnvironment) },
+    { scope: 'environment', variables: activeEnvironment?.variables }
   ];
 };
 
@@ -220,9 +222,7 @@ export const ItemVariableResolverProvider: React.FC<{
     (name: string, value: string) => {
       const { name: varName, scope } = resolver.lookup(name);
       if (scope === '$secrets') {
-        // The store keys external secrets by their bare name, not the `$secrets.` reference.
-        const secretName = varName.slice('$secrets.'.length);
-        if (activeEnvName) dispatch(setPlaygroundVariable({ scope, name: secretName, value, envName: activeEnvName }));
+        if (activeEnvName) dispatch(setPlaygroundVariable({ scope, name: varName, value, envName: activeEnvName }));
       } else if (scope === 'environment') {
         if (activeEnvName) dispatch(setPlaygroundVariable({ scope, name: varName, value, envName: activeEnvName }));
       } else if (scope === 'collection') {

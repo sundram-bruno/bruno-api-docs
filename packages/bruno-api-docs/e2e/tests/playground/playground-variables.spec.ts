@@ -123,7 +123,7 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
   });
 
   test('an external secret is editable and keeps its Secret scope', async ({ playground }) => {
-    await playground.variable.hoverInputToken('$secrets.vaultKey');
+    await playground.variable.hoverInputToken('vaultKey');
 
     await expect(playground.variable.scopeBadge).toHaveText('Secret');
     await expect(playground.variable.value).toHaveText('');
