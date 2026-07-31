@@ -1,20 +1,22 @@
 import React from 'react';
 import { StyledWrapper } from './StyledWrapper';
+import Tooltip from '../Tooltip/Tooltip';
 
 export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Accessible label — icon buttons have no visible text. */
   label: string;
+  /** Show the hover/focus tooltip carrying `label`. Defaults to `true`. */
+  showTooltip?: boolean;
 }
 
-/**
- * Icon-only button primitive (aria-label required, no text). Shared across the
- * app — used for the Topbar hamburger, search toggle, overflow ⋯, etc. Extra
- * ARIA / button props (aria-expanded, aria-haspopup, onClick…) pass through.
- */
-const IconButton: React.FC<IconButtonProps> = ({ label, children, type = 'button', ...rest }) => (
-  <StyledWrapper type={type} aria-label={label} {...rest}>
-    {children}
-  </StyledWrapper>
+const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
+  ({ label, children, type = 'button', showTooltip = true, ...rest }, ref) => (
+    <Tooltip content={label} disabled={!label || !showTooltip}>
+      <StyledWrapper ref={ref} type={type} aria-label={label} {...rest}>
+        {children}
+      </StyledWrapper>
+    </Tooltip>
+  )
 );
 
 export default IconButton;

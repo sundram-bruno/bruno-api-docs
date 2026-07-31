@@ -30,7 +30,7 @@ const HttpRequestPlaygroundView: React.FC<PlaygroundViewProps> = ({ item, collec
   const [editableItem, setEditableItem] = useState<HttpRequest>(item);
   const itemName = getItemName(editableItem) || 'Untitled Request';
   const itemUuid = (item as any).uuid;
-  const response = useAppSelector(state => selectPlaygroundResponse(state, itemUuid));
+  const response = useAppSelector((state) => selectPlaygroundResponse(state, itemUuid));
   const [isLoading, setIsLoading] = useState(false);
   // The request/response split is one draggable divider whose axis follows the
   // orientation: horizontal layout resizes width, vertical layout resizes height.
@@ -96,8 +96,8 @@ const HttpRequestPlaygroundView: React.FC<PlaygroundViewProps> = ({ item, collec
 
       dispatch(setPlaygroundResponse({ uuid: itemUuid, response: result }));
     } catch (error) {
-      dispatch(setPlaygroundResponse({ 
-        uuid: itemUuid, 
+      dispatch(setPlaygroundResponse({
+        uuid: itemUuid,
         response: {
           error: error instanceof Error ? error.message : 'Unknown error occurred'
         }
@@ -155,14 +155,14 @@ const PlaygroundView: React.FC<PlaygroundViewProps> = ({ item, ...otherProps }) 
   if (isUnsupportedRequest(item)) {
     return (
       <UnsupportedRequest
-        className='px-5'
+        className="px-5"
         item={item}
         titleVariant="label"
         showRequestDocs={false}
         emptyStateProps={{
           icon: <FileNotFoundIcon />,
           heading: 'Request type not supported',
-          subheadingSuffix: "isn't currently supported in this playground."
+          subheadingSuffix: 'isn\'t currently supported in this playground.'
         }}
       />
     );

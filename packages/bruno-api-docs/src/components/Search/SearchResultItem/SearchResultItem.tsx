@@ -74,7 +74,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   matches,
   active = false,
   onSelect,
-  testId = 'search-result',
+  testId = 'search-result'
 }) => {
   const { full: fullBreadcrumb, display: breadcrumb } = formatBreadcrumb(record.ancestorNames);
   const isElided = breadcrumb !== fullBreadcrumb;

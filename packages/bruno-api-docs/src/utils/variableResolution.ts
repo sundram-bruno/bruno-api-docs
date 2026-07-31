@@ -92,16 +92,16 @@ export const singleReferenceName = (raw: string): string | null => {
   return trimmed.slice(2, -2).trim();
 };
 
-export type VariableScope =
-  | 'collection'
-  | 'environment'
-  | 'folder'
-  | 'request'
-  | 'process.env'
-  | 'dynamic'
-  | 'oauth2'
-  | '$secrets'
-  | 'undefined';
+export type VariableScope
+  = | 'collection'
+    | 'environment'
+    | 'folder'
+    | 'request'
+    | 'process.env'
+    | 'dynamic'
+    | 'oauth2'
+    | '$secrets'
+    | 'undefined';
 
 /** Scopes a variable can actually be declared in, `$secrets` being an environment's external secrets. */
 export type ConcreteScope = 'collection' | 'environment' | 'folder' | 'request' | '$secrets';

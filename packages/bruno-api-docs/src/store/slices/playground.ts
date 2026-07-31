@@ -8,6 +8,7 @@ import type { Variable, SecretVariable } from '@opencollection/types/common/vari
 import type { RootState } from '../store';
 import { hydrateWithUUIDs, findAndUpdateItem } from '../../utils/fileUtils';
 import { isFolder, getRequestVariables } from '../../utils/schemaHelpers';
+import type { ResponseBodyFormat } from '@/constants';
 
 export type ViewMode = 'playground' | 'environments' | 'folder-settings' | 'collection-settings' | 'example';
 
@@ -21,6 +22,8 @@ export interface PlaygroundState {
   selectedItemId: string | null;
   selectedExampleIndex: number | null;
   responsePaneOrientation: 'horizontal' | 'vertical' | null;
+  selectedResponseFormat: Record<string, ResponseBodyFormat>;
+  showResponsePreview: Record<string, boolean>;
 }
 
 const initialState: PlaygroundState = {
@@ -32,7 +35,9 @@ const initialState: PlaygroundState = {
   viewMode: 'playground',
   selectedItemId: null,
   selectedExampleIndex: null,
-  responsePaneOrientation: null
+  responsePaneOrientation: null,
+  selectedResponseFormat: {},
+  showResponsePreview: {}
 };
 
 const readEnvironments = (collection: OpenCollectionCollection): Environment[] | null =>
@@ -50,17 +55,17 @@ const findAndUpdateItemInCollection = (
   updatedItem: HttpRequest
 ): boolean => {
   if (!items) return false;
-  
+
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const itemUuid = (item as any).uuid;
-    
+
     if (itemUuid === uuid) {
       // Preserve UUID when updating
       items[i] = { ...updatedItem, uuid: itemUuid } as any;
       return true;
     }
-    
+
     if (isFolder(item)) {
       const folder = item as Folder;
       if (folder.items && findAndUpdateItemInCollection(folder.items, uuid, updatedItem)) {
@@ -68,13 +73,13 @@ const findAndUpdateItemInCollection = (
       }
     }
   }
-  
+
   return false;
 };
 
 const initializeCollapsedState = (items: OpenCollectionItem[] | undefined): void => {
   if (!items) return;
-  
+
   for (const item of items) {
     if (isFolder(item)) {
       // Initialize isCollapsed to true (collapsed) if not already set
@@ -95,13 +100,13 @@ const preserveCollapsedState = (
 ): void => {
   for (const newItem of newItems) {
     const newUuid = (newItem as any).uuid;
-    
+
     const oldItem = oldItems.find((old: any) => old.uuid === newUuid);
-    
+
     if (isFolder(newItem)) {
       if (oldItem && isFolder(oldItem)) {
         (newItem as any).isCollapsed = (oldItem as any).isCollapsed;
-        
+
         const newFolder = newItem as Folder;
         const oldFolder = oldItem as Folder;
         if (newFolder.items && oldFolder.items) {
@@ -133,14 +138,14 @@ const playgroundSlice = createSlice({
       state.pristineEnvironments = envs ? cloneDeep(envs) : null;
 
       const hydrated = hydrateWithUUIDs(action.payload);
-      
+
       // Preserve existing collapsed states from previous hydrated collection
       if (state.hydratedCollection?.items && hydrated.items) {
         preserveCollapsedState(hydrated.items, state.hydratedCollection.items);
       } else if (hydrated.items) {
         initializeCollapsedState(hydrated.items);
       }
-      
+
       state.hydratedCollection = hydrated;
     },
     clearPlaygroundCollection: (state: PlaygroundState) => {
@@ -209,12 +214,12 @@ const playgroundSlice = createSlice({
     },
     updateFolderInCollection: (state: PlaygroundState, action: PayloadAction<{ uuid: string; folder: Folder }>) => {
       if (!state.hydratedCollection?.items) return;
-      
+
       const { uuid, folder } = action.payload;
       findAndUpdateItem(state.hydratedCollection.items, uuid, (item) => {
         Object.assign(item, folder);
       });
-      
+
       // Also update the base collection
       if (state.collection?.items) {
         findAndUpdateItem(state.collection.items, uuid, (item) => {
@@ -266,6 +271,24 @@ const playgroundSlice = createSlice({
       };
       apply(state.hydratedCollection);
       apply(state.collection);
+    },
+    setResponseFormat: (state: PlaygroundState, action: PayloadAction<{
+      uuid: PlaygroundState['selectedItemId'];
+      format: ResponseBodyFormat;
+    }>) => {
+      if (action.payload.uuid != null)
+        state.selectedResponseFormat[action.payload.uuid] = action.payload.format;
+    },
+    setShowResponsePreview: (
+      state: PlaygroundState,
+      action: PayloadAction<{
+        uuid: PlaygroundState['selectedItemId'];
+        showResponsePreview: boolean;
+      }>
+    ) => {
+      const { uuid, showResponsePreview } = action.payload;
+      if (uuid != null)
+        state.showResponsePreview[uuid] = showResponsePreview;
     }
   }
 });
@@ -286,17 +309,25 @@ export const {
   updateCollectionEnvironments,
   updateFolderInCollection,
   resetPlaygroundEnvironments,
-  setPlaygroundVariable
+  setPlaygroundVariable,
+  setResponseFormat,
+  setShowResponsePreview
 } = playgroundSlice.actions;
 
 // Selectors
 export const selectPlaygroundCollection = (state: RootState) => state.playground.collection;
 export const selectHydratedCollection = (state: RootState) => state.playground.hydratedCollection;
-export const selectPlaygroundResponse = (state: RootState, uuid: string) => state.playground.responses[uuid];
 export const selectPlaygroundResponses = (state: RootState) => state.playground.responses;
+export const selectPlaygroundResponse = (state: RootState, uuid: string) => state.playground.responses[uuid];
 export const selectViewMode = (state: RootState) => state.playground.viewMode;
 export const selectSelectedItemId = (state: RootState) => state.playground.selectedItemId;
 export const selectSelectedExampleIndex = (state: RootState) => state.playground.selectedExampleIndex;
 export const selectResponsePaneOrientation = (state: RootState) => state.playground.responsePaneOrientation;
+export const selectResponseFormat
+  = (uuid: PlaygroundState['selectedItemId']) =>
+    (state: RootState) => uuid ? state.playground.selectedResponseFormat[uuid] : null;
+export const selectShowResponsePreview
+  = (uuid: PlaygroundState['selectedItemId']) =>
+    (state: RootState) => uuid ? state.playground.showResponsePreview[uuid] : null;
 
 export default playgroundSlice.reducer;

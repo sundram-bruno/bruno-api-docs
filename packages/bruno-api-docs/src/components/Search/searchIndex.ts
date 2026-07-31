@@ -64,7 +64,7 @@ export const buildSearchRecords = (entries: NavEntry[]): SearchRecord[] => {
       slug: entry.slug,
       name: entry.name,
       ancestorNames: entry.ancestors.map((a) => a.name),
-      ancestorSlugs: entry.ancestors.map((a) => a.slug),
+      ancestorSlugs: entry.ancestors.map((a) => a.slug)
     };
 
     if (entry.type === 'folder') {

@@ -1,49 +1,72 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { ResponseBodyFormat } from '../../../../../../../../constants';
 import { useInitialResponseFormat } from './useInitialResponseFormat';
 import type { RunRequestResponse } from '../../../../../../../../runner';
 import { getResponseFormatOptions } from '../../../../../../../../utils/response';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  selectResponseFormat,
+  selectShowResponsePreview,
+  selectSelectedItemId,
+  setResponseFormat,
+  setShowResponsePreview
+} from '@/store/slices/playground';
 
 export function useResponseFormatter(
   response: RunRequestResponse
 ) {
+  const selectedItemId = useAppSelector(selectSelectedItemId);
+  const selectedResponseFormat = useAppSelector(selectResponseFormat(selectedItemId));
+  const showResponsePreview = useAppSelector(selectShowResponsePreview(selectedItemId));
+  const dispatch = useAppDispatch();
   const { format, view, detectedContentType, headerContentType, contentType } = useInitialResponseFormat(response);
+
   const allowedFormats = useMemo(
     () => getResponseFormatOptions(detectedContentType, headerContentType),
     [detectedContentType, headerContentType]
   );
-  const [userSelectedFormat, setUserSelectedFormat] = useState<ResponseBodyFormat>();
-  const [showPreview, setShowPreview] = useState(view === 'preview');
-
-  const previousViewRef = useRef(view);
-  useEffect(() => {
-    if (previousViewRef.current !== view) {
-      previousViewRef.current = view;
-      setShowPreview(view === 'preview');
-    }
-  }, [view]);
 
   const handleFormatChange = useCallback((format: ResponseBodyFormat) => {
-    setUserSelectedFormat(format);
-  }, []);
+    dispatch(setResponseFormat({
+      uuid: selectedItemId,
+      format
+    }));
+  }, [dispatch, selectedItemId]);
 
-  const handleViewChange = useCallback((showPreview: boolean) => {
-    setShowPreview(showPreview);
-  }, []);
+  const toggleView = useCallback(() => {
+    const currentlyPreview = showResponsePreview != null ? showResponsePreview : view === 'preview';
+    dispatch(setShowResponsePreview({
+      uuid: selectedItemId,
+      showResponsePreview: !currentlyPreview
+    }));
+  }, [dispatch, selectedItemId, view, showResponsePreview]);
 
   return useMemo(() => {
     // A user's chosen format wins, but a stale choice that no longer applies to the current
     // body (e.g. 'json' held while the content-type turned binary) is ignored in favour of
     // the detected default.
     const selectedFormat
-      = userSelectedFormat && allowedFormats.includes(userSelectedFormat) ? userSelectedFormat : format;
+      = selectedResponseFormat && allowedFormats.includes(selectedResponseFormat) ? selectedResponseFormat : format;
     return {
       selectedFormat,
-      showPreview,
+      showPreview: (
+        showResponsePreview != null
+          ? showResponsePreview
+          : view === 'preview'
+      ),
       handleFormatChange,
-      handleViewChange,
+      toggleView,
       contentType,
       allowedFormats
     };
-  }, [handleFormatChange, handleViewChange, format, userSelectedFormat, allowedFormats, showPreview, contentType]);
+  }, [
+    handleFormatChange,
+    toggleView,
+    format,
+    selectedResponseFormat,
+    allowedFormats,
+    showResponsePreview,
+    contentType,
+    view
+  ]);
 }

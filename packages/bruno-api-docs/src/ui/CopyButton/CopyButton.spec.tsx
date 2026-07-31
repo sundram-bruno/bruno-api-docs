@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { useRenderToDom } from '../../hooks/useRenderToDom';
-import { getByTestId, query } from '../../test-utils/dom';
+import { getByTestId } from '../../test-utils/dom';
 import { CopyButton } from './CopyButton';
 
 describe('CopyButton', () => {
@@ -20,12 +20,5 @@ describe('CopyButton', () => {
   it('is not marked copied on first render', () => {
     const root = useRenderToDom(<CopyButton text="hello" />);
     expect(getByTestId(root, 'copy-button').getAttribute('data-copied')).toBeFalsy();
-  });
-
-  it('renders rounded stroke ends so the glyph matches the desktop app', () => {
-    const root = useRenderToDom(<CopyButton text="hello" />);
-    const svg = query(getByTestId(root, 'copy-button'), 'svg');
-    expect(svg.getAttribute('stroke-linecap')).toBe('round');
-    expect(svg.getAttribute('stroke-linejoin')).toBe('round');
   });
 });

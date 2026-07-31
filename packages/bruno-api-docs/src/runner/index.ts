@@ -96,11 +96,11 @@ export class RequestRunner {
   async runRequest(options: RunRequestOptions): Promise<RunRequestResponse> {
     const { item, collection, environment, runtimeVariables = {}, timeout = 30000 } = options;
     const requestId = this.generateRequestId();
-    
+
     try {
       const environmentVariables = this.getEnvironmentVariables(environment);
       const processEnvVars = typeof process !== 'undefined' && process.env ? process.env : {};
-      
+
       const processedRequest = await this.preprocessRequest(item, collection);
 
       const { collectionVariables, folderVariables, requestVariables } = getCollectionFolderRequestVariables(collection, processedRequest);
@@ -113,21 +113,20 @@ export class RequestRunner {
         folderVariables,
         requestVariables
       };
-      
+
       // Get scripts in object format for easier access
       const scriptsObj = scriptsArrayToObject(getRequestScripts(processedRequest));
       const assertions = getRequestAssertions(processedRequest);
-      
+
       // Pre-request script
       if (scriptsObj.preRequest) {
-        
         try {
           await this.scriptRuntime.runScript({
             script: scriptsObj.preRequest,
             request: processedRequest,
             variables: allVariables,
             collectionName: collection.info?.name || '',
-            collectionPath: ""
+            collectionPath: ''
           });
         } catch (scriptError) {
           return {
@@ -136,11 +135,11 @@ export class RequestRunner {
           };
         }
       }
-      
+
       const interpolatedRequest = interpolateVars(processedRequest, allVariables);
 
       const response = await this.executor.executeRequest(interpolatedRequest, { timeout });
-      
+
       // Post-response script
       if (scriptsObj.postResponse) {
         try {
@@ -150,7 +149,7 @@ export class RequestRunner {
             response,
             variables: allVariables,
             collectionName: collection.info?.name || '',
-            collectionPath: ""
+            collectionPath: ''
           });
         } catch (scriptError) {
           // Don't fail the request for post-response script errors, just log them
@@ -160,7 +159,7 @@ export class RequestRunner {
       let assertionResults: AssertionResult[] | undefined;
       let assertionResultsResponse: AssertionResultsResponse | undefined;
       let testResultsResponse: TestResultsResponse | undefined;
-      
+
       // Run assertions
       if (assertions && assertions.length > 0) {
         try {
@@ -175,7 +174,7 @@ export class RequestRunner {
           console.warn('Assertion error:', assertError);
         }
       }
-      
+
       // Tests
       if (scriptsObj.tests) {
         try {
@@ -185,10 +184,10 @@ export class RequestRunner {
             response,
             variables: allVariables,
             collectionName: collection.info?.name || '',
-            collectionPath: "",
+            collectionPath: '',
             assertionResults
           });
-          
+
           // Capture test results and assertion results from bru object
           if (bru && typeof bru.getTestResults === 'function') {
             testResultsResponse = await bru.getTestResults();
@@ -201,7 +200,7 @@ export class RequestRunner {
           console.warn('Test script error:', scriptError);
         }
       }
-      
+
       return {
         ...response,
         requestId,
@@ -244,20 +243,20 @@ export class RequestRunner {
   }
 
   private async preprocessRequest(
-    item: HttpRequest, 
+    item: HttpRequest,
     collection: OpenCollectionCollection
   ): Promise<HttpRequest> {
     // Create a deep copy of the request to avoid mutating the original
     const processed = JSON.parse(JSON.stringify(item)) as HttpRequest;
-    
+
     // Get the tree path from collection to this item
     const requestTreePath = getTreePathFromCollectionToItem(collection, item);
-    
+
     // Apply collection and folder defaults in the correct order
     mergeHeaders(collection, processed, requestTreePath);
     mergeAuth(collection, processed, requestTreePath);
     mergeScripts(collection, processed, requestTreePath, 'sandwich'); // Default to sandwich flow
-    
+
     return processed;
   }
 
@@ -276,4 +275,4 @@ export const createRequestRunner = () => new RequestRunner();
 export const requestRunner = new RequestRunner();
 
 export const getGlobalVariables = () => requestRunner.getGlobalVariables();
-export const clearGlobalVariables = () => requestRunner.clearGlobalVariables(); 
+export const clearGlobalVariables = () => requestRunner.clearGlobalVariables();

@@ -16,8 +16,8 @@ import { qaFixtureCollection } from './e2eFixtures/qaCollection';
 // `?fixture=folders` mounts a nested-folder collection for routing e2e tests;
 // `?fixture=qa` mounts the deep, deliberately awkward collection for manual QA.
 const fixture = new URLSearchParams(window.location.search).get('fixture');
-const devCollection =
-  fixture === 'folders'
+const devCollection
+  = fixture === 'folders'
     ? foldersFixtureCollection
     : fixture === 'vars'
       ? variablesFixtureCollection

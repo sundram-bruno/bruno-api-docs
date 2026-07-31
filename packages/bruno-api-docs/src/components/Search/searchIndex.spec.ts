@@ -25,9 +25,9 @@ const requestEntry = (over: Partial<NavEntry> & { uuid: string }): NavEntry => {
     item: {
       uuid,
       info: { name: 'Get All Hotels', type: 'http', description: 'List hotels' },
-      http: { method: 'GET', url: '{{baseUrl}}/api/v1/hotels', params: [{ name: 'page', value: '1' }] },
+      http: { method: 'GET', url: '{{baseUrl}}/api/v1/hotels', params: [{ name: 'page', value: '1' }] }
     } as never,
-    ...rest,
+    ...rest
   };
 };
 
@@ -79,8 +79,8 @@ describe('buildSearchRecords', () => {
       uuid: 'u1',
       ancestors: [
         { name: 'Billing', slug: 'billing' },
-        { name: 'Lookups', slug: 'billing/lookups' },
-      ],
+        { name: 'Lookups', slug: 'billing/lookups' }
+      ]
     });
     expect(requestRecords([entry])[0].ancestorNames).toEqual(['Billing', 'Lookups']);
     expect(requestRecords([entry])[0].ancestorSlugs).toEqual(['billing', 'billing/lookups']);
@@ -150,7 +150,7 @@ describe('buildSearchRecords', () => {
 
   it('excludes built-in pages from records', () => {
     const overview: NavEntry = {
-      slug: '', type: 'overview', name: 'Overview', item: null, ancestors: [], depth: -1,
+      slug: '', type: 'overview', name: 'Overview', item: null, ancestors: [], depth: -1
     };
     const environments: NavEntry = {
       slug: '~environments', type: 'environments', name: 'Environments', item: null, ancestors: [], depth: -1
@@ -201,7 +201,7 @@ describe('collectTopLevelFolders', () => {
     const top: NavEntry = { slug: 'hotels', type: 'folder', name: 'Hotels', item: {} as never, ancestors: [], depth: 0 };
     const nested: NavEntry = { slug: 'hotels/x', type: 'folder', name: 'X', item: {} as never, ancestors: [], depth: 1 };
     expect(collectTopLevelFolders([top, nested, requestEntry({ uuid: 'u1' })])).toEqual([
-      { slug: 'hotels', name: 'Hotels' },
+      { slug: 'hotels', name: 'Hotels' }
     ]);
   });
 });
@@ -215,7 +215,7 @@ describe('collectMethods', () => {
       requestEntry({ uuid: 'c', method: 'GET' }),
       requestEntry({ uuid: 'd', method: 'PURGE' }),
       requestEntry({ uuid: 'e', method: 'HEAD' }),
-      folder,
+      folder
     ];
     expect(collectMethods(entries)).toEqual(['GET', 'PATCH', 'HEAD', 'PURGE']);
   });

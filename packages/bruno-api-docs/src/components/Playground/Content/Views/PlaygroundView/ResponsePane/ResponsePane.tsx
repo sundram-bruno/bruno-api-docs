@@ -29,7 +29,7 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading, orient
     selectedFormat,
     showPreview,
     handleFormatChange,
-    handleViewChange,
+    toggleView,
     contentType,
     allowedFormats
   } = useResponseFormatter(response);
@@ -79,9 +79,9 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading, orient
     );
   const renderHeaders = () => <ResponseHeadersTab headers={response.headers} />;
   const renderTestResults = () => (
-    <TestResultsTab 
-      testResults={response.testResults} 
-      assertionResults={response.assertionResults} 
+    <TestResultsTab
+      testResults={response.testResults}
+      assertionResults={response.assertionResults}
     />
   );
 
@@ -91,22 +91,22 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading, orient
   const testsCount = hasTestResults || hasAssertionResults ? '•' : undefined;
 
   const tabs = [
-    { 
-      id: 'response', 
-      label: 'Response', 
-      content: renderResponseBody() 
+    {
+      id: 'response',
+      label: 'Response',
+      content: renderResponseBody()
     },
-    { 
-      id: 'headers', 
-      label: 'Headers', 
+    {
+      id: 'headers',
+      label: 'Headers',
       contentIndicator: headersCount || undefined,
-      content: renderHeaders() 
+      content: renderHeaders()
     },
-    { 
-      id: 'tests', 
-      label: 'Tests', 
+    {
+      id: 'tests',
+      label: 'Tests',
       contentIndicator: testsCount,
-      content: renderTestResults() 
+      content: renderTestResults()
     }
   ];
 
@@ -122,7 +122,7 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading, orient
             allowedFormats={allowedFormats}
             handleSelection={(value: ResponseBodyFormat) => handleFormatChange(value)}
             showPreview={showPreview}
-            onPreviewToggle={handleViewChange}
+            toggleView={toggleView}
           />
         )}
         <ResponseStatus status={response.status} statusText={response.statusText} />
@@ -144,7 +144,7 @@ const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading, orient
       <Tabs
         variant="responsive"
         testId="response-tabs"
-        className='h-full'
+        className="h-full"
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={setActiveTab}

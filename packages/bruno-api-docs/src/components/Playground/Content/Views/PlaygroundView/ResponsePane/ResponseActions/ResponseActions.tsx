@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   IconCopy,
   IconDownload,
@@ -11,16 +11,17 @@ import CopyResponse from './CopyResponse/CopyResponse';
 import ClearResponse from './ClearResponse/ClearResponse';
 import DownloadResponse from './DownloadResponse/DownloadResponse';
 import ChangeLayout from './ChangeLayout/ChangeLayout';
-import { useCopyResponse } from './CopyResponse/hooks/useCopyResponse';
 import { StyledWrapper } from './StyledWrapper';
 import MenuDropdown from '@/ui/MenuDropdown';
 import type { MenuDropdownItem } from '@/ui/MenuDropdown';
-import ActionIcon from '@/ui/ActionIcon/ActionIcon';
+import IconButton from '@/ui/IconButton/IconButton';
 import type { RunRequestResponse } from '@/runner';
 import type { ResponseBodyFormat } from '@/constants';
 import { useAppDispatch } from '@/store/hooks';
 import { clearPlaygroundResponse, setResponsePaneOrientation } from '@/store/slices/playground';
 import { downloadResponse } from '@/utils/downloadResponse';
+import useCopy from '@/hooks/useCopy';
+import { formatResponse } from '@/utils/dataFormatter';
 
 interface ResponseActionsProps {
   orientation: 'vertical' | 'horizontal';
@@ -37,7 +38,29 @@ const ResponseActions: React.FC<ResponseActionsProps> = ({
   selectedFormat,
   showPreview
 }) => {
-  const { copied, copyResponse, disabled: copyDisabled } = useCopyResponse(response, selectedFormat, showPreview);
+  const getCopyText = useCallback((
+  ): string => {
+    const data = response?.data;
+    const dataBuffer = response?.base64Data;
+    // Preview shows the raw data, so copy that as-is.
+    if (showPreview) {
+      return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+    if (selectedFormat && data && dataBuffer) {
+      return formatResponse(data, dataBuffer, selectedFormat);
+    }
+    return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  }, [
+    response?.data,
+    response?.base64Data,
+    selectedFormat,
+    showPreview
+  ]);
+  const copyDisabled = !response.data;
+  const { copied, copyResponse } = useCopy({
+    getText: getCopyText,
+    disabled: copyDisabled
+  });
   const dispatch = useAppDispatch();
 
   const downloadDisabled = !response?.base64Data;
@@ -62,9 +85,9 @@ const ResponseActions: React.FC<ResponseActionsProps> = ({
     <StyledWrapper className="response-pane-actions-wrapper" data-testid="response-pane-actions-wrapper">
       <div className="actions-dropdown" data-testid="actions-dropdown">
         <MenuDropdown items={menuItems} placement="bottom-end" testId="response-actions-menu">
-          <ActionIcon label="More actions" className="p-1">
-            <IconDots size={16} stroke={2} />
-          </ActionIcon>
+          <IconButton label="More actions" showTooltip={false} className="p-1">
+            <IconDots size={13} stroke={1.5} style={{ color: 'var(--text-muted)' }} />
+          </IconButton>
         </MenuDropdown>
       </div>
       <div className="actions-buttons" data-testid="actions-buttons">

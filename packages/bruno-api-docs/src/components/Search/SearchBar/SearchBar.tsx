@@ -9,7 +9,7 @@ import {
   searchHits,
   orderFoldersFirst,
   type SearchHit,
-  type SearchRecord,
+  type SearchRecord
 } from '../searchIndex';
 import { SearchIcon, CloseIcon } from '../../../assets/icons';
 import MethodChips from '../MethodChips/MethodChips';
@@ -122,7 +122,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
       });
       refocusInput();
     },
-    [refocusInput],
+    [refocusInput]
   );
 
   const setFolderFilter = useCallback(
@@ -130,7 +130,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
       setFolder(slug);
       refocusInput();
     },
-    [refocusInput],
+    [refocusInput]
   );
 
   const clearFilters = useCallback(() => {
@@ -153,7 +153,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
       resetAndClose();
       inputRef.current?.blur(); // navigating away, so drop focus from the palette
     },
-    [docsNavigate, resetAndClose],
+    [docsNavigate, resetAndClose]
   );
 
   // Move the highlight and keep it in view. All option rows are already

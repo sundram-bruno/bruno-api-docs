@@ -1,33 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface UseCopyArg {
+interface useCopyArg {
   text?: string;
   getText?: () => string;
   disabled?: boolean;
   resetAfterMs?: number;
 }
 
-export const useCopy = ({ text, getText, disabled, resetAfterMs = 2000 }: UseCopyArg) => {
+function useCopy({
+  text, getText, disabled, resetAfterMs = 2000
+}: useCopyArg) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  useEffect(
-    () => () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    },
-    []
-  );
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current)
+        clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     setCopied((was) => (was ? false : was));
   }, [text, getText]);
 
   const copyResponse = useCallback(async () => {
-    if (disabled || !navigator.clipboard) return;
-    const value = getText ? getText() : text;
-    if (!value) return;
+    if (disabled || !navigator.clipboard || !(text || getText)) return;
     try {
-      await navigator.clipboard.writeText(value);
+      await navigator.clipboard.writeText(text ? text : getText ? getText() : '');
       setCopied(true);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => setCopied(false), resetAfterMs);
