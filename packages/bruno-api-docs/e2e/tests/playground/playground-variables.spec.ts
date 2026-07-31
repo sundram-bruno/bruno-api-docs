@@ -168,6 +168,20 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.value).toHaveText('bcde');
   });
 
+  // The app confirms every copy, so a variable with nothing in it still ticks.
+  test('confirms a copy even when the secret has no value yet', async ({ playground, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    await playground.variable.hoverInputToken('unsetSecret');
+    await expect(playground.variable.value).toHaveText('');
+    await expect(playground.variable.copyButton).toBeVisible();
+    await expect(playground.variable.copiedTick).toHaveCount(0);
+
+    await playground.variable.copyButton.click();
+
+    await expect(playground.variable.copiedTick).toBeVisible();
+  });
+
   // The field holds asterisks, so a plain selection copy would put those on the
   // clipboard instead of the secret.
   test('copying a selection out of a masked secret yields the real value', async ({ page, playground, context }) => {

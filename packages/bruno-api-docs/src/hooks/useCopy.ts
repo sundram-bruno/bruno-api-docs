@@ -25,7 +25,7 @@ function useCopy({
   }, [text, getText]);
 
   const copyResponse = useCallback(async () => {
-    if (disabled || !navigator.clipboard || !(text || getText)) return;
+    if (disabled || !navigator.clipboard) return;
     try {
       await navigator.clipboard.writeText(text ? text : getText ? getText() : '');
       setCopied(true);
