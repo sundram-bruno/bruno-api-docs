@@ -107,11 +107,20 @@ export type VariableScope =
 export type ConcreteScope = 'collection' | 'environment' | 'folder' | 'request' | '$secrets';
 
 /**
- * One external secret declared on an environment. `name` is what the collection
- * references as `{{name}}`, and a pointer field (`secretName`, `path`, and so
- * on) names the key to fetch from the provider. `value` appears only when
- * someone types one into the playground. Collections spell the on/off toggle
- * either `enabled` or `disabled`, so both are optional here.
+ * One entry from an environment's "external secrets" list: a secret whose real
+ * value lives in a secrets manager such as AWS Secrets Manager or Vault, rather
+ * than in the collection itself.
+ *
+ * - `name` is how the collection refers to it, written as `{{name}}`.
+ * - `value` is filled in only when someone types one in the playground. A browser
+ *   cannot reach the secrets manager, so there is no other way to get a value.
+ * - The on/off switch is written as `enabled` by some collections and `disabled`
+ *   by others, so either may be present. Read it with `isExternalSecretActive`
+ *   rather than checking a field directly.
+ *
+ * The key used to look the secret up in the manager is stored under a field whose
+ * name varies by provider (`secretName`, `path`, and others), so it is not listed
+ * here. Nothing in the playground reads it.
  */
 export interface ExternalSecretEntry {
   name?: string;
