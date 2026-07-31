@@ -43,6 +43,11 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   const [revealed, setRevealed] = useState(false);
   const [draft, setDraft] = useState('');
   const editRef = useRef<HTMLTextAreaElement>(null);
+  // Selection before the pending edit, and the caret to restore after it. The
+  // textarea shows the mask, so React re-renders it with substituted content and
+  // the browser's own caret position is lost.
+  const selectionRef = useRef({ start: 0, end: 0 });
+  const caretRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
     const el = editRef.current;
@@ -58,6 +63,14 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     el.setSelectionRange(end, end);
   }, [editing]);
 
+  useLayoutEffect(() => {
+    const el = editRef.current;
+    const caret = caretRef.current;
+    if (!el || caret === null) return;
+    caretRef.current = null;
+    el.setSelectionRange(caret, caret);
+  }, [draft]);
+
   const canEdit
     = editable
       && canWrite
@@ -70,6 +83,10 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   const secretFillable = editable && info.secret;
   const masked = secretFillable && !revealed;
   const displayValue = masked ? maskValue(info.value) : info.value;
+  // A variable that is secret only because it references one has a raw value
+  // like `Bearer {{token}}`, which holds no secret material, so editing it plainly.
+  const maskWhileEditing = masked && info.rawValue === info.value;
+  const editValue = maskWhileEditing ? maskValue(draft) : draft;
 
   const startEditing = () => {
     setDraft(info.rawValue);
@@ -81,7 +98,33 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     if (draft !== info.rawValue) updateVariable(info.name, draft);
   };
 
+  const rememberSelection = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    const el = event.currentTarget;
+    selectionRef.current = { start: el.selectionStart ?? 0, end: el.selectionEnd ?? 0 };
+  };
+
+  /**
+   * The field shows one mask character per real character, so display and real
+   * indices line up. That lets the edit be replayed onto the real string: take
+   * what the browser inserted at the old selection and splice it in at the same
+   * offsets.
+   */
+  const handleEditChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const next = event.target.value;
+    if (!maskWhileEditing) {
+      setDraft(next);
+      return;
+    }
+
+    const { start, end } = selectionRef.current;
+    const insertedLength = next.length - draft.length + (end - start);
+    const inserted = insertedLength > 0 ? next.slice(start, start + insertedLength) : '';
+    caretRef.current = start + inserted.length;
+    setDraft(draft.slice(0, start) + inserted + draft.slice(end));
+  };
+
   const handleEditKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    rememberSelection(event);
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       commit();
@@ -176,24 +219,22 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   );
 
   const editFieldNode = (
-    <div className={`var-value-editor${masked ? ' var-value-editor--masked' : ''}`}>
-      <div className="var-value-mirror" aria-hidden="true">
-        {maskValue(draft)}
-      </div>
-      <textarea
-        ref={editRef}
-        className="var-value-edit"
-        data-testid={`${testId}-edit`}
-        aria-label={`Edit ${info.name}`}
-        value={draft}
-        autoFocus
-        rows={1}
-        spellCheck={false}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={handleEditKeyDown}
-        onBlur={commit}
-      />
-    </div>
+    <textarea
+      ref={editRef}
+      className="var-value-edit"
+      data-testid={`${testId}-edit`}
+      aria-label={`Edit ${info.name}`}
+      value={editValue}
+      autoFocus
+      rows={1}
+      spellCheck={false}
+      autoComplete="off"
+      onChange={handleEditChange}
+      onKeyDown={handleEditKeyDown}
+      onSelect={rememberSelection}
+      onMouseDown={rememberSelection}
+      onBlur={commit}
+    />
   );
 
   const editableDisplayNode = (

@@ -19,6 +19,7 @@ export const StyledWrapper = styled.button`
   }
 
   &[data-copied] {
+    color: var(--oc-status-success-text);
     cursor: default;
   }
 

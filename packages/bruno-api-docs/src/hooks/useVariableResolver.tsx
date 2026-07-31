@@ -16,8 +16,10 @@ import {
   singleReferenceName,
   detectSpecialScope,
   isValidVariableName,
+  isExternalSecretActive,
   formatEntryValue,
   referencesSecret,
+  type ExternalSecretEntry,
   type ScopedVariableModel,
   type VariableScope,
   type VariableSource
@@ -116,8 +118,8 @@ const makeResolver = (
  * can carry is one typed into the playground this session.
  */
 const externalSecretVariables = (environment: Environment | undefined): SecretVariable[] =>
-  ((environment?.externalSecrets?.variables ?? []) as { name?: string; disabled?: boolean; value?: string }[])
-    .filter((entry) => entry.name && entry.disabled !== true)
+  ((environment?.externalSecrets?.variables ?? []) as ExternalSecretEntry[])
+    .filter((entry) => entry.name && isExternalSecretActive(entry))
     .map((entry) => ({ name: entry.name, secret: true, value: entry.value ?? '' }) as unknown as SecretVariable);
 
 /** `withExternalSecrets` tracks the writable (playground) mount; docs leave them unresolved. */
@@ -227,9 +229,7 @@ export const ItemVariableResolverProvider: React.FC<{
   const updateVariable = useCallback(
     (name: string, value: string) => {
       const { name: varName, scope } = resolver.lookup(name);
-      if (scope === '$secrets') {
-        if (activeEnvName) dispatch(setPlaygroundVariable({ scope, name: varName, value, envName: activeEnvName }));
-      } else if (scope === 'environment') {
+      if (scope === 'environment' || scope === '$secrets') {
         if (activeEnvName) dispatch(setPlaygroundVariable({ scope, name: varName, value, envName: activeEnvName }));
       } else if (scope === 'collection') {
         dispatch(setPlaygroundVariable({ scope, name: varName, value }));

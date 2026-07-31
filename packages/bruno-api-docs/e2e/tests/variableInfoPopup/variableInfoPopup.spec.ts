@@ -157,8 +157,6 @@ test.describe('Variable hover card', () => {
 
     await expect(variableCard.copyButton).toHaveAttribute('data-copied', 'true');
     await expect(tick).toHaveCount(1);
-    // The tick is stroke="currentColor", so the button's colour is the tick's colour.
-    await expect(variableCard.copyButton).toHaveAttribute('style', /--oc-status-success-text/);
 
     await expect(variableCard.copyButton).not.toHaveAttribute('data-copied', 'true', { timeout: 3000 });
     await expect(tick).toHaveCount(0);

@@ -106,6 +106,35 @@ export type VariableScope =
 /** Scopes a variable can actually be declared in, `$secrets` being an environment's external secrets. */
 export type ConcreteScope = 'collection' | 'environment' | 'folder' | 'request' | '$secrets';
 
+/**
+ * An environment's external secret entry. `name` is what the collection
+ * references as `{{name}}`; the pointer field (`secretName`, `path`, …) names
+ * the provider key. `value` only exists for a value typed in this session.
+ * Older collections spell the toggle `enabled`, newer ones `disabled`.
+ */
+export interface ExternalSecretEntry {
+  name?: string;
+  value?: string;
+  disabled?: boolean;
+  enabled?: boolean;
+}
+
+/** Both spellings of the toggle appear in the wild, so honour whichever is present. */
+export const isExternalSecretActive = (entry: ExternalSecretEntry): boolean =>
+  entry.disabled !== true && entry.enabled !== false;
+
+/**
+ * The session values an environment's external secrets carry, keyed by the name
+ * the collection references. An entry cleared to '' is a deliberate empty value
+ * and is kept; one that was never filled in has no value and is skipped, leaving
+ * `{{name}}` unresolved.
+ */
+export const externalSecretValues = (entries: ExternalSecretEntry[] | undefined): Record<string, string> =>
+  (entries ?? []).reduce((values, entry) => {
+    if (entry.name && isExternalSecretActive(entry) && entry.value !== undefined) values[entry.name] = entry.value;
+    return values;
+  }, {} as Record<string, string>);
+
 export interface VariableSource {
   scope: ConcreteScope;
   variables: (Variable | SecretVariable)[] | undefined;

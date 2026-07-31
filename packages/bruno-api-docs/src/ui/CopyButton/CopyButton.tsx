@@ -48,8 +48,11 @@ export const CopyButton: React.FC<CopyButtonProps> = ({
     []
   );
 
+  // A new value clears the tick, so it never claims success for text that was
+  // not the text copied.
+  useEffect(() => setCopied(false), [text]);
+
   const handleCopy = useCallback(async () => {
-    if (copied) return;
     if (!navigator.clipboard) return;
     const value = getText ? getText() : text;
     if (!value) return;
@@ -61,7 +64,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({
     } catch {
       // Clipboard unavailable (e.g. insecure context) — fail silently.
     }
-  }, [copied, text, getText, resetAfterMs]);
+  }, [text, getText, resetAfterMs]);
 
   return (
     <StyledWrapper
@@ -71,7 +74,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({
       aria-label={copied ? copiedLabel : label}
       data-copied={copied ? 'true' : undefined}
       data-testid={testId}
-      style={copied ? { color: 'var(--oc-status-success-text)', ...style } : style}
+      style={style}
     >
       {copied ? <CheckGlyph /> : <CopyGlyph />}
     </StyledWrapper>

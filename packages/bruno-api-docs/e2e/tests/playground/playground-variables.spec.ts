@@ -133,6 +133,35 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.value).toHaveText('*'.repeat('vault-value'.length));
   });
 
+  // The field's own content is the mask, so the real value is never in the DOM
+  // and the caret cannot drift away from the end of the asterisks.
+  test('the edit field holds only mask characters while the secret is hidden', async ({ playground }) => {
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.startEditing('typed-secret');
+
+    const state = await playground.variable.editField.evaluate((el: HTMLTextAreaElement) => ({
+      value: el.value,
+      caret: el.selectionStart
+    }));
+
+    expect(state.value).toBe('*'.repeat('typed-secret'.length));
+    expect(state.caret).toBe(state.value.length);
+  });
+
+  test('typing into the middle of a masked secret edits the real value', async ({ playground }) => {
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.startEditing('abcdef');
+
+    await playground.variable.editField.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(3, 3));
+    await playground.variable.editField.pressSequentially('XY');
+    await playground.variable.editField.press('Enter');
+
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.revealToggle.click();
+
+    await expect(playground.variable.value).toHaveText('abcXYdef');
+  });
+
   test('a typed secret stays masked in the card until revealed', async ({ playground }) => {
     await playground.variable.hoverInputToken('unsetSecret');
     await playground.variable.editTo('typed-secret');

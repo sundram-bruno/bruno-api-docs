@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+  isExternalSecretActive,
+  externalSecretValues,
   resolveVariables,
   singleReferenceName,
   unwrapVariableTyped,
@@ -130,5 +132,42 @@ describe('formatEntryValue', () => {
   it('pretty-prints an object-typed value', () => {
     const entry = { value: '{"b":2,"a":1}', scope: 'collection', secret: false, dataType: 'object' } as any;
     expect(formatEntryValue(entry, {})).toBe(JSON.stringify(JSON.parse(entry.value), null, 2));
+  });
+});
+
+describe('isExternalSecretActive', () => {
+  it('treats an entry with neither toggle as active', () => {
+    expect(isExternalSecretActive({ name: 'apiKey' })).toBe(true);
+  });
+
+  it('honours the disabled spelling written by the environments editor', () => {
+    expect(isExternalSecretActive({ name: 'apiKey', disabled: true })).toBe(false);
+    expect(isExternalSecretActive({ name: 'apiKey', disabled: false })).toBe(true);
+  });
+
+  // The repo's own sample collection authors these with `enabled`, so an entry
+  // switched off that way must not reach the request.
+  it('honours the enabled spelling written by the sample collection', () => {
+    expect(isExternalSecretActive({ name: 'apiKey', enabled: false })).toBe(false);
+    expect(isExternalSecretActive({ name: 'apiKey', enabled: true })).toBe(true);
+  });
+});
+
+describe('externalSecretValues', () => {
+  it('keeps a secret deliberately cleared to an empty string', () => {
+    expect(externalSecretValues([{ name: 'apiKey', value: '' }])).toEqual({ apiKey: '' });
+  });
+
+  it('skips a secret that was never filled in, leaving the reference unresolved', () => {
+    expect(externalSecretValues([{ name: 'apiKey' }])).toEqual({});
+  });
+
+  it('skips a switched-off secret under either spelling', () => {
+    expect(externalSecretValues([{ name: 'a', value: 'x', disabled: true }])).toEqual({});
+    expect(externalSecretValues([{ name: 'b', value: 'x', enabled: false }])).toEqual({});
+  });
+
+  it('returns an empty map when the environment declares none', () => {
+    expect(externalSecretValues(undefined)).toEqual({});
   });
 });

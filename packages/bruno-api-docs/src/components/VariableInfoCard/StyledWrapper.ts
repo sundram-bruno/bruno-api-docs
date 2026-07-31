@@ -114,35 +114,6 @@ export const StyledWrapper = styled.div`
     outline: none;
   }
 
-  .var-value-editor {
-    position: relative;
-  }
-
-  .var-value-mirror {
-    position: absolute;
-    top: 0;
-    right: 1.5rem;
-    left: 0;
-    visibility: hidden;
-    pointer-events: none;
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    font-weight: 400;
-    line-height: 1.25rem;
-    color: var(--text-primary);
-    white-space: pre-wrap;
-    word-break: break-all;
-  }
-
-  .var-value-editor--masked .var-value-mirror {
-    visibility: visible;
-  }
-
-  .var-value-editor--masked .var-value-edit {
-    color: transparent;
-    caret-color: var(--text-primary);
-  }
-
   .var-icons {
     position: absolute;
     top: 50%;
@@ -181,6 +152,7 @@ export const StyledWrapper = styled.div`
 
   .var-icons .copy-button[data-copied] {
     opacity: 1;
+    color: var(--oc-status-success-text);
     cursor: default;
   }
 
