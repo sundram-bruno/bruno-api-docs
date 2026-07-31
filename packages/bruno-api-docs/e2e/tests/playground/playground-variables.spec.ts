@@ -168,6 +168,39 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.value).toHaveText('bcde');
   });
 
+  // The field holds asterisks, so a plain selection copy would put those on the
+  // clipboard instead of the secret.
+  test('copying a selection out of a masked secret yields the real value', async ({ page, playground, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.startEditing('abcdef');
+
+    await playground.variable.editField.press('ControlOrMeta+a');
+    await playground.variable.editField.press('ControlOrMeta+c');
+
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('abcdef');
+  });
+
+  test('cutting from a masked secret removes the real characters', async ({ page, playground, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.startEditing('abcdef');
+
+    await playground.variable.editField.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(2, 4));
+    await playground.variable.editField.press('ControlOrMeta+x');
+
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('cd');
+    await expect(playground.variable.editField).toHaveValue('*'.repeat(4));
+
+    await playground.variable.editField.press('Enter');
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.revealToggle.click();
+
+    await expect(playground.variable.value).toHaveText('abef');
+  });
+
   test('typing into the middle of a masked secret edits the real value', async ({ playground }) => {
     await playground.variable.hoverInputToken('unsetSecret');
     await playground.variable.startEditing('abcdef');

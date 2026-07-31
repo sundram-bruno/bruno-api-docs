@@ -214,14 +214,22 @@ describe('VariableInfoCard (editable)', () => {
     expect(root.querySelector(selector('copy'))).not.toBeNull();
   });
 
-  it('shows a declared external secret as blank, editable, with reveal but no copy', () => {
+  it('shows a declared external secret as blank and editable, with reveal and copy', () => {
     const root = useRenderToDom(editableCardTree('vaultKey'));
     expect(part(root, 'scope').text).toBe('Secret');
     expect(part(root, 'value').text).toBe('');
     expect(part(root, 'value').classList.contains('var-value-editable')).toBe(true);
     expect(root.querySelector(selector('reveal'))).not.toBeNull();
-    expect(root.querySelector(selector('copy'))).toBeNull();
+    expect(root.querySelector(selector('copy'))).not.toBeNull();
     expect(root.querySelector(selector('note'))).toBeNull();
+  });
+
+  // The app shows copy on every card, so an unfilled secret keeps it too.
+  it('offers copy on a secret with no value yet', () => {
+    const root = useRenderToDom(editableCardTree('unsetSecret'));
+    expect(part(root, 'value').text).toBe('');
+    expect(root.querySelector(selector('copy'))).not.toBeNull();
+    expect(root.querySelector(selector('reveal'))).not.toBeNull();
   });
 
   it('never makes a read-only scope (process.env) editable', () => {

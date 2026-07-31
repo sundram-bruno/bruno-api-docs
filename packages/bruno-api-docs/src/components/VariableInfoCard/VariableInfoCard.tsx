@@ -128,6 +128,33 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     setDraft(draft.slice(0, from) + inserted + draft.slice(from + removedCount));
   };
 
+  /**
+   * Copying out of a masked field would otherwise put asterisks on the
+   * clipboard. Because a position in the field is the same position in the
+   * value, the selected range can be taken from the real string instead.
+   */
+  const writeSelectionToClipboard = (event: React.ClipboardEvent<HTMLTextAreaElement>): [number, number] | null => {
+    const el = event.currentTarget;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    if (!maskWhileEditing || start === end) return null;
+    event.preventDefault();
+    event.clipboardData.setData('text/plain', draft.slice(start, end));
+    return [start, end];
+  };
+
+  const handleEditCopy = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    writeSelectionToClipboard(event);
+  };
+
+  const handleEditCut = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const range = writeSelectionToClipboard(event);
+    if (!range) return;
+    const [start, end] = range;
+    caretRef.current = start;
+    setDraft(draft.slice(0, start) + draft.slice(end));
+  };
+
   const handleEditKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     rememberSelection(event);
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -188,7 +215,9 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   const emptyLabel = !secretFillable && info.value === '' ? '(empty)' : null;
   const placeholder = info.secret && !editable ? '(Secret)' : canEdit ? null : emptyLabel;
 
-  const showCopy = info.value !== '' && !(info.secret && !editable);
+  // The playground always offers copy, matching the app, even with nothing yet to
+  // copy. The docs keep their original rule: a value, and never for a secret.
+  const showCopy = editable || (info.value !== '' && !info.secret);
 
   const icons = (showCopy || secretFillable) && (
     <div className="var-icons">
@@ -238,6 +267,8 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
       onKeyDown={handleEditKeyDown}
       onSelect={rememberSelection}
       onMouseDown={rememberSelection}
+      onCopy={handleEditCopy}
+      onCut={handleEditCut}
       onBlur={commit}
     />
   );
