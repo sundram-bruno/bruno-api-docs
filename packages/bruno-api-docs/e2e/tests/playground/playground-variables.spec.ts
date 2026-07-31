@@ -100,19 +100,19 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
 
   test('the copy control stays available while the value is being edited', async ({ playground }) => {
     await playground.variable.hoverInputToken('host');
-    await expect(playground.variable.copyButton).toHaveCount(1);
+    await expect(playground.variable.copyButton).toBeVisible();
 
     await playground.variable.startEditing('https://edited.example.com');
 
     await expect(playground.variable.editField).toBeVisible();
-    await expect(playground.variable.copyButton).toHaveCount(1);
+    await expect(playground.variable.copyButton).toBeVisible();
   });
 
   test('an unset secret starts blank with a reveal control and takes a typed value', async ({ playground }) => {
     await playground.variable.hoverInputToken('unsetSecret');
 
     await expect(playground.variable.value).toHaveText('');
-    await expect(playground.variable.revealToggle).toHaveCount(1);
+    await expect(playground.variable.revealToggle).toBeVisible();
 
     await playground.variable.editTo('typed-secret');
 
@@ -146,6 +146,26 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
 
     expect(state.value).toBe('*'.repeat('typed-secret'.length));
     expect(state.caret).toBe(state.value.length);
+  });
+
+  // fill() replaces the value in one shot, so only per-key presses exercise the
+  // deletion path through the mask.
+  test('Backspace and Delete remove characters from a masked secret', async ({ playground }) => {
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.startEditing('abcdef');
+
+    await playground.variable.editField.press('Backspace');
+    await expect(playground.variable.editField).toHaveValue('*'.repeat(5));
+
+    await playground.variable.editField.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(0, 0));
+    await playground.variable.editField.press('Delete');
+    await expect(playground.variable.editField).toHaveValue('*'.repeat(4));
+
+    await playground.variable.editField.press('Enter');
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.revealToggle.click();
+
+    await expect(playground.variable.value).toHaveText('bcde');
   });
 
   test('typing into the middle of a masked secret edits the real value', async ({ playground }) => {

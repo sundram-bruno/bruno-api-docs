@@ -105,22 +105,26 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
 
   /**
    * The field shows one mask character per real character, so display and real
-   * indices line up. That lets the edit be replayed onto the real string: take
-   * what the browser inserted at the old selection and splice it in at the same
-   * offsets.
+   * indices line up and an edit can be replayed onto the real string.
+   *
+   * The replaced range is derived from the caret after the edit rather than the
+   * selection before it: a Backspace on a collapsed caret removes a character
+   * outside that selection, which the selection alone cannot describe.
    */
   const handleEditChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const next = event.target.value;
+    const el = event.target;
+    const next = el.value;
     if (!maskWhileEditing) {
       setDraft(next);
       return;
     }
 
-    const { start, end } = selectionRef.current;
-    const insertedLength = next.length - draft.length + (end - start);
-    const inserted = insertedLength > 0 ? next.slice(start, start + insertedLength) : '';
-    caretRef.current = start + inserted.length;
-    setDraft(draft.slice(0, start) + inserted + draft.slice(end));
+    const caret = el.selectionStart ?? 0;
+    const from = Math.min(selectionRef.current.start, caret);
+    const inserted = next.slice(from, caret);
+    const removedCount = draft.length - (next.length - inserted.length);
+    caretRef.current = caret;
+    setDraft(draft.slice(0, from) + inserted + draft.slice(from + removedCount));
   };
 
   const handleEditKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
