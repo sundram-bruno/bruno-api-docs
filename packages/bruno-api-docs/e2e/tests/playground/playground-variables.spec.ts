@@ -133,8 +133,8 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.value).toHaveText('*'.repeat('vault-value'.length));
   });
 
-  // The field's own content is the mask, so the real value is never in the DOM
-  // and the caret cannot drift away from the end of the asterisks.
+  // The field contains the asterisks themselves rather than the secret, so the
+  // secret is never present in the page while it is hidden.
   test('the edit field holds only mask characters while the secret is hidden', async ({ playground }) => {
     await playground.variable.hoverInputToken('unsetSecret');
     await playground.variable.startEditing('typed-secret');
@@ -148,8 +148,8 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     expect(state.caret).toBe(state.value.length);
   });
 
-  // fill() replaces the value in one shot, so only per-key presses exercise the
-  // deletion path through the mask.
+  // Use key presses, not fill(): fill() replaces the whole value at once and so
+  // never exercises deleting a single character through the mask.
   test('Backspace and Delete remove characters from a masked secret', async ({ playground }) => {
     await playground.variable.hoverInputToken('unsetSecret');
     await playground.variable.startEditing('abcdef');
@@ -198,9 +198,9 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.value).toHaveText('*'.repeat('typed-secret'.length));
   });
 
-  // A secret nobody filled in has no value to send, so it stays an unresolved
-  // reference rather than silently becoming an empty parameter. Environment and
-  // external secrets agree on this.
+  // A secret nobody filled in has no value to send, so the request keeps the
+  // `{{name}}` reference instead of quietly sending an empty value. Environment
+  // secrets and external secrets behave the same way here.
   test('leaves an unfilled secret unresolved in the request', async ({ page, responsePane }) => {
     const sent: string[] = [];
     await page.route('**/customers/**', (route) => {
@@ -215,7 +215,6 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     expect(sent[0]).toContain('k={{vaultKey}}');
   });
 
-  // The point of making secrets fillable: the value has to reach the wire.
   test('sends a typed secret with the request', async ({ page, playground, responsePane }) => {
     const sent: string[] = [];
     await page.route('**/customers/**', (route) => {
@@ -228,8 +227,9 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
 
     await expect(playground.variable.value).toHaveText('*'.repeat('typed-secret'.length));
 
-    // A card is already open, so hoverInputToken's visibility wait returns at
-    // once; wait for it to be showing this variable before editing.
+    // A card is already open from the edit above, so the hover helper's wait for
+    // a visible card returns immediately. Wait for the name to change before
+    // editing, or the edit lands on the previous variable.
     await playground.variable.hoverInputToken('vaultKey');
     await expect(playground.variable.name).toHaveText('vaultKey');
     await playground.variable.editTo('vault-value');

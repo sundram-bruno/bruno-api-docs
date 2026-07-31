@@ -304,8 +304,8 @@ describe('mergeExternalSecretRows', () => {
     expect(out[0].disabled).toBe(true);
   });
 
-  // Carrying `enabled` alongside the row's `disabled` would leave the two
-  // contradicting each other, switching the secret off behind the user's back.
+  // An entry holding both `enabled: false` and `disabled: false` reads as off,
+  // which would switch the secret off even though the table shows it on.
   it('drops a legacy enabled key rather than contradicting the row toggle', () => {
     const legacy = [{ name: 'apiKey', secretName: 'prod/api-key', enabled: false }];
     const rows = [{ name: 'apiKey', value: 'prod/api-key', enabled: true }];

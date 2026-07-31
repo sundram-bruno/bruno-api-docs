@@ -77,12 +77,14 @@ interface ExternalSecretsConfig {
 }
 
 /**
- * Rebuild an environment's external secrets from edited rows, carrying over any
- * field the row model does not round-trip. The hover card writes a session
- * `value` onto these entries, and rebuilding a row from scratch would drop it.
+ * Rebuild an environment's external secrets after the table has been edited.
  *
- * The legacy `enabled` key is deliberately dropped: the row's toggle is written
- * as `disabled`, and keeping both would leave the pair contradicting each other.
+ * A table row holds only a name, a pointer and a toggle, so anything else on the
+ * entry has to be carried across by hand. In particular the hover card stores a
+ * typed-in `value` there, which a plain rebuild would throw away.
+ *
+ * `enabled` is the exception and is dropped on purpose: the toggle is written
+ * back as `disabled`, and an entry carrying both could contradict itself.
  */
 export const mergeExternalSecretRows = (
   existing: ExternalSecretEntry[] | undefined,

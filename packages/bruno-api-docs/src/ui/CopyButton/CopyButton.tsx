@@ -48,9 +48,9 @@ export const CopyButton: React.FC<CopyButtonProps> = ({
     []
   );
 
-  // A new value clears the tick, so it never claims success for text that was
-  // not the text copied. `getText` is expected to be stable, as it already is
-  // for the copy handler below.
+  // Clear the confirmation when the value changes, so the tick never vouches for
+  // text that was not the text copied. Callers passing `getText` should keep the
+  // reference stable, as the copy handler below already requires.
   useEffect(() => {
     setCopied(false);
   }, [text, getText]);

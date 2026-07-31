@@ -145,8 +145,8 @@ describe('isExternalSecretActive', () => {
     expect(isExternalSecretActive({ name: 'apiKey', disabled: false })).toBe(true);
   });
 
-  // The repo's own sample collection authors these with `enabled`, so an entry
-  // switched off that way must not reach the request.
+  // The sample collection in this repo writes `enabled`, so a secret switched
+  // off that way must not reach the request.
   it('honours the enabled spelling written by the sample collection', () => {
     expect(isExternalSecretActive({ name: 'apiKey', enabled: false })).toBe(false);
     expect(isExternalSecretActive({ name: 'apiKey', enabled: true })).toBe(true);

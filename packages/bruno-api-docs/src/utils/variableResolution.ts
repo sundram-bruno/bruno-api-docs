@@ -107,10 +107,11 @@ export type VariableScope =
 export type ConcreteScope = 'collection' | 'environment' | 'folder' | 'request' | '$secrets';
 
 /**
- * An environment's external secret entry. `name` is what the collection
- * references as `{{name}}`; the pointer field (`secretName`, `path`, …) names
- * the provider key. `value` only exists for a value typed in this session.
- * Older collections spell the toggle `enabled`, newer ones `disabled`.
+ * One external secret declared on an environment. `name` is what the collection
+ * references as `{{name}}`, and a pointer field (`secretName`, `path`, and so
+ * on) names the key to fetch from the provider. `value` appears only when
+ * someone types one into the playground. Collections spell the on/off toggle
+ * either `enabled` or `disabled`, so both are optional here.
  */
 export interface ExternalSecretEntry {
   name?: string;
@@ -119,15 +120,15 @@ export interface ExternalSecretEntry {
   enabled?: boolean;
 }
 
-/** Both spellings of the toggle appear in the wild, so honour whichever is present. */
+/** True unless either spelling of the toggle says the secret is switched off. */
 export const isExternalSecretActive = (entry: ExternalSecretEntry): boolean =>
   entry.disabled !== true && entry.enabled !== false;
 
 /**
- * The session values an environment's external secrets carry, keyed by the name
- * the collection references. An entry cleared to '' is a deliberate empty value
- * and is kept; one that was never filled in has no value and is skipped, leaving
- * `{{name}}` unresolved.
+ * External secret values for interpolation, keyed by the name the collection
+ * references. An entry someone cleared to an empty string is kept, because that
+ * is a value they chose. An entry nobody ever filled in is skipped, so
+ * `{{name}}` is sent as-is rather than as an empty string.
  */
 export const externalSecretValues = (entries: ExternalSecretEntry[] | undefined): Record<string, string> =>
   (entries ?? []).reduce((values, entry) => {

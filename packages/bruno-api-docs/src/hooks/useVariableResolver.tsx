@@ -111,18 +111,12 @@ const makeResolver = (
   };
 };
 
-/**
- * External secrets are `{ name, secretName }` pointers: `name` is what the
- * collection references as `{{name}}`, `secretName` only says where a provider
- * would fetch it. The browser cannot reach the provider, so the only value they
- * can carry is one typed into the playground this session.
- */
+/** Presents an environment's external secrets as ordinary secret variables. */
 const externalSecretVariables = (environment: Environment | undefined): SecretVariable[] =>
   ((environment?.externalSecrets?.variables ?? []) as ExternalSecretEntry[])
     .filter((entry) => entry.name && isExternalSecretActive(entry))
     .map((entry) => ({ name: entry.name, secret: true, value: entry.value ?? '' }) as unknown as SecretVariable);
 
-/** `withExternalSecrets` tracks the writable (playground) mount; docs leave them unresolved. */
 const collectionAndEnvSources = (
   collection: OpenCollection | null,
   activeEnvName: string | null,
@@ -213,8 +207,8 @@ export const ItemVariableResolverProvider: React.FC<{
   const activeEnvName = useAppSelector(selectActiveEnvName);
   const showVars = useAppSelector(selectShowVars);
 
-  // This provider also backs the rendered docs pages, which pass no `writable`.
-  // Only the writable (playground) mount folds in external secrets.
+  // Both the docs pages and the playground mount this provider; only the
+  // playground passes `writable`, and only it can supply an external secret.
   const model = useMemo(() => {
     const sources: VariableSource[] = collectionAndEnvSources(collection, activeEnvName, writable);
     for (const folder of ancestry) {

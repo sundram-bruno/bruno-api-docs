@@ -238,8 +238,9 @@ const playgroundSlice = createSlice({
       }>
     ) => {
       const { scope, name, value, envName, itemUuid } = action.payload;
-      // Secrets are writable here: the value lives only on this in-memory copy,
-      // which is rebuilt from the source collection on reload and never serialized.
+      // Secret variables are writable. Their values only ever live on this
+      // in-memory copy of the collection, which is rebuilt from the source on
+      // reload and never written back, so nothing typed here is persisted.
       const setInList = (list: (Variable | SecretVariable)[] | undefined): void => {
         const enabled = (list ?? []).filter((v) => v.name === name && !v.disabled);
         const variable = enabled[enabled.length - 1] as (Variable & { value?: string }) | undefined;

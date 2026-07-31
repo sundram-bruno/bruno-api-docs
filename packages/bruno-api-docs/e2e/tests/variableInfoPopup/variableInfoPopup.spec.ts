@@ -75,7 +75,7 @@ test.describe('Variable hover card', () => {
     await expect(variableCard.copyButton).toHaveCount(0);
   });
 
-  // External secrets are fillable in the playground only; the docs must not resolve them.
+  // Only the playground can fill an external secret in, so the docs leave it unresolved.
   test('leaves an external secret undefined', async ({ requestPage }) => {
     const { variableCard } = requestPage;
     await variableCard.hoverToken('vaultKey');

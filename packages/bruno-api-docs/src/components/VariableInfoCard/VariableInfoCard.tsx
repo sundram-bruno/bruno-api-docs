@@ -8,7 +8,7 @@ import { StyledWrapper } from './StyledWrapper';
 
 const EDITABLE_SCOPES = new Set<VariableScope>(['environment', 'collection', 'folder', 'request', '$secrets']);
 
-/** Scopes whose value the active environment supplies, so editing needs one selected. */
+/** These scopes read their values from the active environment, so one must be selected to edit them. */
 const ENV_BOUND_SCOPES = new Set<VariableScope>(['environment', '$secrets']);
 
 interface VariableInfoCardProps {
@@ -18,9 +18,10 @@ interface VariableInfoCardProps {
 }
 
 /**
- * `$secrets` covers two things: a literal `{{$secrets.x}}` provider reference,
- * which nothing here can resolve, and an environment's declared external secret,
- * which the playground can fill in. Only the latter is editable.
+ * The `$secrets` scope covers two different things. A literal `{{$secrets.x}}`
+ * reference points at a secrets provider that a browser cannot reach, so it is
+ * read-only. An external secret declared on the environment can be filled in
+ * from the playground, so it is not. `canEdit` is what tells them apart.
  */
 const getReadOnlyNote = (scope: VariableScope, activeEnvName: string | null, canEdit: boolean): string | null => {
   if (scope === 'process.env' || scope === 'oauth2') return 'read-only';
@@ -29,7 +30,7 @@ const getReadOnlyNote = (scope: VariableScope, activeEnvName: string | null, can
   return null;
 };
 
-/** Masks per character so newlines survive and the mask lines up with the value. */
+/** One asterisk per character, keeping line breaks so a multi-line value still looks multi-line. */
 const maskValue = (value: string): string => value.replace(/[^\n]/g, '*');
 
 export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
@@ -43,10 +44,8 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   const [revealed, setRevealed] = useState(false);
   const [draft, setDraft] = useState('');
   const editRef = useRef<HTMLTextAreaElement>(null);
-  // Selection before the pending edit, and the caret to restore after it. The
-  // textarea shows the mask, so React re-renders it with substituted content and
-  // the browser's own caret position is lost.
   const selectionRef = useRef({ start: 0, end: 0 });
+  // Where the caret should sit after the next render, or null to leave it alone.
   const caretRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
@@ -56,20 +55,15 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     el.style.height = `${el.scrollHeight}px`;
   }, [editing, draft]);
 
-  useLayoutEffect(() => {
-    const el = editRef.current;
-    if (!editing || !el) return;
-    const end = el.value.length;
-    el.setSelectionRange(end, end);
-  }, [editing]);
-
+  // Setting a textarea's value moves the caret to the end, so any position we
+  // want to keep has to be reapplied once React has written the new value.
   useLayoutEffect(() => {
     const el = editRef.current;
     const caret = caretRef.current;
     if (!el || caret === null) return;
     caretRef.current = null;
     el.setSelectionRange(caret, caret);
-  }, [draft]);
+  }, [editing, draft]);
 
   const canEdit
     = editable
@@ -79,17 +73,21 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
       && EDITABLE_SCOPES.has(info.scope)
       && (!ENV_BOUND_SCOPES.has(info.scope) || !!activeEnvName);
 
-  // Docs keep the opaque "(Secret)" treatment; only the playground fills them in.
+  // Secrets are only fillable in the playground. The rendered docs show the
+  // original "(Secret)" placeholder with no mask, reveal or copy.
   const secretFillable = editable && info.secret;
   const masked = secretFillable && !revealed;
   const displayValue = masked ? maskValue(info.value) : info.value;
-  // A variable that is secret only because it references one has a raw value
-  // like `Bearer {{token}}`, which holds no secret material, so editing it plainly.
+  // A variable can be secret because it *is* one, or because its value mentions
+  // one. In the second case the raw value is a template such as
+  // `Bearer {{token}}`, which holds nothing sensitive, so it is edited in plain
+  // text rather than masked.
   const maskWhileEditing = masked && info.rawValue === info.value;
   const editValue = maskWhileEditing ? maskValue(draft) : draft;
 
   const startEditing = () => {
     setDraft(info.rawValue);
+    caretRef.current = info.rawValue.length;
     setEditing(true);
   };
 
@@ -104,12 +102,15 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   };
 
   /**
-   * The field shows one mask character per real character, so display and real
-   * indices line up and an edit can be replayed onto the real string.
+   * While masked, the field contains asterisks rather than the secret, so an
+   * edit has to be translated back onto the real string. There is one asterisk
+   * per character, so a position in the field is the same position in the value.
    *
-   * The replaced range is derived from the caret after the edit rather than the
-   * selection before it: a Backspace on a collapsed caret removes a character
-   * outside that selection, which the selection alone cannot describe.
+   * The edited range runs from wherever the change began to wherever the caret
+   * ended up. Reading it from the caret afterwards, rather than from the
+   * selection beforehand, is what makes Backspace and Delete work: they remove a
+   * character next to an empty selection, which the selection alone cannot
+   * describe.
    */
   const handleEditChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const el = event.target;

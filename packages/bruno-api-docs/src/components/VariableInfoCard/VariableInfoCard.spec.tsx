@@ -89,8 +89,8 @@ describe('VariableInfoCard', () => {
     expect(root.querySelector(selector('copy'))).toBeNull();
   });
 
-  // PageRouter wraps the docs pages in ItemVariableResolverProvider without
-  // `writable`, so that mount must leave external secrets unresolved too.
+  // The docs reach this card through two different providers, so both have to
+  // leave external secrets unresolved. PageRouter uses the second one.
   it('does not resolve an external secret on either docs provider', () => {
     expect(part(useRenderToDom(cardTree('vaultKey')), 'scope').text).toBe('Undefined');
 

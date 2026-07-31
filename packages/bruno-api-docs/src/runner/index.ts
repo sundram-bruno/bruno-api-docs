@@ -220,10 +220,10 @@ export class RequestRunner {
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  /** A secret carries its data type as a sibling `type`; a plain one nests it in `value`. */
   private getEnvironmentVariables(environment?: Environment): Record<string, any> {
-    // External secrets resolve as ordinary `{{name}}` references, so they seed
-    // the map and an explicitly declared variable of the same name overwrites.
+    // External secrets are referenced as ordinary `{{name}}` variables, so they
+    // go in first and a variable declared on the environment with the same name
+    // takes precedence over them.
     const externalSecrets = externalSecretValues(
       environment?.externalSecrets?.variables as ExternalSecretEntry[] | undefined
     );
