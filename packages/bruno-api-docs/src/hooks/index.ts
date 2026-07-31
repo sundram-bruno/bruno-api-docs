@@ -16,6 +16,7 @@ export {
 } from './useCanRunBrunoApp';
 export { useSearchHotkey } from './useSearchHotkey';
 export { useClickOutside } from './useClickOutside';
+export { useCopy } from './useCopy';
 export { useEscapeKey } from './useEscapeKey';
 export { useLockBodyScroll } from './useLockBodyScroll';
 export { useStorage, useLocalStorage, useSessionStorage, type StorageArea, type SetStoredValue } from './useStorage';

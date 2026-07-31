@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { baseIconProps } from '../../assets/icons/baseIconProps';
+import { useCopy } from '../../hooks/useCopy';
 import { StyledWrapper } from './StyledWrapper';
 
 interface CopyButtonProps {
@@ -38,42 +39,13 @@ export const CopyButton: React.FC<CopyButtonProps> = ({
   style,
   className
 }) => {
-  const [copied, setCopied] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(
-    () => () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    },
-    []
-  );
-
-  // Clear the confirmation when the value changes, so the tick never vouches for
-  // text that was not the text copied. Callers passing `getText` should keep the
-  // reference stable, as the copy handler below already requires.
-  useEffect(() => {
-    setCopied(false);
-  }, [text, getText]);
-
-  const handleCopy = useCallback(async () => {
-    if (!navigator.clipboard) return;
-    const value = getText ? getText() : text;
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setCopied(false), resetAfterMs);
-    } catch {
-      // Clipboard unavailable (e.g. insecure context) — fail silently.
-    }
-  }, [text, getText, resetAfterMs]);
+  const { copied, copyResponse } = useCopy({ text, getText, resetAfterMs });
 
   return (
     <StyledWrapper
       type="button"
       className={['copy-button', className].filter(Boolean).join(' ')}
-      onClick={handleCopy}
+      onClick={copyResponse}
       aria-label={copied ? copiedLabel : label}
       data-copied={copied ? 'true' : undefined}
       data-testid={testId}
