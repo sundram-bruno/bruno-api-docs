@@ -150,16 +150,12 @@ test.describe('Variable hover card', () => {
     await variableCard.pinToken('apiVersion');
     await expect(variableCard.card).toBeVisible();
 
-    const tick = variableCard.copyButton.locator('polyline');
-    await expect(tick).toHaveCount(0);
+    await expect(variableCard.copiedTick).toHaveCount(0);
 
     await variableCard.copyButton.click();
 
-    await expect(variableCard.copyButton).toHaveAttribute('data-copied', 'true');
-    await expect(tick).toHaveCount(1);
-
-    await expect(variableCard.copyButton).not.toHaveAttribute('data-copied', 'true', { timeout: 3000 });
-    await expect(tick).toHaveCount(0);
+    await expect(variableCard.copiedTick).toHaveCount(1);
+    await expect(variableCard.copiedTick).toHaveCount(0, { timeout: 3000 });
   });
 
   test('is read-only — no editor inside the card', async ({ requestPage }) => {

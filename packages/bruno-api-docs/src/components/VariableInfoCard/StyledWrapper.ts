@@ -129,33 +129,7 @@ export const StyledWrapper = styled.div`
     height: 1em;
   }
 
-  .var-icons .copy-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.125rem;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    background: transparent;
-    border: none;
-    border-radius: var(--oc-radius);
-    opacity: 0.7;
-    cursor: pointer;
-    transition: opacity 0.15s ease, color 0.15s ease;
-  }
-
-  .var-icons .copy-button:hover {
-    opacity: 1;
-    color: var(--text-primary);
-    background: transparent;
-  }
-
-  .var-icons .copy-button[data-copied] {
-    opacity: 1;
-    color: var(--oc-status-success-text);
-    cursor: default;
-  }
-
+  .var-icons .copy-button,
   .var-icons .reveal-button {
     display: inline-flex;
     align-items: center;
@@ -171,19 +145,23 @@ export const StyledWrapper = styled.div`
     transition: opacity 0.15s ease, color 0.15s ease;
   }
 
+  .var-icons .copy-button:hover,
   .var-icons .reveal-button:hover {
     opacity: 1;
     color: var(--text-primary);
+    background: transparent;
   }
 
+  .var-icons .copy-button:focus-visible,
   .var-icons .reveal-button:focus-visible {
     outline: 0.125rem solid var(--primary-color);
     outline-offset: 0.0625rem;
   }
 
-  .var-icons .copy-button:focus-visible {
-    outline: 0.125rem solid var(--primary-color);
-    outline-offset: 0.0625rem;
+  .var-icons .copy-button[data-copied] {
+    opacity: 1;
+    color: var(--oc-status-success-text);
+    cursor: default;
   }
 
   .var-readonly-note {

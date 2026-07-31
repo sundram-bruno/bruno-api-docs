@@ -171,5 +171,37 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await playground.variable.revealToggle.click();
 
     await expect(playground.variable.card).toContainText('typed-secret');
+
+    await playground.variable.revealToggle.click();
+
+    await expect(playground.variable.card).not.toContainText('typed-secret');
+    await expect(playground.variable.value).toHaveText('*'.repeat('typed-secret'.length));
+  });
+
+  // The point of making secrets fillable: the value has to reach the wire.
+  test('sends a typed secret with the request', async ({ page, playground, responsePane }) => {
+    const sent: string[] = [];
+    await page.route('**/customers/**', (route) => {
+      sent.push(route.request().url());
+      return route.fulfill({ status: 200, headers: { 'content-type': 'application/json' }, body: '{}' });
+    });
+
+    await playground.variable.hoverInputToken('unsetSecret');
+    await playground.variable.editTo('typed-secret');
+
+    await expect(playground.variable.value).toHaveText('*'.repeat('typed-secret'.length));
+
+    // A card is already open, so hoverInputToken's visibility wait returns at
+    // once; wait for it to be showing this variable before editing.
+    await playground.variable.hoverInputToken('vaultKey');
+    await expect(playground.variable.name).toHaveText('vaultKey');
+    await playground.variable.editTo('vault-value');
+    await expect(playground.variable.value).toHaveText('*'.repeat('vault-value'.length));
+
+    await responsePane.send();
+
+    await expect.poll(() => sent.length).toBeGreaterThan(0);
+    expect(sent[0]).toContain('s=typed-secret');
+    expect(sent[0]).toContain('k=vault-value');
   });
 });

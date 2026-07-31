@@ -31,6 +31,10 @@ const makeCollection = () =>
 const envVariables = (store: ReturnType<typeof createOpenCollectionStore>) =>
   selectHydratedCollection(store.getState())!.config!.environments![0].variables!;
 
+const envExternalSecrets = (store: ReturnType<typeof createOpenCollectionStore>) =>
+  (selectHydratedCollection(store.getState())!.config!.environments![0].externalSecrets!
+    .variables as unknown) as { name: string; value?: string; secretName?: string }[];
+
 describe('resetPlaygroundEnvironments', () => {
   it('restores the original environments after an edit', () => {
     const store = createOpenCollectionStore();
@@ -179,11 +183,9 @@ describe('setPlaygroundVariable', () => {
 
     store.dispatch(setPlaygroundVariable({ scope: '$secrets', name: 'vaultKey', value: 'typed', envName: 'Dev' }));
 
-    const env = selectHydratedCollection(store.getState())!.config!.environments![0] as unknown as {
-      externalSecrets: { variables: { value: string; secretName: string }[] };
-    };
-    expect(env.externalSecrets.variables[0].value).toBe('typed');
-    expect(env.externalSecrets.variables[0].secretName).toBe('prod/api-key');
+    const [vaultKey] = envExternalSecrets(store);
+    expect(vaultKey.value).toBe('typed');
+    expect(vaultKey.secretName).toBe('prod/api-key');
   });
 });
 
