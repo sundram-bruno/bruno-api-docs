@@ -154,7 +154,7 @@ test.describe('Variable hover card', () => {
 
     await variableCard.copyButton.click();
 
-    await expect(variableCard.copiedTick).toHaveCount(1);
+    await expect(variableCard.copiedTick).toBeVisible();
     await expect(variableCard.copiedTick).toHaveCount(0, { timeout: 3000 });
   });
 
