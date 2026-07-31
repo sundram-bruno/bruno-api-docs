@@ -198,6 +198,23 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.value).toHaveText('*'.repeat('typed-secret'.length));
   });
 
+  // A secret nobody filled in has no value to send, so it stays an unresolved
+  // reference rather than silently becoming an empty parameter. Environment and
+  // external secrets agree on this.
+  test('leaves an unfilled secret unresolved in the request', async ({ page, responsePane }) => {
+    const sent: string[] = [];
+    await page.route('**/customers/**', (route) => {
+      sent.push(route.request().url());
+      return route.fulfill({ status: 200, headers: { 'content-type': 'application/json' }, body: '{}' });
+    });
+
+    await responsePane.send();
+
+    await expect.poll(() => sent.length).toBeGreaterThan(0);
+    expect(sent[0]).toContain('s={{unsetSecret}}');
+    expect(sent[0]).toContain('k={{vaultKey}}');
+  });
+
   // The point of making secrets fillable: the value has to reach the wire.
   test('sends a typed secret with the request', async ({ page, playground, responsePane }) => {
     const sent: string[] = [];

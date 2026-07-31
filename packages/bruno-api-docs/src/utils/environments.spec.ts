@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getEnvironmentVariables, envVariableToRow, envRowToVariable, mergeExternalSecretRows } from './environments';
+import { isExternalSecretActive } from './variableResolution';
 
 describe('getEnvironmentVariables', () => {
   it('splits regular and secret variables', () => {
@@ -301,6 +302,19 @@ describe('mergeExternalSecretRows', () => {
 
     expect(out[0].value).toBe('typed-this-session');
     expect(out[0].disabled).toBe(true);
+  });
+
+  // Carrying `enabled` alongside the row's `disabled` would leave the two
+  // contradicting each other, switching the secret off behind the user's back.
+  it('drops a legacy enabled key rather than contradicting the row toggle', () => {
+    const legacy = [{ name: 'apiKey', secretName: 'prod/api-key', enabled: false }];
+    const rows = [{ name: 'apiKey', value: 'prod/api-key', enabled: true }];
+
+    const [out] = mergeExternalSecretRows(legacy, rows, 'secretName') as Record<string, unknown>[];
+
+    expect(out.enabled).toBeUndefined();
+    expect(out.disabled).toBe(false);
+    expect(isExternalSecretActive(out as { disabled?: boolean; enabled?: boolean })).toBe(true);
   });
 
   it('adds a brand new row with no carried fields', () => {

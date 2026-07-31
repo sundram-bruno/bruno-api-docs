@@ -14,7 +14,7 @@ import { GlobeIcon } from '../../../../../assets/icons';
 import { useAppDispatch } from '../../../../../store/hooks';
 import { cx } from '../../../../../utils/cx';
 import { envVariableToRow, envRowToVariable, mergeExternalSecretRows } from '../../../../../utils/environments';
-import { isSecretVariable } from '../../../../../utils/variableResolution';
+import { isSecretVariable, isExternalSecretActive, type ExternalSecretEntry } from '../../../../../utils/variableResolution';
 import { updateCollectionEnvironments } from '@slices/playground';
 
 const ENV_TABS = [
@@ -65,12 +65,15 @@ const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({ collection, compact
   const secretProviderType = selectedEnvironment?.externalSecrets?.type as SecretProviderType | undefined;
   const secretPointerField = (secretProviderType && SECRET_POINTER_FIELD[secretProviderType]) || 'secretName';
 
-  const externalRows: KeyValueRow[] = (selectedEnvironment?.externalSecrets?.variables ?? []).map(
-    (variable: { name?: string; disabled?: boolean }, index: number) => ({
+  // Same predicate the resolver uses, so the checkbox and the request agree on
+  // which entries are live.
+  const externalEntries = (selectedEnvironment?.externalSecrets?.variables ?? []) as ExternalSecretEntry[];
+  const externalRows: KeyValueRow[] = externalEntries.map(
+    (variable, index: number) => ({
       id: `ext-${index}`,
       name: variable.name ?? '',
       value: (variable as Record<string, string | undefined>)[secretPointerField] ?? '',
-      enabled: variable.disabled !== true
+      enabled: isExternalSecretActive(variable)
     })
   );
 

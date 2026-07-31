@@ -3,7 +3,7 @@ import type { Variable, VariableValueType } from '@opencollection/types/common/v
 import { MANAGER_LABELS } from '../constants';
 import { getDescription, getVariableTypeLabel } from './request';
 import { descriptionText, resolveDescription } from './description';
-import { isSecretVariable, unwrapVariableValue } from './variableResolution';
+import { isSecretVariable, unwrapVariableValue, type ExternalSecretEntry } from './variableResolution';
 import { rowToVariable, toDataType } from './variableDataType';
 
 const humanizeManager = (type: string | undefined): string => {
@@ -80,19 +80,25 @@ interface ExternalSecretsConfig {
  * Rebuild an environment's external secrets from edited rows, carrying over any
  * field the row model does not round-trip. The hover card writes a session
  * `value` onto these entries, and rebuilding a row from scratch would drop it.
+ *
+ * The legacy `enabled` key is deliberately dropped: the row's toggle is written
+ * as `disabled`, and keeping both would leave the pair contradicting each other.
  */
 export const mergeExternalSecretRows = (
-  existing: { name?: string }[] | undefined,
+  existing: ExternalSecretEntry[] | undefined,
   rows: { name: string; value: string; enabled: boolean }[],
   pointerField: string
 ): Record<string, unknown>[] => {
   const byName = new Map((existing ?? []).map((variable) => [variable.name, variable]));
-  return rows.map((row) => ({
-    ...(byName.get(row.name) ?? {}),
-    name: row.name,
-    [pointerField]: row.value,
-    disabled: !row.enabled
-  }));
+  return rows.map((row) => {
+    const { enabled: _legacyToggle, ...carried } = byName.get(row.name) ?? {};
+    return {
+      ...carried,
+      name: row.name,
+      [pointerField]: row.value,
+      disabled: !row.enabled
+    };
+  });
 };
 
 export interface EnvironmentVariableRow {
