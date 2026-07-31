@@ -133,10 +133,14 @@ test.describe('Playground variables: highlight, hover card and inline edit', () 
     await expect(playground.variable.value).toHaveText('*'.repeat('vault-value'.length));
   });
 
-  test('a typed secret never reaches the generated code snippet', async ({ playground }) => {
+  test('a typed secret stays masked in the card until revealed', async ({ playground }) => {
     await playground.variable.hoverInputToken('unsetSecret');
     await playground.variable.editTo('typed-secret');
 
-    await expect(playground.view).not.toContainText('typed-secret');
+    await expect(playground.variable.card).not.toContainText('typed-secret');
+
+    await playground.variable.revealToggle.click();
+
+    await expect(playground.variable.card).toContainText('typed-secret');
   });
 });

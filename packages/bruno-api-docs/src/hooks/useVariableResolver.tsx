@@ -120,7 +120,7 @@ const externalSecretVariables = (environment: Environment | undefined): SecretVa
     .filter((entry) => entry.name && entry.disabled !== true)
     .map((entry) => ({ name: entry.name, secret: true, value: entry.value ?? '' }) as unknown as SecretVariable);
 
-/** `withExternalSecrets` is playground-only; the docs leave them unresolved. */
+/** `withExternalSecrets` tracks the writable (playground) mount; docs leave them unresolved. */
 const collectionAndEnvSources = (
   collection: OpenCollection | null,
   activeEnvName: string | null,
@@ -211,14 +211,16 @@ export const ItemVariableResolverProvider: React.FC<{
   const activeEnvName = useAppSelector(selectActiveEnvName);
   const showVars = useAppSelector(selectShowVars);
 
+  // This provider also backs the rendered docs pages, which pass no `writable`.
+  // Only the writable (playground) mount folds in external secrets.
   const model = useMemo(() => {
-    const sources: VariableSource[] = collectionAndEnvSources(collection, activeEnvName, true);
+    const sources: VariableSource[] = collectionAndEnvSources(collection, activeEnvName, writable);
     for (const folder of ancestry) {
       sources.push({ scope: 'folder', variables: folderVariables(folder) });
     }
     if (item) sources.push(itemSource(item));
     return buildScopedVariableModel(sources);
-  }, [collection, activeEnvName, ancestry, item]);
+  }, [collection, activeEnvName, ancestry, item, writable]);
 
   const resolver = useMemo(() => makeResolver(model, showVars, activeEnvName), [model, showVars, activeEnvName]);
 

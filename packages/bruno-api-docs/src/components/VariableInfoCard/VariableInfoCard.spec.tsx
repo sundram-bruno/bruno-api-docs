@@ -89,9 +89,21 @@ describe('VariableInfoCard', () => {
     expect(root.querySelector(selector('copy'))).toBeNull();
   });
 
-  // External secrets are a playground affordance; the docs leave them unresolved.
-  it('does not resolve an external secret', () => {
+  // PageRouter wraps the docs pages in ItemVariableResolverProvider without
+  // `writable`, so that mount must leave external secrets unresolved too.
+  it('does not resolve an external secret on either docs provider', () => {
     expect(part(useRenderToDom(cardTree('vaultKey')), 'scope').text).toBe('Undefined');
+
+    const store = createOpenCollectionStore();
+    store.dispatch(setActiveEnv('Dev'));
+    const docsItemTree = (
+      <Provider store={store}>
+        <ItemVariableResolverProvider collection={collection} ancestry={[]} item={null}>
+          <VariableInfoCard name="vaultKey" />
+        </ItemVariableResolverProvider>
+      </Provider>
+    );
+    expect(part(useRenderToDom(docsItemTree), 'scope').text).toBe('Undefined');
   });
 
   it('pretty-prints an object-typed value', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getEnvironmentVariables, envVariableToRow, envRowToVariable } from './environments';
+import { getEnvironmentVariables, envVariableToRow, envRowToVariable, mergeExternalSecretRows } from './environments';
 
 describe('getEnvironmentVariables', () => {
   it('splits regular and secret variables', () => {
@@ -272,5 +272,42 @@ describe('envVariableToRow / envRowToVariable round-trip', () => {
     const out = envRowToVariable(row) as any;
     expect(out.description).toEqual({ content: 'Bearer *token*', type: 'text/markdown' });
     expect(out.value).toBe('new-token');
+  });
+});
+
+describe('mergeExternalSecretRows', () => {
+  const existing = [
+    { name: 'vaultKey', secretName: 'prod/api-key', value: 'typed-this-session' },
+    { name: 'dbPassword', secretName: 'prod/db' }
+  ];
+
+  it('keeps a session value when another field on the row is edited', () => {
+    const rows = [
+      { name: 'vaultKey', value: 'prod/api-key-renamed', enabled: true },
+      { name: 'dbPassword', value: 'prod/db', enabled: true }
+    ];
+
+    const out = mergeExternalSecretRows(existing, rows, 'secretName') as Record<string, string | boolean>[];
+
+    expect(out[0].value).toBe('typed-this-session');
+    expect(out[0].secretName).toBe('prod/api-key-renamed');
+    expect(out[1].value).toBeUndefined();
+  });
+
+  it('carries the session value through a disable toggle', () => {
+    const rows = [{ name: 'vaultKey', value: 'prod/api-key', enabled: false }];
+
+    const out = mergeExternalSecretRows(existing, rows, 'secretName') as Record<string, string | boolean>[];
+
+    expect(out[0].value).toBe('typed-this-session');
+    expect(out[0].disabled).toBe(true);
+  });
+
+  it('adds a brand new row with no carried fields', () => {
+    const rows = [{ name: 'fresh', value: 'prod/fresh', enabled: true }];
+
+    const out = mergeExternalSecretRows(existing, rows, 'secretName') as Record<string, string | boolean>[];
+
+    expect(out).toEqual([{ name: 'fresh', secretName: 'prod/fresh', disabled: false }]);
   });
 });

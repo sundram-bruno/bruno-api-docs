@@ -76,6 +76,25 @@ interface ExternalSecretsConfig {
   variables?: { name?: string; secretName?: string; enabled?: boolean; type?: VariableValueType }[];
 }
 
+/**
+ * Rebuild an environment's external secrets from edited rows, carrying over any
+ * field the row model does not round-trip. The hover card writes a session
+ * `value` onto these entries, and rebuilding a row from scratch would drop it.
+ */
+export const mergeExternalSecretRows = (
+  existing: { name?: string }[] | undefined,
+  rows: { name: string; value: string; enabled: boolean }[],
+  pointerField: string
+): Record<string, unknown>[] => {
+  const byName = new Map((existing ?? []).map((variable) => [variable.name, variable]));
+  return rows.map((row) => ({
+    ...(byName.get(row.name) ?? {}),
+    name: row.name,
+    [pointerField]: row.value,
+    disabled: !row.enabled
+  }));
+};
+
 export interface EnvironmentVariableRow {
   name: string;
   value: string;

@@ -17,8 +17,14 @@ interface VariableInfoCardProps {
   testId?: string;
 }
 
-const getReadOnlyNote = (scope: VariableScope, activeEnvName: string | null): string | null => {
+/**
+ * `$secrets` covers two things: a literal `{{$secrets.x}}` provider reference,
+ * which nothing here can resolve, and an environment's declared external secret,
+ * which the playground can fill in. Only the latter is editable.
+ */
+const getReadOnlyNote = (scope: VariableScope, activeEnvName: string | null, canEdit: boolean): string | null => {
   if (scope === 'process.env' || scope === 'oauth2') return 'read-only';
+  if (scope === '$secrets' && !canEdit) return 'read-only';
   if (scope === 'undefined') return activeEnvName ? 'Variable is not defined' : 'No active environment';
   return null;
 };
@@ -130,7 +136,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     );
   }
 
-  const readOnlyNote = getReadOnlyNote(info.scope, activeEnvName);
+  const readOnlyNote = getReadOnlyNote(info.scope, activeEnvName, canEdit);
   const emptyLabel = !secretFillable && info.value === '' ? '(empty)' : null;
   const placeholder = info.secret && !editable ? '(Secret)' : canEdit ? null : emptyLabel;
 

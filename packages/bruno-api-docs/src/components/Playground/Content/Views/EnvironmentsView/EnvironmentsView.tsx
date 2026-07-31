@@ -13,7 +13,7 @@ import { variableTypeColumn } from '../Common/VariableTypeControl/variableTypeCo
 import { GlobeIcon } from '../../../../../assets/icons';
 import { useAppDispatch } from '../../../../../store/hooks';
 import { cx } from '../../../../../utils/cx';
-import { envVariableToRow, envRowToVariable } from '../../../../../utils/environments';
+import { envVariableToRow, envRowToVariable, mergeExternalSecretRows } from '../../../../../utils/environments';
 import { isSecretVariable } from '../../../../../utils/variableResolution';
 import { updateCollectionEnvironments } from '@slices/playground';
 
@@ -100,11 +100,7 @@ const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({ collection, compact
     applyToSelectedEnv({
       externalSecrets: {
         ...(selectedEnvironment?.externalSecrets ?? {}),
-        variables: rows.map((row) => ({
-          name: row.name,
-          [secretPointerField]: row.value,
-          disabled: !row.enabled
-        }))
+        variables: mergeExternalSecretRows(selectedEnvironment?.externalSecrets?.variables, rows, secretPointerField)
       }
     });
 

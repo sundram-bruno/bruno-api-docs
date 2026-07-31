@@ -75,6 +75,16 @@ test.describe('Variable hover card', () => {
     await expect(variableCard.copyButton).toHaveCount(0);
   });
 
+  // External secrets are fillable in the playground only; the docs must not resolve them.
+  test('leaves an external secret undefined', async ({ requestPage }) => {
+    const { variableCard } = requestPage;
+    await variableCard.hoverToken('vaultKey');
+
+    await expect(variableCard.card).toBeVisible();
+    await expect(variableCard.scopeBadge).toHaveText('Undefined');
+    await expect(variableCard.note).toHaveText('Variable is not defined');
+  });
+
   test('shows an (empty) placeholder with no copy for a defined variable that has no value', async ({ requestPage }) => {
     const { variableCard } = requestPage;
     await variableCard.hoverToken('emptyValue');
