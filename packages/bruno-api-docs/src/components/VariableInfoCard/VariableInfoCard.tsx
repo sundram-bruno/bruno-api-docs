@@ -143,10 +143,6 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
     return [start, end];
   };
 
-  const handleEditCopy = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    writeSelectionToClipboard(event);
-  };
-
   const handleEditCut = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const range = writeSelectionToClipboard(event);
     if (!range) return;
@@ -219,7 +215,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
   // copy. The docs keep their original rule: a value, and never for a secret.
   const showCopy = editable || (info.value !== '' && !info.secret);
 
-  const icons = (showCopy || secretFillable) && (
+  const icons = showCopy && (
     <div className="var-icons">
       {secretFillable && (
         <button
@@ -266,8 +262,7 @@ export const VariableInfoCard: React.FC<VariableInfoCardProps> = ({
       onChange={handleEditChange}
       onKeyDown={handleEditKeyDown}
       onSelect={rememberSelection}
-      onMouseDown={rememberSelection}
-      onCopy={handleEditCopy}
+      onCopy={writeSelectionToClipboard}
       onCut={handleEditCut}
       onBlur={commit}
     />
