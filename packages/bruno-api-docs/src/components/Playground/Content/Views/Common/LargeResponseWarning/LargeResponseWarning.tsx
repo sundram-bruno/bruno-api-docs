@@ -52,18 +52,6 @@ export const LargeResponseWarning: React.FC<LargeResponseWarningProps> = ({ resp
         </button>
         <button
           type="button"
-          className="large-response-copy"
-          onClick={copyResponse}
-          aria-label={copied ? 'Copied response' : 'Copy response'}
-          data-testid="large-response-copy"
-        >
-          <span className="button-icon">
-            {copied ? <IconCheck size={13} strokeWidth={1} /> : <IconCopy size={13} strokeWidth={1} />}
-          </span>
-          <span>{copied ? 'Copied' : 'Copy'}</span>
-        </button>
-        <button
-          type="button"
           className="large-response-download"
           onClick={() => downloadResponse(response)}
           disabled={!response?.base64Data}
@@ -74,6 +62,18 @@ export const LargeResponseWarning: React.FC<LargeResponseWarningProps> = ({ resp
             <IconDownload size={13} strokeWidth={1} />
           </span>
           <span>Download</span>
+        </button>
+        <button
+          type="button"
+          className="large-response-copy"
+          onClick={copyResponse}
+          aria-label={copied ? 'Copied response' : 'Copy response'}
+          data-testid="large-response-copy"
+        >
+          <span className="button-icon">
+            {copied ? <IconCheck size={13} strokeWidth={1} /> : <IconCopy size={13} strokeWidth={1} />}
+          </span>
+          <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
       </div>
     </StyledWrapper>

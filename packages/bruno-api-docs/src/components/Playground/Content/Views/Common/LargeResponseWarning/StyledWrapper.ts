@@ -11,7 +11,6 @@ export const StyledWrapper = styled.div`
   text-align: center;
 
   .warning-icon {
-    margin-bottom: 1rem;
     color: var(--oc-status-warning-text);
   }
 
