@@ -22,8 +22,8 @@ const CopyGlyph: React.FC = () => (
   </svg>
 );
 
-const CheckGlyph: React.FC = () => (
-  <svg {...glyphProps}>
+const CheckGlyph: React.FC<{ testId?: string }> = ({ testId }) => (
+  <svg {...glyphProps} data-testid={testId}>
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
@@ -79,7 +79,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({
       data-testid={testId}
       style={style}
     >
-      {copied ? <CheckGlyph /> : <CopyGlyph />}
+      {copied ? <CheckGlyph testId={testId ? `${testId}-tick` : undefined} /> : <CopyGlyph />}
     </StyledWrapper>
   );
 };
