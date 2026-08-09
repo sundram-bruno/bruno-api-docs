@@ -16,7 +16,6 @@ import {
   getItemDocs,
   getItemDescription,
   getRequestExamples,
-  isHttpRequest,
   isUnsupportedRequestInDocs,
   isGrpcRequest
 } from '../../utils/schemaHelpers';
@@ -338,20 +337,18 @@ export const Request: React.FC<RequestProps> = ({
     );
   }
 
-  if (isHttpRequest(item)) {
-    return (
-      <RequestContent
-        item={item}
-        ancestry={ancestry}
-        collection={collection}
-        onTryClick={onTryClick}
-        onBreadcrumbClick={onBreadcrumbClick}
-        highlightedExampleIndex={highlightedExampleIndex}
-      />
-    );
-  }
-
-  return null;
+  // Anything else, including a type this viewer has no page for, renders as a request the way
+  // it always has: the HTTP getters read from the root and fall back to GET.
+  return (
+    <RequestContent
+      item={item as HttpRequest}
+      ancestry={ancestry}
+      collection={collection}
+      onTryClick={onTryClick}
+      onBreadcrumbClick={onBreadcrumbClick}
+      highlightedExampleIndex={highlightedExampleIndex}
+    />
+  );
 };
 
 export default Request;

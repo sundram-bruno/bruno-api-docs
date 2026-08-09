@@ -271,3 +271,29 @@ describe('Request page', () => {
     expect(description.text).not.toContain('©'); // ©
   });
 });
+
+describe('Request — unrecognised request types', () => {
+  const unknownItem = (data: Record<string, unknown>): Item => data as unknown as Item;
+
+  it('renders a type the viewer has no page for as a request rather than a blank page', () => {
+    const root = useRenderToDom(
+      <MemoryRouter>
+        <Request item={unknownItem({ info: { name: 'Quantum Ping', type: 'quic' }, url: 'quic://h:1' })} />
+      </MemoryRouter>
+    );
+
+    expect(getByTestId(root, 'request-page')).toBeTruthy();
+    expect(getByTestId(root, 'request-title').text).toContain('Quantum Ping');
+  });
+
+  it('does the same for an item that names no type at all', () => {
+    const root = useRenderToDom(
+      <MemoryRouter>
+        <Request item={unknownItem({ info: { name: 'Mystery' } })} />
+      </MemoryRouter>
+    );
+
+    expect(getByTestId(root, 'request-page')).toBeTruthy();
+    expect(getByTestId(root, 'request-title').text).toContain('Mystery');
+  });
+});
