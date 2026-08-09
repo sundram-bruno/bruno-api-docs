@@ -1,5 +1,6 @@
 import type { GrpcMetadata, GrpcMethodType } from '@opencollection/types/requests/grpc';
 import type { GrpcMessageEntry } from './schemaHelpers';
+import { templateVariableGlobalRegex } from './common';
 
 export interface GrpcSnippetInput {
   url: string;
@@ -59,6 +60,18 @@ const shellQuote = (value: string): string => `'${value.replace(/'/g, `'\\''`)}'
 
 const jsQuote = (value: string): string =>
   `'${value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'').replace(/\r/g, '\\r').replace(/\n/g, '\\n')}'`;
+
+const jsObjectLiteral = (message: string): string => {
+  const trimmed = message.trim();
+  if (!trimmed) return '{}';
+  if (templateVariableGlobalRegex().test(trimmed)) return trimmed;
+  try {
+    JSON.parse(trimmed);
+    return trimmed;
+  } catch {
+    return jsQuote(trimmed);
+  }
+};
 
 const indent = (text: string, spaces: number): string =>
   text
@@ -149,11 +162,11 @@ export const generateGrpcJavaScriptCode = ({
     lines.push('', 'const messages = [');
     messages.forEach((entry, index) => {
       const comma = index === messages.length - 1 ? '' : ',';
-      lines.push(`  ${indent(entry.message, 2)}${comma}`);
+      lines.push(`  ${indent(jsObjectLiteral(entry.message), 2)}${comma}`);
     });
     lines.push('];');
   } else {
-    lines.push('', `const message = ${messages.length > 0 ? messages[0].message : '{}'};`);
+    lines.push('', `const message = ${messages.length > 0 ? jsObjectLiteral(messages[0].message) : '{}'};`);
   }
 
   lines.push('');

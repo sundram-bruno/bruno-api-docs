@@ -163,7 +163,7 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
 
         <Heading size="md" style={{ marginTop: '0.25rem' }} testId="grpc-request-title">{name}</Heading>
 
-        <RequestUrlBar method="gRPC" url={url} style={{ marginTop: '0.75rem' }} />
+        <RequestUrlBar method="gRPC" methodAsWritten url={url} style={{ marginTop: '0.75rem' }} />
         {descHtml && (
           <ViewMore collapsedHeight="4.5rem" style={{ marginTop: '1.5rem' }} testId="grpc-request-description">
             <div className="markdown-documentation" dangerouslySetInnerHTML={{ __html: descHtml }} />

@@ -270,34 +270,34 @@ describe('GrpcRequestContent', () => {
     expect(html).not.toContain('grpc-request-config-empty');
     expect(html).toContain('grpc-request-section-method');
   });
-});
 
-it('offers a JavaScript snippet only when a proto file is attached', () => {
-  const withProto = renderToStaticMarkup(
-    <GrpcRequestContent
-      item={grpcItem({
-        info: { name: 'Get Book', type: 'grpc' },
-        grpc: {
-          url: 'grpc://localhost:9000',
-          method: '/com.book.BookService/GetBook',
-          methodType: 'unary',
-          protoFilePath: 'protos/book.proto'
-        }
-      })}
-    />
-  );
-  expect(withProto).toContain('code-snippet-tab-javascript');
+  it('offers a JavaScript snippet only when a proto file is attached', () => {
+    const withProto = renderToStaticMarkup(
+      <GrpcRequestContent
+        item={grpcItem({
+          info: { name: 'Get Book', type: 'grpc' },
+          grpc: {
+            url: 'grpc://localhost:9000',
+            method: '/com.book.BookService/GetBook',
+            methodType: 'unary',
+            protoFilePath: 'protos/book.proto'
+          }
+        })}
+      />
+    );
+    expect(withProto).toContain('grpc-request-code-snippet-tab-javascript');
 
-  const reflectionOnly = renderToStaticMarkup(
-    <GrpcRequestContent
-      item={grpcItem({
-        info: { name: 'Order Service', type: 'grpc' },
-        grpc: { url: 'grpc://localhost:50051', method: '/orders.OrderService/GetOrder', methodType: 'unary' }
-      })}
-    />
-  );
-  expect(reflectionOnly).toContain('code-snippet-tab-grpcurl');
-  expect(reflectionOnly).not.toContain('code-snippet-tab-javascript');
+    const reflectionOnly = renderToStaticMarkup(
+      <GrpcRequestContent
+        item={grpcItem({
+          info: { name: 'Order Service', type: 'grpc' },
+          grpc: { url: 'grpc://localhost:50051', method: '/orders.OrderService/GetOrder', methodType: 'unary' }
+        })}
+      />
+    );
+    expect(reflectionOnly).toContain('grpc-request-code-snippet-tab-grpcurl');
+    expect(reflectionOnly).not.toContain('grpc-request-code-snippet-tab-javascript');
+  });
 });
 
 describe('GrpcRequestContent — execution context', () => {

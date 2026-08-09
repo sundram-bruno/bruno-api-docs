@@ -60,7 +60,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
                 type="button"
                 role="tab"
                 aria-selected={activeSnippet.id === snippet.id}
-                data-testid={`code-snippet-tab-${snippet.id}`}
+                data-testid={`${testId}-tab-${snippet.id}`}
                 className={['snippet-tab', activeSnippet.id === snippet.id ? 'is-active' : ''].filter(Boolean).join(' ')}
                 onClick={() => setActiveId(snippet.id)}
               >
@@ -75,7 +75,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
               type="button"
               className="code-snippet-expand"
               aria-label="Expand code snippet"
-              data-testid="code-snippet-expand"
+              data-testid={`${testId}-expand`}
               onClick={openModal}
             >
               <ExpandIcon />
@@ -91,7 +91,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
           showCopy={placement === 'inline'}
           variableAware
           copyText={copyText}
-          testId="code-snippet-code"
+          testId={`${testId}-code`}
         />
       </div>
     );
@@ -121,7 +121,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
         ariaLabel="Code snippet"
       >
         {expanded && (
-          <StyledWrapper className="code-snippet-tabs is-modal" data-testid="code-snippet-modal">
+          <StyledWrapper className="code-snippet-tabs is-modal" data-testid={`${testId}-modal`}>
             {renderSnippetBox('modal', modalActive, setModalActive)}
           </StyledWrapper>
         )}

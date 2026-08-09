@@ -6,11 +6,11 @@ import { StyledWrapper } from './StyledWrapper';
 interface MethodBadgeProps {
   method: string;
   className?: string;
+  asWritten?: boolean;
 }
 
-export const MethodBadge: React.FC<MethodBadgeProps> = ({ method, className }) => {
+export const MethodBadge: React.FC<MethodBadgeProps> = ({ method, className, asWritten = false }) => {
   const resolvedMethod = method || 'GET';
-  const asWritten = resolvedMethod !== resolvedMethod.toLowerCase() && resolvedMethod !== resolvedMethod.toUpperCase();
 
   return (
     <StyledWrapper

@@ -291,3 +291,29 @@ describe('grpcurl and JavaScript hardening', () => {
     expect(code).toContain('client.GetBook(');
   });
 });
+
+describe('message bodies in the JavaScript snippet', () => {
+  const withProto = (overrides: Partial<GrpcSnippetInput> = {}) =>
+    input({ protoFilePath: 'a.proto', method: '/pkg.Svc/Do', ...overrides });
+
+  it('keeps a valid JSON body exactly as the author wrote it', () => {
+    const code = generateGrpcJavaScriptCode(withProto({ messages: [{ title: 'a', message: '{\n  "n": 1\n}' }] }));
+    expect(code).toContain('const message = {\n  "n": 1\n};');
+  });
+
+  it('keeps a templated body so its variables survive', () => {
+    const code = generateGrpcJavaScriptCode(withProto({ messages: [{ title: 'a', message: '{"id":"{{orderId}}"}' }] }));
+    expect(code).toContain('const message = {"id":"{{orderId}}"};');
+  });
+
+  it('quotes a body that is not JSON so it cannot become executable code', () => {
+    const code = generateGrpcJavaScriptCode(withProto({ messages: [{ title: 'a', message: '};process.exit(1);//' }] }));
+    expect(code).toContain(`const message = '};process.exit(1);//';`);
+    expect(code).not.toContain('const message = };');
+  });
+
+  it('falls back to an empty object for a blank body', () => {
+    const code = generateGrpcJavaScriptCode(withProto({ messages: [{ title: 'a', message: '   ' }] }));
+    expect(code).toContain('const message = {};');
+  });
+});

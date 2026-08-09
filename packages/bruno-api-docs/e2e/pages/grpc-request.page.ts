@@ -20,7 +20,6 @@ export class GrpcRequestPage extends BasePage {
   readonly method = this.page.getByTestId('grpc-request-method');
 
   readonly messagesSection = this.page.getByTestId('grpc-request-section-messages');
-  readonly messages = this.page.getByTestId('grpc-messages');
   readonly showToggle = this.page.getByTestId('grpc-messages-show-toggle');
 
   readonly metadataSection = this.page.getByTestId('grpc-request-section-metadata');
@@ -32,7 +31,7 @@ export class GrpcRequestPage extends BasePage {
 
   readonly emptyState = this.page.getByTestId('grpc-request-config-empty');
 
-  readonly codeSnippet = this.page.getByTestId('grpc-request-code-snippet').getByTestId('code-snippet-code');
+  readonly codeSnippet = this.page.getByTestId('grpc-request-code-snippet').getByTestId('grpc-request-code-snippet-code');
 
   readonly executionContext = new ExecutionContextComponent(this.page);
   readonly executionContextSection = this.page.getByTestId('grpc-request-section-execution-context');
