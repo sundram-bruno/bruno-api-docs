@@ -107,54 +107,54 @@ test.describe('Request page — gRPC messages', () => {
   test('opens the first message and leaves the rest closed', async ({ grpcRequestPage }) => {
     await grpcRequestPage.open([REALTIME, 'Send Greetings']);
 
-    await expect(grpcRequestPage.messageToggle(0)).toHaveAttribute('aria-expanded', 'true');
-    await expect(grpcRequestPage.messageToggle(1)).toHaveAttribute('aria-expanded', 'false');
-    await expect(grpcRequestPage.messageCode(0)).toBeVisible();
+    await expect(grpcRequestPage.messages.toggle(0)).toHaveAttribute('aria-expanded', 'true');
+    await expect(grpcRequestPage.messages.toggle(1)).toHaveAttribute('aria-expanded', 'false');
+    await expect(grpcRequestPage.messages.code(0)).toBeVisible();
   });
 
   test('offers no show-more control when every message already fits', async ({ grpcRequestPage }) => {
     await grpcRequestPage.open([REALTIME, 'Send Greetings']);
 
-    await expect(grpcRequestPage.showToggle).toHaveCount(0);
+    await expect(grpcRequestPage.messages.showToggle).toHaveCount(0);
   });
 
   test('collapses a message that was open', async ({ grpcRequestPage }) => {
     await grpcRequestPage.open([REALTIME, 'Send Greetings']);
-    await grpcRequestPage.messageToggle(0).click();
+    await grpcRequestPage.messages.toggle(0).click();
 
-    await expect(grpcRequestPage.messageToggle(0)).toHaveAttribute('aria-expanded', 'false');
+    await expect(grpcRequestPage.messages.toggle(0)).toHaveAttribute('aria-expanded', 'false');
   });
 
   test('shows only the first three messages until show more is used', async ({ grpcRequestPage }) => {
     await grpcRequestPage.open([REALTIME, 'Bulk Upload']);
 
     await expect(grpcRequestPage.messagesSection).toContainText('6 messages');
-    await expect(grpcRequestPage.messageCard(2)).toBeVisible();
-    await expect(grpcRequestPage.messageCard(3)).toHaveCount(0);
-    await expect(grpcRequestPage.showToggle).toHaveText('Show more');
+    await expect(grpcRequestPage.messages.card(2)).toBeVisible();
+    await expect(grpcRequestPage.messages.card(3)).toHaveCount(0);
+    await expect(grpcRequestPage.messages.showToggle).toHaveText('Show more');
 
-    await grpcRequestPage.showToggle.click();
+    await grpcRequestPage.messages.showToggle.click();
 
-    await expect(grpcRequestPage.messageCard(5)).toBeVisible();
-    await expect(grpcRequestPage.showToggle).toHaveText('Show less');
+    await expect(grpcRequestPage.messages.card(5)).toBeVisible();
+    await expect(grpcRequestPage.messages.showToggle).toHaveText('Show less');
   });
 
   test('keeps every expanded message open across show more and show less', async ({ grpcRequestPage }) => {
     await grpcRequestPage.open([REALTIME, 'Bulk Upload']);
 
-    await grpcRequestPage.messageToggle(1).click();
-    await grpcRequestPage.messageToggle(2).click();
-    await grpcRequestPage.showToggle.click();
-    await grpcRequestPage.messageToggle(4).click();
-    await grpcRequestPage.showToggle.click();
+    await grpcRequestPage.messages.toggle(1).click();
+    await grpcRequestPage.messages.toggle(2).click();
+    await grpcRequestPage.messages.showToggle.click();
+    await grpcRequestPage.messages.toggle(4).click();
+    await grpcRequestPage.messages.showToggle.click();
 
-    await expect(grpcRequestPage.messageCard(3)).toHaveCount(0);
-    await expect(grpcRequestPage.messageToggle(1)).toHaveAttribute('aria-expanded', 'true');
-    await expect(grpcRequestPage.messageToggle(2)).toHaveAttribute('aria-expanded', 'true');
+    await expect(grpcRequestPage.messages.card(3)).toHaveCount(0);
+    await expect(grpcRequestPage.messages.toggle(1)).toHaveAttribute('aria-expanded', 'true');
+    await expect(grpcRequestPage.messages.toggle(2)).toHaveAttribute('aria-expanded', 'true');
 
-    await grpcRequestPage.showToggle.click();
+    await grpcRequestPage.messages.showToggle.click();
 
-    await expect(grpcRequestPage.messageToggle(4)).toHaveAttribute('aria-expanded', 'true');
+    await expect(grpcRequestPage.messages.toggle(4)).toHaveAttribute('aria-expanded', 'true');
   });
 });
 

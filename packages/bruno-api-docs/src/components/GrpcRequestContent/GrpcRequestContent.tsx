@@ -26,7 +26,6 @@ import {
 import { collectAssertions } from '../../utils/assertions';
 import { collectTests, collectRawTestScripts } from '../../utils/fileUtils';
 import { ExecutionContext } from '../ExecutionContext/ExecutionContext';
-import { RefreshIcon } from '../../assets/icons';
 import { generateGrpcurlCommand, generateGrpcJavaScriptCode, grpcMethodPath } from '../../utils/grpcSnippets';
 import { SnippetTabs, type Snippet } from '../SnippetTabs/SnippetTabs';
 import { useMarkdownRenderer, useResolvedVariables } from '../../hooks';
@@ -47,7 +46,7 @@ import { Breadcrumb, type BreadcrumbSegment } from '../../ui/Breadcrumb/Breadcru
 import { EmptyState } from '../../ui/EmptyState/EmptyState';
 import { RequestUrlBar } from '../Request/RequestUrlBar/RequestUrlBar';
 import { StyledWrapper } from './StyledWrapper';
-import { FileIcon } from '../../assets/icons';
+import { FileIcon, RefreshIcon } from '../../assets/icons';
 
 const NO_ANCESTRY: Item[] = [];
 
@@ -76,7 +75,10 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
   const methodType = getGrpcMethodType(item);
   const protoFileName = getGrpcProtoFileName(item);
   const protoFilePath = getGrpcProtoFilePath(item);
-  const methodTypeLabel = methodType ? GRPC_METHOD_TYPE_LABELS[methodType] : undefined;
+  const methodTypeLabel
+    = methodType && Object.prototype.hasOwnProperty.call(GRPC_METHOD_TYPE_LABELS, methodType)
+      ? GRPC_METHOD_TYPE_LABELS[methodType]
+      : undefined;
   const messages = useMemo(() => getGrpcMessages(item), [item]);
   const metadata = useMemo(() => getGrpcMetadata(item), [item]);
   const enabledMetadataCount = countEnabled(metadata);

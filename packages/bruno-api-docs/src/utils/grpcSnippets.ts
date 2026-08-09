@@ -60,7 +60,7 @@ const effectiveMetadata = (
   const { headers, comment } = authToHeaders(auth);
   headers.forEach((header) => {
     const present = entries.some((entry) => (entry.name || '').toLowerCase() === header.name.toLowerCase());
-    if (!present) entries.push({ name: header.name, value: header.value } as GrpcMetadata);
+    if (!present) entries.push({ name: header.name, value: header.value });
   });
   return { entries, note: comment };
 };

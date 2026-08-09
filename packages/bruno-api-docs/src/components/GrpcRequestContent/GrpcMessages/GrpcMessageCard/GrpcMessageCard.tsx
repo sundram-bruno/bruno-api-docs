@@ -19,12 +19,14 @@ export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
   testId = 'grpc-message-card'
 }) => {
   const [mounted, setMounted] = useState(expanded);
-  if (expanded && !mounted) {
-    setMounted(true);
-  }
 
   const detailId = useId();
   const detailRef = useRef<HTMLDivElement>(null);
+
+  const handleToggle = () => {
+    if (!expanded) setMounted(true);
+    onToggle();
+  };
 
   useEffect(() => {
     const el = detailRef.current;
@@ -42,7 +44,7 @@ export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
           aria-expanded={expanded}
           aria-controls={detailId}
           data-testid={`${testId}-toggle`}
-          onClick={onToggle}
+          onClick={handleToggle}
         >
           <ChevronArrow open={expanded} size={14} className="grpc-message-chevron" />
           <span className="grpc-message-title" data-testid={`${testId}-title`}>{title}</span>
