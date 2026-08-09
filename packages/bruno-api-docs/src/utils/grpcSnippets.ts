@@ -26,7 +26,7 @@ const parseProtoFlags = (protoFilePath: string): string[] => {
   const segments = protoFilePath.split(/[\\/]/).filter(Boolean);
   const file = segments[segments.length - 1];
   const dir = segments.slice(0, -1).join('/');
-  return dir ? [`-import-path ${dir}`, `-proto ${file}`] : [`-proto ${file}`];
+  return dir ? [`-import-path ${shellQuote(dir)}`, `-proto ${shellQuote(file)}`] : [`-proto ${shellQuote(file)}`];
 };
 
 const isClientStreaming = (methodType?: GrpcMethodType): boolean =>
@@ -79,8 +79,8 @@ export const generateGrpcurlCommand = ({
     parts.push(streaming ? '-d @' : `-d ${shellQuote(messages[0].message)}`);
   }
 
-  parts.push(target);
-  parts.push(parseMethod(method));
+  parts.push(shellQuote(target));
+  parts.push(shellQuote(parseMethod(method)));
 
   const command = parts.join(' \\\n  ');
 

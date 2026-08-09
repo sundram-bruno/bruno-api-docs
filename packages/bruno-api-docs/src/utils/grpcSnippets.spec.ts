@@ -47,8 +47,8 @@ describe('generateGrpcurlCommand', () => {
 
   it('adds the import path and proto file when one is attached', () => {
     const command = generateGrpcurlCommand(input({ protoFilePath: 'protos/telemetry/v1/telemetry.proto' }));
-    expect(command).toContain('-import-path protos/telemetry/v1');
-    expect(command).toContain('-proto telemetry.proto');
+    expect(command).toContain(`-import-path 'protos/telemetry/v1'`);
+    expect(command).toContain(`-proto 'telemetry.proto'`);
   });
 
   it('omits proto flags when the request uses reflection', () => {
@@ -98,6 +98,25 @@ describe('generateGrpcurlCommand', () => {
   it('keeps a quote in a message inside the quoted data flag', () => {
     const command = generateGrpcurlCommand(input({ messages: [{ title: 'Message 1', message: `{"note":"it's"}` }] }));
     expect(command).toContain(`-d '{"note":"it'\\''s"}'`);
+  });
+
+  it('keeps a proto path with spaces as one shell word', () => {
+    const command = generateGrpcurlCommand(input({ protoFilePath: 'my protos/book service.proto' }));
+    expect(command).toContain(`-import-path 'my protos'`);
+    expect(command).toContain(`-proto 'book service.proto'`);
+  });
+
+  it('quotes the target and the method so neither can split or execute', () => {
+    const command = generateGrpcurlCommand(
+      input({ url: 'grpc://host$(whoami):50051', method: '/pkg.Svc/Do$(whoami)' })
+    );
+    expect(command).toContain(`'host$(whoami):50051'`);
+    expect(command).toContain(`'pkg.Svc/Do$(whoami)'`);
+  });
+
+  it('neutralises a proto path that carries a shell command', () => {
+    const command = generateGrpcurlCommand(input({ protoFilePath: 'protos/book$(rm -rf ~).proto' }));
+    expect(command).toContain(`-proto 'book$(rm -rf ~).proto'`);
   });
 });
 
