@@ -114,22 +114,20 @@ export const Table: React.FC<TableProps> = ({
             <col key={column.key} style={column.width ? { width: column.width } : undefined} />
           ))}
         </colgroup>
-        {!hideHeader && (
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  scope="col"
-                  className={`table-head-cell table-cell--${column.align ?? 'left'}`}
-                  data-testid={`table-header-${column.key}`}
-                >
-                  {column.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-        )}
+        <thead className={hideHeader ? 'table-head table-head--hidden' : 'table-head'}>
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                scope="col"
+                className={`table-head-cell table-cell--${column.align ?? 'left'}`}
+                data-testid={`table-header-${column.key}`}
+              >
+                {column.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
         {groupList.map((group) => (
           <tbody key={group.id} className="table-group" data-testid={group.testId}>
             {group.label !== undefined && (
