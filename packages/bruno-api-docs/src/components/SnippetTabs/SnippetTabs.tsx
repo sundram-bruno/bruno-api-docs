@@ -17,7 +17,6 @@ export interface Snippet {
 
 interface SnippetTabsProps {
   snippets: Snippet[];
-  /** `embedded` collapses the box to a button that opens the snippet in the modal. */
   variant?: 'inline' | 'embedded';
   className?: string;
   testId?: string;

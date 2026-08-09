@@ -337,8 +337,6 @@ export const Request: React.FC<RequestProps> = ({
     );
   }
 
-  // Anything else, including a type this viewer has no page for, renders as a request the way
-  // it always has: the HTTP getters read from the root and fall back to GET.
   return (
     <RequestContent
       item={item as HttpRequest}

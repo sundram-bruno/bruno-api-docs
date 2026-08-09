@@ -346,10 +346,6 @@ const toPostResponseVarRow = (action: Action): PostResponseVarRow => ({
 export const getPreRequestVars = (item: Item): PreRequestVarRow[] =>
   getRequestVariables(item as RequestItem).map(toPreRequestVarRow);
 
-/**
- * Post-response captures live in `runtime.actions` for every protocol — the converter writes them
- * for gRPC too — but the published `GrpcRequestRuntime` omits the field, so it is read structurally.
- */
 export const getPostResponseVars = (item: Item): PostResponseVarRow[] =>
   ((item as { runtime?: { actions?: Action[] } }).runtime?.actions ?? [])
     .filter(isAfterResponseSetVariable)

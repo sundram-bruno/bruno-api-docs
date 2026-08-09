@@ -49,7 +49,6 @@ import { RequestUrlBar } from '../Request/RequestUrlBar/RequestUrlBar';
 import { StyledWrapper } from './StyledWrapper';
 import { FileIcon } from '../../assets/icons';
 
-/** Shared empty ancestry so an omitted prop keeps the same reference and the memos below hold. */
 const NO_ANCESTRY: Item[] = [];
 
 interface GrpcRequestContentProps {
@@ -101,8 +100,6 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
 
   const { lookup } = useResolvedVariables();
 
-  // Only the TLS flag reads this. `lookup` returns a secret's real value, so the guard below is
-  // what keeps it out of the snippet — the resolver does not mask it here.
   const resolvedUrl = useMemo(() => {
     const name = singleReferenceName(url);
     if (!name) return undefined;
