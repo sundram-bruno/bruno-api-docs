@@ -40,10 +40,6 @@ export const StyledWrapper = styled.div`
   .grpc-message-chevron {
     flex: 0 0 auto;
     color: var(--text-muted);
-    transition: transform 0.15s ease;
-  }
-  .grpc-message-chevron.is-open {
-    transform: rotate(90deg);
   }
 
   .grpc-message-title {
@@ -67,5 +63,11 @@ export const StyledWrapper = styled.div`
   }
   .grpc-message-detail-body {
     border-top: 1px solid var(--border-color);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grpc-message-detail {
+      transition: none;
+    }
   }
 `;

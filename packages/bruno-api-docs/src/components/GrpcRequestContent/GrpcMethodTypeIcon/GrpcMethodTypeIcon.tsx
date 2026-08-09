@@ -34,3 +34,5 @@ export const GrpcMethodTypeIcon: React.FC<GrpcMethodTypeIconProps> = ({ methodTy
     </StyledWrapper>
   );
 };
+
+export default GrpcMethodTypeIcon;

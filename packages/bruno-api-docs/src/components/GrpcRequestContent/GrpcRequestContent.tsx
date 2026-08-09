@@ -49,6 +49,9 @@ import { RequestUrlBar } from '../Request/RequestUrlBar/RequestUrlBar';
 import { StyledWrapper } from './StyledWrapper';
 import { FileIcon } from '../../assets/icons';
 
+/** Shared empty ancestry so an omitted prop keeps the same reference and the memos below hold. */
+const NO_ANCESTRY: Item[] = [];
+
 interface GrpcRequestContentProps {
   item: GrpcRequest;
   collection?: OpenCollection | null;
@@ -59,7 +62,7 @@ interface GrpcRequestContentProps {
 
 export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
   item,
-  ancestry = [],
+  ancestry = NO_ANCESTRY,
   collection,
   onBreadcrumbClick,
   testId = 'grpc-request-page'
@@ -72,8 +75,8 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
   const protoFileName = getGrpcProtoFileName(item);
   const protoFilePath = getGrpcProtoFilePath(item);
   const methodTypeLabel = methodType ? GRPC_METHOD_TYPE_LABELS[methodType] : undefined;
-  const messages = getGrpcMessages(item);
-  const metadata = getGrpcMetadata(item);
+  const messages = useMemo(() => getGrpcMessages(item), [item]);
+  const metadata = useMemo(() => getGrpcMetadata(item), [item]);
   const enabledMetadataCount = countEnabled(metadata);
 
   const ownAuth = getRequestAuth(item) as Auth | undefined;

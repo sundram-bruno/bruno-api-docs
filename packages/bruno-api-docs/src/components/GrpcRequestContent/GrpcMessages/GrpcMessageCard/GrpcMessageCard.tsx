@@ -18,6 +18,10 @@ export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
   onToggle,
   testId = 'grpc-message-card'
 }) => {
+  // The body mounts on first expand and stays mounted: the open/close animation runs on a
+  // grid-template-rows transition, which needs both states to exist to interpolate between.
+  // Setting it during render rather than in an effect keeps the first frame at the closed
+  // size, so opening animates instead of snapping.
   const [mounted, setMounted] = useState(expanded);
   if (expanded && !mounted) {
     setMounted(true);
@@ -26,6 +30,8 @@ export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
   const detailId = useId();
   const detailRef = useRef<HTMLDivElement>(null);
 
+  // A collapsed body is only clipped, not unmounted, so it stays focusable and reachable to a
+  // screen reader without `inert`.
   useEffect(() => {
     const el = detailRef.current;
     if (!el) return;
