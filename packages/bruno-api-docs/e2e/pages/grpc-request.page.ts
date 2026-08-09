@@ -31,6 +31,8 @@ export class GrpcRequestPage extends BasePage {
 
   readonly emptyState = this.page.getByTestId('grpc-request-config-empty');
 
+  readonly codeSnippet = this.page.getByTestId('grpc-request-code-snippet').getByTestId('code-snippet-code');
+
   messageCard(index: number) {
     return this.page.getByTestId(`grpc-messages-card-${index}`);
   }

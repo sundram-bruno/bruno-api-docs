@@ -19,7 +19,8 @@ import {
 import { resolveInheritedAuth } from '../../utils/request';
 import { generateGrpcurlCommand, generateGrpcJavaScriptCode } from '../../utils/grpcSnippets';
 import { SnippetTabs, type Snippet } from '../SnippetTabs/SnippetTabs';
-import { useMarkdownRenderer } from '../../hooks';
+import { useMarkdownRenderer, useResolvedVariables } from '../../hooks';
+import { singleReferenceName } from '../../utils/variableResolution';
 import { buildBreadcrumbSegments } from '../../utils/common';
 import { AUTH_MODE_LABELS, GRPC_METHOD_TYPE_LABELS } from '../../constants';
 import { Section } from '../Section/Section';
@@ -85,9 +86,19 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
   const hasLeftColumn
     = Boolean(protoFileName) || Boolean(method) || messages.length > 0 || metadata.length > 0 || showAuth;
 
+  const { lookup } = useResolvedVariables();
+
+  // Only the TLS flag reads this. A secret value is never looked at, so it cannot reach the snippet.
+  const resolvedUrl = useMemo(() => {
+    const name = singleReferenceName(url);
+    if (!name) return undefined;
+    const entry = lookup(name);
+    return entry.secret ? undefined : entry.value || undefined;
+  }, [url, lookup]);
+
   const snippets = useMemo<Snippet[]>(() => {
     if (!method) return [];
-    const input = { url, method, methodType, protoFilePath, metadata, messages };
+    const input = { url, resolvedUrl, method, methodType, protoFilePath, metadata, messages };
     const built: Snippet[] = [
       { id: 'grpcurl', label: 'grpcURL', language: 'bash', code: generateGrpcurlCommand(input) }
     ];
@@ -98,7 +109,7 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
     }
 
     return built;
-  }, [url, method, methodType, protoFilePath, metadata, messages]);
+  }, [url, resolvedUrl, method, methodType, protoFilePath, metadata, messages]);
 
   const md = useMarkdownRenderer();
 

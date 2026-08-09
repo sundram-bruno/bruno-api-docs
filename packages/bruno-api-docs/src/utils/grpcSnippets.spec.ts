@@ -114,6 +114,33 @@ describe('generateGrpcurlCommand', () => {
     expect(command).toContain(`'pkg.Svc/Do$(whoami)'`);
   });
 
+  it('drops plaintext when the scheme is TLS but hidden inside a variable', () => {
+    const command = generateGrpcurlCommand(input({ url: '{{host}}', resolvedUrl: 'grpcs://grpcb.in:9001' }));
+    expect(command).not.toContain('-plaintext');
+    expect(command).toContain(`'{{host}}'`);
+  });
+
+  it('keeps plaintext when the variable resolves to an unencrypted scheme', () => {
+    const command = generateGrpcurlCommand(input({ url: '{{host}}', resolvedUrl: 'grpc://grpcb.in:9000' }));
+    expect(command).toContain('-plaintext');
+    expect(command).toContain(`'{{host}}'`);
+  });
+
+  it('assumes plaintext when the variable resolves to a bare address', () => {
+    const command = generateGrpcurlCommand(input({ url: '{{host}}', resolvedUrl: 'grpcb.in:9000' }));
+    expect(command).toContain('-plaintext');
+  });
+
+  it('assumes plaintext when the variable cannot be resolved', () => {
+    expect(generateGrpcurlCommand(input({ url: '{{host}}' }))).toContain('-plaintext');
+  });
+
+  it('lets a scheme written into the url win over the resolved value', () => {
+    const command = generateGrpcurlCommand(input({ url: 'grpcs://api.example.com:443', resolvedUrl: 'grpc://ignored' }));
+    expect(command).not.toContain('-plaintext');
+    expect(command).toContain(`'api.example.com:443'`);
+  });
+
   it('neutralises a proto path that carries a shell command', () => {
     const command = generateGrpcurlCommand(input({ protoFilePath: 'protos/book$(rm -rf ~).proto' }));
     expect(command).toContain(`-proto 'book$(rm -rf ~).proto'`);
@@ -134,6 +161,12 @@ describe('generateGrpcJavaScriptCode', () => {
   it('uses TLS credentials for a grpcs target', () => {
     const code = generateGrpcJavaScriptCode(withProto({ url: 'grpcs://api.example.com:443' }));
     expect(code).toContain('grpc.credentials.createSsl()');
+  });
+
+  it('uses TLS credentials when the scheme is hidden inside a variable', () => {
+    const code = generateGrpcJavaScriptCode(withProto({ url: '{{host}}', resolvedUrl: 'grpcs://grpcb.in:9001' }));
+    expect(code).toContain('grpc.credentials.createSsl()');
+    expect(code).toContain(`'{{host}}'`);
   });
 
   it('adds enabled metadata and skips disabled rows', () => {

@@ -13,6 +13,21 @@ test.describe('Request page — gRPC requests', () => {
     await expect(grpcRequestPage.urlBar.tryButton).toHaveCount(0);
   });
 
+  test('marks the grpcurl command plaintext for an unencrypted environment', async ({ grpcRequestPage }) => {
+    await grpcRequestPage.open([REALTIME, 'Order Service']);
+
+    await expect(grpcRequestPage.codeSnippet).toContainText('-plaintext');
+    await expect(grpcRequestPage.codeSnippet).toContainText('{{grpcUrl}}');
+  });
+
+  test('drops plaintext when the environment resolves the address to TLS', async ({ grpcRequestPage, envSwitcher }) => {
+    await grpcRequestPage.open([REALTIME, 'Order Service']);
+    await envSwitcher.selectEnvironment('Prod');
+
+    await expect(grpcRequestPage.codeSnippet).not.toContainText('-plaintext');
+    await expect(grpcRequestPage.codeSnippet).toContainText('{{grpcUrl}}');
+  });
+
   test('renders the request docs when the request provides them', async ({ grpcRequestPage }) => {
     await grpcRequestPage.open([REALTIME, 'Order Service']);
 

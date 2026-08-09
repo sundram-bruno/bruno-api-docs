@@ -8,16 +8,25 @@ export interface GrpcSnippetInput {
   protoFilePath?: string;
   metadata: GrpcMetadata[];
   messages: GrpcMessageEntry[];
+  /** What `url` resolves to, when a variable hides the scheme. Decides TLS only; never shown. */
+  resolvedUrl?: string;
 }
 
-const parseTarget = (url: string): { target: string; plaintext: boolean } => {
+const schemeOf = (value: string): string | undefined =>
+  value.trim().match(/^(grpcs?|https?):\/\//i)?.[1]?.toLowerCase();
+
+/**
+ * The target is emitted as written, so a `{{host}}` stays a variable the reader can hover.
+ * TLS is a different question: it is decided here and never displayed, so it reads the
+ * resolved value when the scheme sits inside the variable. Guessing plaintext there makes
+ * grpcurl hang against a TLS server until it times out, blaming the network.
+ */
+const parseTarget = (url: string, resolvedUrl?: string): { target: string; plaintext: boolean } => {
   const trimmed = url.trim();
   const match = trimmed.match(/^(grpcs?|https?):\/\/(.*)$/i);
-  if (!match) {
-    return { target: trimmed, plaintext: true };
-  }
-  const scheme = match[1].toLowerCase();
-  return { target: match[2], plaintext: scheme === 'grpc' || scheme === 'http' };
+  const scheme = match ? match[1].toLowerCase() : schemeOf(resolvedUrl ?? '');
+  const plaintext = !scheme || scheme === 'grpc' || scheme === 'http';
+  return { target: match ? match[2] : trimmed, plaintext };
 };
 
 const parseMethod = (method: string): string => method.replace(/^\//, '');
@@ -56,9 +65,10 @@ export const generateGrpcurlCommand = ({
   methodType,
   protoFilePath,
   metadata,
-  messages
+  messages,
+  resolvedUrl
 }: GrpcSnippetInput): string => {
-  const { target, plaintext } = parseTarget(url);
+  const { target, plaintext } = parseTarget(url, resolvedUrl);
   const parts: string[] = ['grpcurl'];
 
   if (plaintext) {
@@ -97,12 +107,13 @@ export const generateGrpcJavaScriptCode = ({
   methodType,
   protoFilePath,
   metadata,
-  messages
+  messages,
+  resolvedUrl
 }: GrpcSnippetInput): string => {
   const { servicePath, methodName } = parseService(method);
   if (!protoFilePath || !servicePath) return '';
 
-  const { target, plaintext } = parseTarget(url);
+  const { target, plaintext } = parseTarget(url, resolvedUrl);
   const enabled = metadata.filter((entry) => !entry.disabled);
   const credentials = plaintext ? 'grpc.credentials.createInsecure()' : 'grpc.credentials.createSsl()';
 

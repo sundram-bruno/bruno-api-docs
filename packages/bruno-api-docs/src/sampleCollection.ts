@@ -34,7 +34,7 @@ config:
         - name: "host"
           value: "https://echo.usebruno.com"
         - name: "grpcUrl"
-          value: "grpc://echo.usebruno.com:443"
+          value: "grpcs://echo.usebruno.com:443"
         - name: "bearer_auth_token"
           secret: true
           type: "string"
