@@ -157,3 +157,43 @@ test.describe('Request page — gRPC messages', () => {
     await expect(grpcRequestPage.messageToggle(4)).toHaveAttribute('aria-expanded', 'true');
   });
 });
+
+test.describe('Request page — gRPC execution context', () => {
+  test('lists the variables the request defines', async ({ grpcRequestPage }) => {
+    await grpcRequestPage.open([REALTIME, 'Order Service']);
+    await grpcRequestPage.executionContext.openTab('variables');
+
+    await expect(grpcRequestPage.executionContext.variable('orderId')).toBeVisible();
+    await expect(grpcRequestPage.executionContext.variable('lastOrderStatus')).toBeVisible();
+  });
+
+  test('lists the scripts that run around the call', async ({ grpcRequestPage }) => {
+    await grpcRequestPage.open([REALTIME, 'Order Service']);
+    await grpcRequestPage.executionContext.openTab('scripts');
+
+    await expect(grpcRequestPage.executionContext.scriptStep('Request Pre-Request')).toBeVisible();
+    await expect(grpcRequestPage.executionContext.scriptStep('Request Post-Response')).toBeVisible();
+  });
+
+  test('lists the assertions the request declares', async ({ grpcRequestPage }) => {
+    await grpcRequestPage.open([REALTIME, 'Order Service']);
+    await grpcRequestPage.executionContext.openTab('asserts');
+
+    await expect(grpcRequestPage.executionContext.assertion('res.body.orderId')).toBeVisible();
+  });
+
+  test('lists the tests the request declares', async ({ grpcRequestPage }) => {
+    await grpcRequestPage.open([REALTIME, 'Order Service']);
+    await grpcRequestPage.executionContext.openTab('tests');
+
+    await expect(grpcRequestPage.executionContext.testsPanel).toContainText('returns the requested order');
+  });
+
+  test('still shows the inherited chain for a request with no runtime of its own', async ({ grpcRequestPage }) => {
+    await grpcRequestPage.open([REALTIME, 'Chat']);
+    await grpcRequestPage.executionContext.openTab('scripts');
+
+    await expect(grpcRequestPage.executionContext.scriptStep('Collection Pre-Request')).toBeVisible();
+    await expect(grpcRequestPage.executionContext.scriptStep('Request Pre-Request')).toHaveCount(0);
+  });
+});

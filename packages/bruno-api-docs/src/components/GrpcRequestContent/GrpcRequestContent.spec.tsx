@@ -299,3 +299,62 @@ it('offers a JavaScript snippet only when a proto file is attached', () => {
   expect(reflectionOnly).toContain('code-snippet-tab-grpcurl');
   expect(reflectionOnly).not.toContain('code-snippet-tab-javascript');
 });
+
+describe('GrpcRequestContent — execution context', () => {
+  const withRuntime = (runtime: Record<string, unknown>) =>
+    renderToStaticMarkup(
+      <GrpcRequestContent
+        item={grpcItem({
+          info: { name: 'Order Service', type: 'grpc' },
+          grpc: { url: 'grpc://localhost:50051', method: '/orders.OrderService/GetOrder' },
+          runtime
+        })}
+      />
+    );
+
+  it('renders an empty state when the request carries no runtime', () => {
+    const html = renderToStaticMarkup(
+      <GrpcRequestContent
+        item={grpcItem({
+          info: { name: 'Order Service', type: 'grpc' },
+          grpc: { url: 'grpc://localhost:50051', method: '/orders.OrderService/GetOrder' }
+        })}
+      />
+    );
+    expect(html).toContain('grpc-request-section-execution-context');
+    expect(html).toContain('grpc-request-execution-context-empty');
+    expect(html).toContain('No execution context');
+  });
+
+  it('renders pre-request variables from the runtime block', () => {
+    const html = withRuntime({ variables: [{ name: 'orderId', value: '12345' }] });
+    expect(html).not.toContain('grpc-request-execution-context-empty');
+    expect(html).toContain('orderId');
+  });
+
+  it('renders post-response captures stored as actions', () => {
+    const html = withRuntime({
+      actions: [
+        {
+          type: 'set-variable',
+          trigger: 'after-response',
+          variable: { name: 'lastOrderStatus', scope: 'runtime' },
+          selector: { expression: 'res.body.status' }
+        }
+      ]
+    });
+    expect(html).not.toContain('grpc-request-execution-context-empty');
+    expect(html).toContain('lastOrderStatus');
+  });
+
+  it('renders assertions from the runtime block', () => {
+    const html = withRuntime({ assertions: [{ expression: 'res.body.orderId', operator: 'eq', value: '12345' }] });
+    expect(html).not.toContain('grpc-request-execution-context-empty');
+    expect(html).toContain('res.body.orderId');
+  });
+
+  it('renders scripts from the runtime block', () => {
+    const html = withRuntime({ scripts: [{ type: 'before-request', code: 'bru.setVar(\'requestedAt\', Date.now());' }] });
+    expect(html).not.toContain('grpc-request-execution-context-empty');
+  });
+});

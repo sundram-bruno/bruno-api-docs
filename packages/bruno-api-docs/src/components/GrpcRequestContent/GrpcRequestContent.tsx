@@ -16,8 +16,18 @@ import {
   getGrpcProtoFilePath,
   countEnabled
 } from '../../utils/schemaHelpers';
-import { resolveInheritedAuth } from '../../utils/request';
-import { generateGrpcurlCommand, generateGrpcJavaScriptCode } from '../../utils/grpcSnippets';
+import {
+  resolveInheritedAuth,
+  getPreRequestVars,
+  getPostResponseVars,
+  buildScriptChain,
+  getScriptFlow
+} from '../../utils/request';
+import { collectAssertions } from '../../utils/assertions';
+import { collectTests, collectRawTestScripts } from '../../utils/fileUtils';
+import { ExecutionContext } from '../ExecutionContext/ExecutionContext';
+import { RefreshIcon } from '../../assets/icons';
+import { generateGrpcurlCommand, generateGrpcJavaScriptCode, grpcMethodPath } from '../../utils/grpcSnippets';
 import { SnippetTabs, type Snippet } from '../SnippetTabs/SnippetTabs';
 import { useMarkdownRenderer, useResolvedVariables } from '../../hooks';
 import { singleReferenceName } from '../../utils/variableResolution';
@@ -88,7 +98,8 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
 
   const { lookup } = useResolvedVariables();
 
-  // Only the TLS flag reads this. A secret value is never looked at, so it cannot reach the snippet.
+  // Only the TLS flag reads this. `lookup` returns a secret's real value, so the guard below is
+  // what keeps it out of the snippet — the resolver does not mask it here.
   const resolvedUrl = useMemo(() => {
     const name = singleReferenceName(url);
     if (!name) return undefined;
@@ -122,6 +133,23 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
     () => buildBreadcrumbSegments(collection, ancestry),
     [collection, ancestry]
   );
+
+  const preVars = useMemo(() => getPreRequestVars(item), [item]);
+  const postVars = useMemo(() => getPostResponseVars(item), [item]);
+  const scriptChain = useMemo(() => buildScriptChain(collection, ancestry, item), [collection, ancestry, item]);
+  const scriptFlow = useMemo(() => getScriptFlow(collection), [collection]);
+  const assertions = useMemo(() => collectAssertions(item), [item]);
+  const tests = useMemo(
+    () => collectTests(collection, ancestry, item, scriptFlow),
+    [collection, ancestry, item, scriptFlow]
+  );
+  const testScripts = useMemo(
+    () => collectRawTestScripts(collection, ancestry, item, scriptFlow),
+    [collection, ancestry, item, scriptFlow]
+  );
+
+  const hasExecutionContext
+    = scriptChain.length > 0 || preVars.length > 0 || postVars.length > 0 || assertions.length > 0 || tests.length > 0;
 
   return (
     <PageWrapper>
@@ -160,7 +188,7 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
                 <Section label="RPC method" testId="grpc-request-section-method">
                   <div className="grpc-field" data-testid="grpc-request-method">
                     <GrpcMethodTypeIcon methodType={methodType} className="grpc-field-icon" />
-                    <span className="grpc-field-text">{method.replace(/^\//, '')}</span>
+                    <span className="grpc-field-text">{grpcMethodPath(method)}</span>
                     {methodTypeLabel && <span className="grpc-field-meta">{methodTypeLabel}</span>}
                   </div>
                 </Section>
@@ -227,6 +255,35 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
             subheading="This request has no method, messages, metadata, or authentication configured."
           />
         )}
+
+        <Section
+          label="Execution Context"
+          testId="grpc-request-section-execution-context"
+          className="grpc-request-fullwidth"
+          collapsible={hasExecutionContext}
+          storageKey="grpc-request-execution-context"
+        >
+          {hasExecutionContext ? (
+            <ExecutionContext
+              scriptChain={scriptChain}
+              preVars={preVars}
+              postVars={postVars}
+              assertions={assertions}
+              tests={tests}
+              testScripts={testScripts}
+              flow={scriptFlow}
+              url={url}
+              onNavigate={onBreadcrumbClick}
+            />
+          ) : (
+            <EmptyState
+              testId="grpc-request-execution-context-empty"
+              icon={<RefreshIcon />}
+              heading="No execution context"
+              subheading="This request has no scripts, variables, asserts, or tests configured."
+            />
+          )}
+        </Section>
       </StyledWrapper>
     </PageWrapper>
   );

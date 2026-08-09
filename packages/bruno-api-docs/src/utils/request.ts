@@ -20,7 +20,8 @@ import {
   getRequestScripts,
   scriptsArrayToObject,
   getRequestVariables,
-  getHttpHeaders
+  getHttpHeaders,
+  type RequestItem
 } from './schemaHelpers';
 import { getItemUuid } from './itemUtils';
 import { isSecretVariable, unwrapVariableValue } from './variableResolution';
@@ -275,7 +276,7 @@ const stepLabel = (level: ScriptLevel, phase: ScriptPhase): string => {
 export const buildScriptChain = (
   collection: OpenCollection | null | undefined,
   ancestors: Item[],
-  item: HttpRequest
+  item: Item
 ): ScriptChainStep[] => {
   const collectionScripts = scriptsArrayToObject(collection?.request?.scripts);
   const sources: ScriptSource[] = [
@@ -285,7 +286,7 @@ export const buildScriptChain = (
     const s = scriptsArrayToObject(folderScripts(folder));
     sources.push({ level: 'folder', order: sources.length, sourceName: getItemName(folder), sourceUuid: getItemUuid(folder), pre: s.preRequest, post: s.postResponse });
   });
-  const requestScripts = scriptsArrayToObject(getRequestScripts(item));
+  const requestScripts = scriptsArrayToObject(getRequestScripts(item as RequestItem));
   sources.push({ level: 'request', order: sources.length, pre: requestScripts.preRequest, post: requestScripts.postResponse });
 
   const steps: ScriptChainStep[] = [];
@@ -342,11 +343,17 @@ const toPostResponseVarRow = (action: Action): PostResponseVarRow => ({
   disabled: action.disabled
 });
 
-export const getPreRequestVars = (item: HttpRequest): PreRequestVarRow[] =>
-  getRequestVariables(item).map(toPreRequestVarRow);
+export const getPreRequestVars = (item: Item): PreRequestVarRow[] =>
+  getRequestVariables(item as RequestItem).map(toPreRequestVarRow);
 
-export const getPostResponseVars = (item: HttpRequest): PostResponseVarRow[] =>
-  (item.runtime?.actions ?? []).filter(isAfterResponseSetVariable).map(toPostResponseVarRow);
+/**
+ * Post-response captures live in `runtime.actions` for every protocol — the converter writes them
+ * for gRPC too — but the published `GrpcRequestRuntime` omits the field, so it is read structurally.
+ */
+export const getPostResponseVars = (item: Item): PostResponseVarRow[] =>
+  ((item as { runtime?: { actions?: Action[] } }).runtime?.actions ?? [])
+    .filter(isAfterResponseSetVariable)
+    .map(toPostResponseVarRow);
 
 // Bridge the OC actions model (after-response set-variable) to the editable Variables rows, and back.
 export const actionsToPostResponseVars = (actions: Action[] = []): PostResponseVar[] =>

@@ -1,6 +1,6 @@
-import type { HttpRequest } from '@opencollection/types/requests/http';
+import type { Item } from '@opencollection/types/collection/item';
 import type { Assertion } from '@opencollection/types/common/assertions';
-import { getRequestAssertions } from './schemaHelpers';
+import { getRequestAssertions, type RequestItem } from './schemaHelpers';
 import { getDescription } from './request';
 
 const OPERATOR_LABELS: Record<string, string> = {
@@ -52,8 +52,8 @@ export interface AssertionRow {
   disabled?: boolean;
 }
 
-export const collectAssertions = (item: HttpRequest): AssertionRow[] =>
-  getRequestAssertions(item).map((assertion: Assertion) => {
+export const collectAssertions = (item: Item): AssertionRow[] =>
+  getRequestAssertions(item as RequestItem).map((assertion: Assertion) => {
     const unary = isUnaryOperator(assertion.operator);
     return {
       level: 'request',

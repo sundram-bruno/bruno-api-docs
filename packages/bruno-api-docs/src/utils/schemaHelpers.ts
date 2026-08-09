@@ -20,7 +20,7 @@ import type { WebSocketRequest } from '@opencollection/types/requests/websocket'
 import type { Script, Scripts, ScriptType } from '@opencollection/types/common/scripts';
 import { PROTOCOL_BADGE_LABELS } from '../constants';
 
-type RequestItem = HttpRequest | GraphQLRequest | GrpcRequest | WebSocketRequest;
+export type RequestItem = HttpRequest | GraphQLRequest | GrpcRequest | WebSocketRequest;
 
 /** A request body as stored on an item: a single body, a list of body variants, or none. */
 export type RequestBody = HttpRequestBody | HttpRequestBodyVariant[] | undefined;

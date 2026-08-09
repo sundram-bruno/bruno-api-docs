@@ -172,6 +172,42 @@ items:
               "includeItems" : true
             }
           auth: inherit
+        runtime:
+          variables:
+            - name: "orderId"
+              value: "12345"
+              description: "Order the call fetches"
+            - name: "retryBudget"
+              value: "2"
+              disabled: true
+          scripts:
+            - type: "before-request"
+              code: |-
+                bru.setVar('requestedAt', Date.now());
+            - type: "after-response"
+              code: |-
+                bru.setVar('orderStatus', res.body.status);
+            - type: "tests"
+              code: |-
+                test('returns the requested order', function () {
+                  expect(res.body.orderId).to.equal(bru.getVar('orderId'));
+                });
+          assertions:
+            - expression: "res.body.orderId"
+              operator: "eq"
+              value: "12345"
+              description: "Echoes back the order it was asked for"
+            - expression: "res.body.items"
+              operator: "isDefined"
+          actions:
+            - type: "set-variable"
+              trigger: "after-response"
+              variable:
+                name: "lastOrderStatus"
+                scope: "runtime"
+              selector:
+                expression: "res.body.status"
+              description: "Captured for the next request in the folder"
         docs: |
           # Order Service
 
