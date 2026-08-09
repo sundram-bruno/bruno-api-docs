@@ -239,3 +239,55 @@ describe('generateGrpcJavaScriptCode', () => {
     expect(code).toContain(`metadata.set('x-note', 'it\\'s here');`);
   });
 });
+
+describe('grpcurl and JavaScript hardening', () => {
+  it('picks a heredoc delimiter no message line can close early', () => {
+    const command = generateGrpcurlCommand(
+      input({
+        methodType: 'client-streaming',
+        messages: [
+          { title: 'a', message: '{"a":1}\nEOF\nrm -rf ~' },
+          { title: 'b', message: '{"b":2}' }
+        ]
+      })
+    );
+    expect(command).toContain(`<< 'EOF2'`);
+    expect(command.trimEnd().endsWith('EOF2')).toBe(true);
+    expect(command).toContain('rm -rf ~');
+  });
+
+  it('keeps the plain delimiter when no message collides with it', () => {
+    const command = generateGrpcurlCommand(
+      input({ methodType: 'client-streaming', messages: [{ title: 'a', message: '{"a":1}' }] })
+    );
+    expect(command).toContain(`<< 'EOF'`);
+  });
+
+  it('keeps the root of an absolute proto path', () => {
+    const command = generateGrpcurlCommand(input({ protoFilePath: '/protos/book.proto' }));
+    expect(command).toContain(`-import-path '/protos'`);
+    expect(command).toContain(`-proto 'book.proto'`);
+  });
+
+  it('keeps a bare root proto path', () => {
+    const command = generateGrpcurlCommand(input({ protoFilePath: '/book.proto' }));
+    expect(command).toContain(`-import-path '/'`);
+  });
+
+  it('generates no JavaScript when the method is not a plain identifier path', () => {
+    const hostile = generateGrpcJavaScriptCode(
+      input({ protoFilePath: 'a.proto', method: '/pkg.Svc/Do(); process.exit(1); //' })
+    );
+    expect(hostile).toBe('');
+  });
+
+  it('generates no JavaScript when the service segment is not an identifier path', () => {
+    expect(generateGrpcJavaScriptCode(input({ protoFilePath: 'a.proto', method: '/pkg-svc!/Do' }))).toBe('');
+  });
+
+  it('still generates JavaScript for an ordinary dotted service path', () => {
+    const code = generateGrpcJavaScriptCode(input({ protoFilePath: 'a.proto', method: '/com.book.BookService/GetBook' }));
+    expect(code).toContain('new proto.com.book.BookService(');
+    expect(code).toContain('client.GetBook(');
+  });
+});

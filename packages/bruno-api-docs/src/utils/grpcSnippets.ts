@@ -12,8 +12,9 @@ export interface GrpcSnippetInput {
   resolvedUrl?: string;
 }
 
-const schemeOf = (value: string): string | undefined =>
-  value.trim().match(/^(grpcs?|https?):\/\//i)?.[1]?.toLowerCase();
+const SCHEME_PATTERN = /^(grpcs?|https?):\/\//i;
+
+const schemeOf = (value: string): string | undefined => value.trim().match(SCHEME_PATTERN)?.[1]?.toLowerCase();
 
 /**
  * The target is emitted as written, so a `{{host}}` stays a variable the reader can hover.
@@ -23,29 +24,48 @@ const schemeOf = (value: string): string | undefined =>
  */
 const parseTarget = (url: string, resolvedUrl?: string): { target: string; plaintext: boolean } => {
   const trimmed = url.trim();
-  const match = trimmed.match(/^(grpcs?|https?):\/\/(.*)$/i);
-  const scheme = match ? match[1].toLowerCase() : schemeOf(resolvedUrl ?? '');
+  const scheme = schemeOf(trimmed) ?? schemeOf(resolvedUrl ?? '');
   const plaintext = !scheme || scheme === 'grpc' || scheme === 'http';
-  return { target: match ? match[2] : trimmed, plaintext };
+  return { target: trimmed.replace(SCHEME_PATTERN, ''), plaintext };
 };
 
-const parseMethod = (method: string): string => method.replace(/^\//, '');
+/** `/pkg.Service/Method` as grpcurl and the docs page both want it, without the leading slash. */
+export const grpcMethodPath = (method: string): string => method.replace(/^\//, '');
 
 const parseProtoFlags = (protoFilePath: string): string[] => {
-  const segments = protoFilePath.split(/[\\/]/).filter(Boolean);
-  const file = segments[segments.length - 1];
-  const dir = segments.slice(0, -1).join('/');
+  const normalised = protoFilePath.replace(/\\/g, '/').replace(/\/{2,}/g, '/');
+  const lastSlash = normalised.lastIndexOf('/');
+  const file = lastSlash === -1 ? normalised : normalised.slice(lastSlash + 1);
+  // An absolute path keeps its root: slicing to index 0 would drop the leading slash.
+  const dir = lastSlash === -1 ? '' : normalised.slice(0, lastSlash) || '/';
   return dir ? [`-import-path ${shellQuote(dir)}`, `-proto ${shellQuote(file)}`] : [`-proto ${shellQuote(file)}`];
 };
 
-const isClientStreaming = (methodType?: GrpcMethodType): boolean =>
+const streamsInFor = (methodType?: GrpcMethodType): boolean =>
   methodType === 'client-streaming' || methodType === 'bidi-streaming';
 
+const streamsOutFor = (methodType?: GrpcMethodType): boolean =>
+  methodType === 'server-streaming' || methodType === 'bidi-streaming';
+
 const parseService = (method: string): { servicePath: string; methodName: string } => {
-  const trimmed = method.replace(/^\//, '');
+  const trimmed = grpcMethodPath(method);
   const slash = trimmed.lastIndexOf('/');
   if (slash === -1) return { servicePath: '', methodName: trimmed };
   return { servicePath: trimmed.slice(0, slash), methodName: trimmed.slice(slash + 1) };
+};
+
+const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+const IDENTIFIER_PATH = /^[A-Za-z_$][A-Za-z0-9_$]*(\.[A-Za-z_$][A-Za-z0-9_$]*)*$/;
+
+/**
+ * A heredoc ends at the first line equal to its delimiter, so a message containing a bare
+ * `EOF` line would close it early and hand the rest to the shell. Pick one no message uses.
+ */
+const heredocDelimiter = (messages: string[]): string => {
+  const lines = new Set(messages.flatMap((message) => message.split('\n').map((line) => line.trim())));
+  let delimiter = 'EOF';
+  for (let suffix = 2; lines.has(delimiter); suffix += 1) delimiter = `EOF${suffix}`;
+  return delimiter;
 };
 
 const shellQuote = (value: string): string => `'${value.replace(/'/g, `'\\''`)}'`;
@@ -83,19 +103,21 @@ export const generateGrpcurlCommand = ({
     parts.push(...parseProtoFlags(protoFilePath));
   }
 
-  const streaming = isClientStreaming(methodType);
+  const streaming = streamsInFor(methodType);
 
   if (messages.length > 0) {
     parts.push(streaming ? '-d @' : `-d ${shellQuote(messages[0].message)}`);
   }
 
   parts.push(shellQuote(target));
-  parts.push(shellQuote(parseMethod(method)));
+  parts.push(shellQuote(grpcMethodPath(method)));
 
   const command = parts.join(' \\\n  ');
 
   if (streaming && messages.length > 0) {
-    return `${command} << 'EOF'\n${messages.map((entry) => entry.message).join('\n')}\nEOF`;
+    const bodies = messages.map((entry) => entry.message);
+    const delimiter = heredocDelimiter(bodies);
+    return `${command} << '${delimiter}'\n${bodies.join('\n')}\n${delimiter}`;
   }
 
   return command;
@@ -111,7 +133,9 @@ export const generateGrpcJavaScriptCode = ({
   resolvedUrl
 }: GrpcSnippetInput): string => {
   const { servicePath, methodName } = parseService(method);
-  if (!protoFilePath || !servicePath) return '';
+  // Both land in code positions a string cannot be escaped into, so anything that is not a
+  // plain identifier path yields no snippet rather than a corrupted one.
+  if (!protoFilePath || !IDENTIFIER_PATH.test(servicePath) || !IDENTIFIER.test(methodName)) return '';
 
   const { target, plaintext } = parseTarget(url, resolvedUrl);
   const enabled = metadata.filter((entry) => !entry.disabled);
@@ -133,8 +157,8 @@ export const generateGrpcJavaScriptCode = ({
   }
 
   const metadataArg = enabled.length > 0 ? 'metadata' : '';
-  const streamsIn = methodType === 'client-streaming' || methodType === 'bidi-streaming';
-  const streamsOut = methodType === 'server-streaming' || methodType === 'bidi-streaming';
+  const streamsIn = streamsInFor(methodType);
+  const streamsOut = streamsOutFor(methodType);
 
   if (streamsIn) {
     lines.push('', 'const messages = [');
@@ -151,27 +175,19 @@ export const generateGrpcJavaScriptCode = ({
 
   const callArgs = [streamsIn ? '' : 'message', metadataArg].filter(Boolean).join(', ');
 
-  if (!streamsIn && !streamsOut) {
-    lines.push(
-      `client.${methodName}(${callArgs}${callArgs ? ', ' : ''}(error, response) => {`,
-      '  console.log(error ?? response);',
-      '});'
-    );
+  const withCallback = `${callArgs}${callArgs ? ', ' : ''}(error, response) => {`;
+
+  if (!streamsOut) {
+    // Unary and client-streaming both end in a single response, so both take a callback.
+    const opening = streamsIn ? `const call = client.${methodName}(` : `client.${methodName}(`;
+    lines.push(`${opening}${withCallback}`, '  console.log(error ?? response);', '});');
   } else {
-    const opener = streamsIn && !streamsOut ? `${callArgs}${callArgs ? ', ' : ''}(error, response) => {` : callArgs;
-    if (streamsIn && !streamsOut) {
-      lines.push(`const call = client.${methodName}(${opener}`, '  console.log(error ?? response);', '});');
-    } else {
-      lines.push(`const call = client.${methodName}(${opener});`);
-    }
+    lines.push(`const call = client.${methodName}(${callArgs});`);
+    lines.push(`call.on('data', (response) => console.log(response));`, `call.on('end', () => console.log('done'));`);
+  }
 
-    if (streamsOut) {
-      lines.push(`call.on('data', (response) => console.log(response));`, `call.on('end', () => console.log('done'));`);
-    }
-
-    if (streamsIn) {
-      lines.push('', 'for (const message of messages) {', '  call.write(message);', '}', 'call.end();');
-    }
+  if (streamsIn) {
+    lines.push('', 'for (const message of messages) {', '  call.write(message);', '}', 'call.end();');
   }
 
   return lines.join('\n');
