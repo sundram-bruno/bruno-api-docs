@@ -51,6 +51,9 @@ import { FileIcon } from '../../assets/icons';
 
 const NO_ANCESTRY: Item[] = [];
 
+const NAV_GROUP = { configuration: 'Configuration' } as const;
+const NAV_LEVEL = { section: 1, configItem: 2 } as const;
+
 interface GrpcRequestContentProps {
   item: GrpcRequest;
   collection?: OpenCollection | null;
@@ -101,15 +104,15 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
   const { lookup } = useResolvedVariables();
 
   const resolvedUrl = useMemo(() => {
-    const name = singleReferenceName(url);
-    if (!name) return undefined;
-    const entry = lookup(name);
+    const variableName = singleReferenceName(url);
+    if (!variableName) return undefined;
+    const entry = lookup(variableName);
     return entry.secret ? undefined : entry.value || undefined;
   }, [url, lookup]);
 
   const snippets = useMemo<Snippet[]>(() => {
     if (!method) return [];
-    const input = { url, resolvedUrl, method, methodType, protoFilePath, metadata, messages };
+    const input = { url, resolvedUrl, method, methodType, protoFilePath, metadata, messages, auth: effectiveAuth };
     const built: Snippet[] = [
       { id: 'grpcurl', label: 'grpcURL', language: 'bash', code: generateGrpcurlCommand(input) }
     ];
@@ -120,7 +123,7 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
     }
 
     return built;
-  }, [url, resolvedUrl, method, methodType, protoFilePath, metadata, messages]);
+  }, [url, resolvedUrl, method, methodType, protoFilePath, metadata, messages, effectiveAuth]);
 
   const md = useMarkdownRenderer();
 
@@ -166,7 +169,12 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
         <RequestUrlBar method="gRPC" methodAsWritten url={url} style={{ marginTop: '0.75rem' }} />
         {descHtml && (
           <ViewMore collapsedHeight="4.5rem" style={{ marginTop: '1.5rem' }} testId="grpc-request-description">
-            <div className="markdown-documentation" dangerouslySetInnerHTML={{ __html: descHtml }} />
+            <div
+              className="markdown-documentation"
+              data-nav-headings
+              data-nav-level={NAV_LEVEL.section}
+              dangerouslySetInnerHTML={{ __html: descHtml }}
+            />
           </ViewMore>
         )}
 
@@ -174,7 +182,12 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
           <div className="grpc-request-columns">
             <div className="grpc-request-col-left">
               {protoFileName && (
-                <Section label="Proto file" testId="grpc-request-section-proto-file">
+                <Section
+                  label="Proto file"
+                  testId="grpc-request-section-proto-file"
+                  navGroup={NAV_GROUP.configuration}
+                  navLevel={NAV_LEVEL.configItem}
+                >
                   <div className="grpc-field" data-testid="grpc-request-proto-file">
                     <span className="grpc-field-icon">
                       <FileIcon />
@@ -185,7 +198,12 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
               )}
 
               {method && (
-                <Section label="RPC method" testId="grpc-request-section-method">
+                <Section
+                  label="RPC method"
+                  testId="grpc-request-section-method"
+                  navGroup={NAV_GROUP.configuration}
+                  navLevel={NAV_LEVEL.configItem}
+                >
                   <div className="grpc-field" data-testid="grpc-request-method">
                     <GrpcMethodTypeIcon methodType={methodType} className="grpc-field-icon" />
                     <span className="grpc-field-text">{grpcMethodPath(method)}</span>
@@ -198,6 +216,8 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
                 <Section
                   label="Messages"
                   testId="grpc-request-section-messages"
+                  navGroup={NAV_GROUP.configuration}
+                  navLevel={NAV_LEVEL.configItem}
                   badge={
                     <ContentTypeBadge label={`${messages.length} ${messages.length === 1 ? 'message' : 'messages'}`} />
                   }
@@ -210,6 +230,8 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
                 <Section
                   label="Metadata"
                   testId="grpc-request-section-metadata"
+                  navGroup={NAV_GROUP.configuration}
+                  navLevel={NAV_LEVEL.configItem}
                   badge={
                     enabledMetadataCount ? (
                       <ContentTypeBadge
@@ -226,6 +248,8 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
                 <Section
                   label="Auth"
                   testId="grpc-request-section-auth"
+                  navGroup={NAV_GROUP.configuration}
+                  navLevel={NAV_LEVEL.configItem}
                   badge={authBadge}
                 >
                   <AuthDetails
@@ -240,7 +264,7 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
 
             {snippets.length > 0 && (
               <div className="grpc-request-col-right">
-                <Section label="Code snippet" testId="grpc-request-section-code-snippet">
+                <Section label="Code snippet" testId="grpc-request-section-code-snippet" hideFromNav>
                   <SnippetTabs snippets={snippets} testId="grpc-request-code-snippet" />
                 </Section>
               </div>

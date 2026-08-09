@@ -24,7 +24,10 @@ interface GrpcMethodTypeIconProps {
 }
 
 export const GrpcMethodTypeIcon: React.FC<GrpcMethodTypeIconProps> = ({ methodType, className }) => {
-  const entry = methodType ? ICON_BY_METHOD_TYPE[methodType] : undefined;
+  const entry
+    = methodType && Object.prototype.hasOwnProperty.call(ICON_BY_METHOD_TYPE, methodType)
+      ? ICON_BY_METHOD_TYPE[methodType]
+      : undefined;
   if (!entry) return null;
 
   const Icon = entry.icon;

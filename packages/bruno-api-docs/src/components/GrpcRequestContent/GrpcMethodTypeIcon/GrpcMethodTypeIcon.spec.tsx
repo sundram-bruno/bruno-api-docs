@@ -24,3 +24,12 @@ describe('GrpcMethodTypeIcon', () => {
     expect(renderToStaticMarkup(<GrpcMethodTypeIcon methodType={'oneway' as never} />)).toBe('');
   });
 });
+
+describe('GrpcMethodTypeIcon — untrusted method types', () => {
+  it.each(['toString', 'constructor', 'hasOwnProperty', '__proto__'])(
+    'renders nothing for a methodType named %s instead of crashing',
+    (methodType) => {
+      expect(renderToStaticMarkup(<GrpcMethodTypeIcon methodType={methodType as never} />)).toBe('');
+    }
+  );
+});

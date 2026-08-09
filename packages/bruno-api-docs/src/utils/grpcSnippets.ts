@@ -1,6 +1,8 @@
 import type { GrpcMetadata, GrpcMethodType } from '@opencollection/types/requests/grpc';
+import type { Auth } from '@opencollection/types/common/auth';
 import type { GrpcMessageEntry } from './schemaHelpers';
 import { templateVariableGlobalRegex } from './common';
+import { authToHeaders } from './codeSnippets';
 
 export interface GrpcSnippetInput {
   url: string;
@@ -10,6 +12,7 @@ export interface GrpcSnippetInput {
   metadata: GrpcMetadata[];
   messages: GrpcMessageEntry[];
   resolvedUrl?: string;
+  auth?: Auth;
 }
 
 const SCHEME_PATTERN = /^(grpcs?|https?):\/\//i;
@@ -25,7 +28,7 @@ const parseTarget = (url: string, resolvedUrl?: string): { target: string; plain
 
 export const grpcMethodPath = (method: string): string => method.replace(/^\//, '');
 
-const parseProtoFlags = (protoFilePath: string): string[] => {
+const buildProtoFlags = (protoFilePath: string): string[] => {
   const normalised = protoFilePath.replace(/\\/g, '/').replace(/\/{2,}/g, '/');
   const lastSlash = normalised.lastIndexOf('/');
   const file = lastSlash === -1 ? normalised : normalised.slice(lastSlash + 1);
@@ -49,6 +52,19 @@ const parseService = (method: string): { servicePath: string; methodName: string
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 const IDENTIFIER_PATH = /^[A-Za-z_$][A-Za-z0-9_$]*(\.[A-Za-z_$][A-Za-z0-9_$]*)*$/;
 
+const effectiveMetadata = (
+  metadata: GrpcMetadata[],
+  auth: Auth | undefined
+): { entries: GrpcMetadata[]; note?: string } => {
+  const entries = metadata.filter((entry) => !entry.disabled);
+  const { headers, comment } = authToHeaders(auth);
+  headers.forEach((header) => {
+    const present = entries.some((entry) => (entry.name || '').toLowerCase() === header.name.toLowerCase());
+    if (!present) entries.push({ name: header.name, value: header.value } as GrpcMetadata);
+  });
+  return { entries, note: comment };
+};
+
 const heredocDelimiter = (messages: string[]): string => {
   const lines = new Set(messages.flatMap((message) => message.split('\n').map((line) => line.trim())));
   let delimiter = 'EOF';
@@ -64,9 +80,8 @@ const jsQuote = (value: string): string =>
 const jsObjectLiteral = (message: string): string => {
   const trimmed = message.trim();
   if (!trimmed) return '{}';
-  if (templateVariableGlobalRegex().test(trimmed)) return trimmed;
   try {
-    JSON.parse(trimmed);
+    JSON.parse(trimmed.replace(templateVariableGlobalRegex(), '0'));
     return trimmed;
   } catch {
     return jsQuote(trimmed);
@@ -86,21 +101,23 @@ export const generateGrpcurlCommand = ({
   protoFilePath,
   metadata,
   messages,
-  resolvedUrl
+  resolvedUrl,
+  auth
 }: GrpcSnippetInput): string => {
   const { target, plaintext } = parseTarget(url, resolvedUrl);
+  const { entries, note } = effectiveMetadata(metadata, auth);
   const parts: string[] = ['grpcurl'];
 
   if (plaintext) {
     parts.push('-plaintext');
   }
 
-  for (const entry of metadata.filter((item) => !item.disabled)) {
+  for (const entry of entries) {
     parts.push(`-H ${shellQuote(`${entry.name}: ${entry.value}`)}`);
   }
 
   if (protoFilePath) {
-    parts.push(...parseProtoFlags(protoFilePath));
+    parts.push(...buildProtoFlags(protoFilePath));
   }
 
   const streaming = streamsInFor(methodType);
@@ -113,14 +130,15 @@ export const generateGrpcurlCommand = ({
   parts.push(shellQuote(grpcMethodPath(method)));
 
   const command = parts.join(' \\\n  ');
+  const prefix = note ? `# ${note}\n` : '';
 
   if (streaming && messages.length > 0) {
     const bodies = messages.map((entry) => entry.message);
     const delimiter = heredocDelimiter(bodies);
-    return `${command} << '${delimiter}'\n${bodies.join('\n')}\n${delimiter}`;
+    return `${prefix}${command} << '${delimiter}'\n${bodies.join('\n')}\n${delimiter}`;
   }
 
-  return command;
+  return `${prefix}${command}`;
 };
 
 export const generateGrpcJavaScriptCode = ({
@@ -130,16 +148,18 @@ export const generateGrpcJavaScriptCode = ({
   protoFilePath,
   metadata,
   messages,
-  resolvedUrl
+  resolvedUrl,
+  auth
 }: GrpcSnippetInput): string => {
   const { servicePath, methodName } = parseService(method);
   if (!protoFilePath || !IDENTIFIER_PATH.test(servicePath) || !IDENTIFIER.test(methodName)) return '';
 
   const { target, plaintext } = parseTarget(url, resolvedUrl);
-  const enabled = metadata.filter((entry) => !entry.disabled);
+  const { entries: enabled, note } = effectiveMetadata(metadata, auth);
   const credentials = plaintext ? 'grpc.credentials.createInsecure()' : 'grpc.credentials.createSsl()';
 
   const lines: string[] = [
+    ...(note ? [`// ${note}`] : []),
     `const grpc = require('@grpc/grpc-js');`,
     `const protoLoader = require('@grpc/proto-loader');`,
     '',

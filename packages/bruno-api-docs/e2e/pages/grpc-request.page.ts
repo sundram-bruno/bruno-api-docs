@@ -3,6 +3,7 @@ import { SidebarComponent } from '../components/sidebar.component';
 import { BreadcrumbComponent } from '../components/breadcrumb.component';
 import { RequestUrlBarComponent } from '../components/request/url-bar.component';
 import { ExecutionContextComponent } from '../components/request/execution-context.component';
+import { CodeSnippetComponent } from '../components/request/code-snippet.component';
 
 export class GrpcRequestPage extends BasePage {
   readonly sidebar = new SidebarComponent(this.page);
@@ -31,7 +32,8 @@ export class GrpcRequestPage extends BasePage {
 
   readonly emptyState = this.page.getByTestId('grpc-request-config-empty');
 
-  readonly codeSnippet = this.page.getByTestId('grpc-request-code-snippet').getByTestId('grpc-request-code-snippet-code');
+  readonly snippet = new CodeSnippetComponent(this.page, 'grpc-request-code-snippet');
+  readonly codeSnippet = this.snippet.code;
 
   readonly executionContext = new ExecutionContextComponent(this.page);
   readonly executionContextSection = this.page.getByTestId('grpc-request-section-execution-context');

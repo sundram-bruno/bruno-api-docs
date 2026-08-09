@@ -317,3 +317,53 @@ describe('message bodies in the JavaScript snippet', () => {
     expect(code).toContain('const message = {};');
   });
 });
+
+describe('auth in the generated snippets', () => {
+  const bearer = { type: 'bearer', token: 'abc123' } as never;
+
+  it('sends bearer auth as grpcurl metadata', () => {
+    const command = generateGrpcurlCommand(input({ auth: bearer }));
+    expect(command).toContain(`-H 'Authorization: Bearer abc123'`);
+  });
+
+  it('sends bearer auth as JavaScript metadata', () => {
+    const code = generateGrpcJavaScriptCode(input({ protoFilePath: 'a.proto', auth: bearer }));
+    expect(code).toContain(`metadata.set('Authorization', 'Bearer abc123');`);
+    expect(code).toContain('const metadata = new grpc.Metadata();');
+  });
+
+  it('does not overwrite metadata the request already declares', () => {
+    const command = generateGrpcurlCommand(
+      input({ auth: bearer, metadata: [{ name: 'authorization', value: 'Bearer mine' }] as GrpcMetadata[] })
+    );
+    expect(command).toContain(`-H 'authorization: Bearer mine'`);
+    expect(command).not.toContain('abc123');
+  });
+
+  it('notes auth it cannot express as metadata instead of dropping it silently', () => {
+    const command = generateGrpcurlCommand(input({ auth: { type: 'awsv4' } as never }));
+    expect(command).toContain('# auth: awsv4');
+  });
+
+  it('leaves the snippets untouched when there is no auth', () => {
+    expect(generateGrpcurlCommand(input())).not.toContain('Authorization');
+  });
+
+  it('contains a templated body that appends statements', () => {
+    const code = generateGrpcJavaScriptCode(
+      input({
+        protoFilePath: 'a.proto',
+        messages: [{ title: 'a', message: `{"a":"{{t}}"}; require('child_process').execSync('x')` }]
+      })
+    );
+    expect(code).toContain(`const message = '{"a":"{{t}}"}`);
+    expect(code).not.toContain('const message = {"a":"{{t}}"}; require');
+  });
+
+  it('still keeps an ordinary templated body verbatim', () => {
+    const code = generateGrpcJavaScriptCode(
+      input({ protoFilePath: 'a.proto', messages: [{ title: 'a', message: '{"n":{{count}}}' }] })
+    );
+    expect(code).toContain('const message = {"n":{{count}}};');
+  });
+});
