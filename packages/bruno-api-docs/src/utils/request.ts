@@ -1,5 +1,6 @@
 import type { OpenCollection } from '@opencollection/types';
 import type { Item } from '@opencollection/types/collection/item';
+import type { GrpcRequest } from '@opencollection/types/requests/grpc';
 import type {
   HttpRequest,
   HttpRequestBody,
@@ -90,7 +91,7 @@ export const resolveInheritedAuth = (
   ancestors: Item[],
   item: Item
 ): ResolvedAuth => {
-  const own = getRequestAuth(item as HttpRequest) as Auth | undefined;
+  const own = getRequestAuth(item as RequestItem) as Auth | undefined;
   if (own !== 'inherit') return { auth: own };
 
   // Walk ancestors leaf->root. Only an `inherit` folder is transparent; the first folder that
@@ -129,7 +130,7 @@ export const getInheritedAuthSummary = (
   ancestors: Item[],
   item: Item
 ): InheritedAuthSummary | null => {
-  if (getRequestAuth(item as HttpRequest) !== 'inherit') return null;
+  if (getRequestAuth(item as RequestItem) !== 'inherit') return null;
   const resolved = resolveInheritedAuth(collection, ancestors, item);
   return {
     sourceName: resolved.source?.name || collection?.info?.name || 'Collection',
@@ -276,7 +277,7 @@ const stepLabel = (level: ScriptLevel, phase: ScriptPhase): string => {
 export const buildScriptChain = (
   collection: OpenCollection | null | undefined,
   ancestors: Item[],
-  item: Item
+  item: HttpRequest | GrpcRequest
 ): ScriptChainStep[] => {
   const collectionScripts = scriptsArrayToObject(collection?.request?.scripts);
   const sources: ScriptSource[] = [
@@ -286,7 +287,7 @@ export const buildScriptChain = (
     const s = scriptsArrayToObject(folderScripts(folder));
     sources.push({ level: 'folder', order: sources.length, sourceName: getItemName(folder), sourceUuid: getItemUuid(folder), pre: s.preRequest, post: s.postResponse });
   });
-  const requestScripts = scriptsArrayToObject(getRequestScripts(item as RequestItem));
+  const requestScripts = scriptsArrayToObject(getRequestScripts(item));
   sources.push({ level: 'request', order: sources.length, pre: requestScripts.preRequest, post: requestScripts.postResponse });
 
   const steps: ScriptChainStep[] = [];
@@ -343,10 +344,10 @@ const toPostResponseVarRow = (action: Action): PostResponseVarRow => ({
   disabled: action.disabled
 });
 
-export const getPreRequestVars = (item: Item): PreRequestVarRow[] =>
-  getRequestVariables(item as RequestItem).map(toPreRequestVarRow);
+export const getPreRequestVars = (item: HttpRequest | GrpcRequest): PreRequestVarRow[] =>
+  getRequestVariables(item).map(toPreRequestVarRow);
 
-export const getPostResponseVars = (item: Item): PostResponseVarRow[] =>
+export const getPostResponseVars = (item: HttpRequest | GrpcRequest): PostResponseVarRow[] =>
   ((item as { runtime?: { actions?: Action[] } }).runtime?.actions ?? [])
     .filter(isAfterResponseSetVariable)
     .map(toPostResponseVarRow);

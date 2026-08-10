@@ -1,7 +1,9 @@
 import type { OpenCollection } from '@opencollection/types';
 import type { Item, Folder } from '@opencollection/types/collection/item';
+import type { HttpRequest } from '@opencollection/types/requests/http';
+import type { GrpcRequest } from '@opencollection/types/requests/grpc';
 import type { Scripts } from '@opencollection/types/common/scripts';
-import { getItemName, getRequestScripts, scriptsArrayToObject, isFolder, type RequestItem } from './schemaHelpers';
+import { getItemName, getRequestScripts, scriptsArrayToObject, isFolder } from './schemaHelpers';
 import { isYamlFile, parseYaml } from './yamlUtils';
 import type { ScriptFlow } from './request';
 
@@ -305,7 +307,7 @@ interface TestSource {
 const forEachTestSource = (
   collection: OpenCollection | null | undefined,
   ancestors: Item[],
-  item: Item,
+  item: HttpRequest | GrpcRequest,
   flow: ScriptFlow,
   visit: (level: TestRow['level'], code: string | undefined, sourceName?: string) => void
 ): void => {
@@ -316,7 +318,7 @@ const forEachTestSource = (
       code: testsCode(folderScripts(folder)),
       sourceName: getItemName(folder)
     })),
-    { level: 'request', code: testsCode(getRequestScripts(item as RequestItem)) }
+    { level: 'request', code: testsCode(getRequestScripts(item)) }
   ];
 
   const ordered = flow === 'sequential' ? sources : [...sources].reverse();
@@ -326,7 +328,7 @@ const forEachTestSource = (
 export const collectTests = (
   collection: OpenCollection | null | undefined,
   ancestors: Item[],
-  item: Item,
+  item: HttpRequest | GrpcRequest,
   flow: ScriptFlow = 'sandwich'
 ): TestRow[] => {
   const rows: TestRow[] = [];
@@ -355,7 +357,7 @@ export interface RawTestScript {
 export const collectRawTestScripts = (
   collection: OpenCollection | null | undefined,
   ancestors: Item[],
-  item: Item,
+  item: HttpRequest | GrpcRequest,
   flow: ScriptFlow = 'sandwich'
 ): RawTestScript[] => {
   const scripts: RawTestScript[] = [];

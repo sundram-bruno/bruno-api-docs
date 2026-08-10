@@ -298,7 +298,7 @@ export const getHttpParams = (item: HttpRequest | null | undefined): HttpRequest
 // and writes (AuthTab) share this list so the two can't drift.
 export const REQUEST_PROTOCOL_KEYS = ['http', 'graphql', 'grpc', 'websocket'] as const;
 
-export const getRequestAuth = (item: OpenCollectionItem | null | undefined): any => {
+export const getRequestAuth = (item: RequestItem | null | undefined): any => {
   if (!item) return undefined;
 
   // Current schema: auth is part of the protocol-detail block.

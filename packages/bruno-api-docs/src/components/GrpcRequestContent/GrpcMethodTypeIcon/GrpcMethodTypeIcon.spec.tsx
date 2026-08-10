@@ -1,35 +1,33 @@
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
+import { useRenderToDom } from '@/hooks/useRenderToDom';
 import { GrpcMethodTypeIcon } from './GrpcMethodTypeIcon';
 
+const useColourOf = (methodType: string): string => {
+  const root = useRenderToDom(<GrpcMethodTypeIcon methodType={methodType as never} />);
+  return root.innerHTML;
+};
+
 describe('GrpcMethodTypeIcon', () => {
-  it('colours each method type from its theme variable', () => {
-    expect(renderToStaticMarkup(<GrpcMethodTypeIcon methodType="unary" />)).toContain(
-      'color:var(--oc-request-methods-get)'
-    );
-    expect(renderToStaticMarkup(<GrpcMethodTypeIcon methodType="server-streaming" />)).toContain(
-      'color:var(--oc-request-methods-put)'
-    );
-    expect(renderToStaticMarkup(<GrpcMethodTypeIcon methodType="client-streaming" />)).toContain(
-      'color:var(--oc-request-methods-head)'
-    );
-    expect(renderToStaticMarkup(<GrpcMethodTypeIcon methodType="bidi-streaming" />)).toContain(
-      'color:var(--oc-request-methods-post)'
-    );
+  it.each([
+    ['unary', 'get'],
+    ['server-streaming', 'put'],
+    ['client-streaming', 'head'],
+    ['bidi-streaming', 'post']
+  ])('colours %s from the %s method variable', (methodType, token) => {
+    expect(useColourOf(methodType)).toContain(`var(--oc-request-methods-${token})`);
   });
 
-  it('renders nothing when the method type is missing or unknown', () => {
-    expect(renderToStaticMarkup(<GrpcMethodTypeIcon />)).toBe('');
-    expect(renderToStaticMarkup(<GrpcMethodTypeIcon methodType={'oneway' as never} />)).toBe('');
+  it('renders nothing when the method type is absent', () => {
+    const root = useRenderToDom(<GrpcMethodTypeIcon />);
+    expect(root.querySelector('svg')).toBeNull();
   });
-});
 
-describe('GrpcMethodTypeIcon — untrusted method types', () => {
   it.each(['toString', 'constructor', 'hasOwnProperty', '__proto__'])(
     'renders nothing for a methodType named %s instead of crashing',
     (methodType) => {
-      expect(renderToStaticMarkup(<GrpcMethodTypeIcon methodType={methodType as never} />)).toBe('');
+      const root = useRenderToDom(<GrpcMethodTypeIcon methodType={methodType as never} />);
+      expect(root.querySelector('svg')).toBeNull();
     }
   );
 });

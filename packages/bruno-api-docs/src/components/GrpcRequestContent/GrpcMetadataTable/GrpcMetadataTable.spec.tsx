@@ -1,6 +1,8 @@
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
+import { useRenderToDom } from '@/hooks/useRenderToDom';
+
+const useMarkup = (element: React.ReactElement): string => useRenderToDom(element).innerHTML;
 import type { GrpcMetadata } from '@opencollection/types/requests/grpc';
 import { GrpcMetadataTable } from './GrpcMetadataTable';
 
@@ -8,11 +10,11 @@ const rows = (entries: Record<string, unknown>[]) => entries as unknown as GrpcM
 
 describe('GrpcMetadataTable', () => {
   it('renders nothing when there is no metadata', () => {
-    expect(renderToStaticMarkup(<GrpcMetadataTable metadata={rows([])} />)).toBe('');
+    expect(useMarkup(<GrpcMetadataTable metadata={rows([])} />)).toBe('');
   });
 
   it('renders a name, value and description for every row', () => {
-    const html = renderToStaticMarkup(
+    const html = useMarkup(
       <GrpcMetadataTable
         metadata={rows([
           { name: 'authorization', value: 'Bearer token', description: 'Auth token' },
@@ -28,14 +30,14 @@ describe('GrpcMetadataTable', () => {
   });
 
   it('reads a description given as an object', () => {
-    const html = renderToStaticMarkup(
+    const html = useMarkup(
       <GrpcMetadataTable metadata={rows([{ name: 'x-client', value: 'Bruno', description: { content: 'Client name' } }])} />
     );
     expect(html).toContain('Client name');
   });
 
   it('marks a disabled row', () => {
-    const html = renderToStaticMarkup(
+    const html = useMarkup(
       <GrpcMetadataTable metadata={rows([{ name: 'x-legacy-flag', value: 'off', disabled: true }])} />
     );
     expect(html).toContain('x-legacy-flag');
@@ -43,7 +45,7 @@ describe('GrpcMetadataTable', () => {
   });
 
   it('highlights a variable in a value', () => {
-    const html = renderToStaticMarkup(
+    const html = useMarkup(
       <GrpcMetadataTable metadata={rows([{ name: 'authorization', value: 'Bearer {{token}}' }])} />
     );
     expect(html).toContain('var-text');

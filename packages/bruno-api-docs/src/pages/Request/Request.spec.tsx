@@ -4,6 +4,7 @@ import type { OpenCollection } from '@opencollection/types';
 import type { HttpRequest } from '@opencollection/types/requests/http';
 import type { Item } from '@opencollection/types/collection/item';
 import { MemoryRouter } from 'react-router-dom';
+import type { RequestItem } from '../../utils/schemaHelpers';
 import { Request } from './Request';
 import { useRenderToDom } from '../../hooks/useRenderToDom';
 import { getByTestId, queryByTestId } from '../../test-utils/dom';
@@ -273,7 +274,7 @@ describe('Request page', () => {
 });
 
 describe('Request — unrecognised request types', () => {
-  const unknownItem = (data: Record<string, unknown>): Item => data as unknown as Item;
+  const unknownItem = (data: Record<string, unknown>): RequestItem => data as unknown as RequestItem;
 
   it('renders a type the viewer has no page for as a request rather than a blank page', () => {
     const root = useRenderToDom(

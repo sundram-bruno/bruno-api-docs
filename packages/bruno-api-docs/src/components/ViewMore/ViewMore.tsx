@@ -107,7 +107,7 @@ export const ViewMore: React.FC<ViewMoreProps> = ({
           onToggle={toggle}
           controls={contentId}
           className="view-more-toggle"
-          testId={testId ? `${testId}-toggle` : undefined}
+          testId={testId && `${testId}-toggle`}
         />
       )}
     </StyledWrapper>

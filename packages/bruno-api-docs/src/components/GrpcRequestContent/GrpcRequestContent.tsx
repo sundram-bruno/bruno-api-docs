@@ -15,23 +15,23 @@ import {
   getGrpcProtoFileName,
   getGrpcProtoFilePath,
   countEnabled
-} from '../../utils/schemaHelpers';
+} from '@/utils/schemaHelpers';
 import {
   resolveInheritedAuth,
   getPreRequestVars,
   getPostResponseVars,
   buildScriptChain,
   getScriptFlow
-} from '../../utils/request';
-import { collectAssertions } from '../../utils/assertions';
-import { collectTests, collectRawTestScripts } from '../../utils/fileUtils';
+} from '@/utils/request';
+import { collectAssertions } from '@/utils/assertions';
+import { collectTests, collectRawTestScripts } from '@/utils/fileUtils';
 import { ExecutionContext } from '../ExecutionContext/ExecutionContext';
-import { generateGrpcurlCommand, generateGrpcJavaScriptCode, grpcMethodPath } from '../../utils/grpcSnippets';
+import { generateGrpcurlCommand, generateGrpcJavaScriptCode, grpcMethodPath } from '@/utils/grpcSnippets';
 import { SnippetTabs, type Snippet } from '../SnippetTabs/SnippetTabs';
-import { useMarkdownRenderer, useResolvedVariables } from '../../hooks';
-import { singleReferenceName } from '../../utils/variableResolution';
-import { buildBreadcrumbSegments } from '../../utils/common';
-import { AUTH_MODE_LABELS, GRPC_METHOD_TYPE_LABELS } from '../../constants';
+import { useMarkdownRenderer, useResolvedVariables } from '@/hooks';
+import { singleReferenceName } from '@/utils/variableResolution';
+import { buildBreadcrumbSegments } from '@/utils/common';
+import { AUTH_MODE_LABELS, GRPC_METHOD_TYPE_LABELS } from '@/constants';
 import { Section } from '../Section/Section';
 import { ContentTypeBadge } from '../ContentTypeBadge/ContentTypeBadge';
 import { InheritedAuthBadge } from '../InheritedAuthBadge/InheritedAuthBadge';
@@ -42,11 +42,11 @@ import { GrpcMetadataTable } from './GrpcMetadataTable/GrpcMetadataTable';
 import { PageWrapper } from '../PageWrapper/PageWrapper';
 import { Heading } from '../Heading/Heading';
 import { ViewMore } from '../ViewMore/ViewMore';
-import { Breadcrumb, type BreadcrumbSegment } from '../../ui/Breadcrumb/Breadcrumb';
-import { EmptyState } from '../../ui/EmptyState/EmptyState';
+import { Breadcrumb, type BreadcrumbSegment } from '@/ui/Breadcrumb/Breadcrumb';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { RequestUrlBar } from '../Request/RequestUrlBar/RequestUrlBar';
 import { StyledWrapper } from './StyledWrapper';
-import { FileIcon, RefreshIcon } from '../../assets/icons';
+import { FileIcon, RefreshIcon } from '@/assets/icons';
 
 const NO_ANCESTRY: Item[] = [];
 
@@ -166,9 +166,9 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
           testId="grpc-request-breadcrumb"
         />
 
-        <Heading size="md" style={{ marginTop: '0.25rem' }} testId="grpc-request-title">{name}</Heading>
+        <Heading size="md" className="mt-1" testId="grpc-request-title">{name}</Heading>
 
-        <RequestUrlBar method="gRPC" methodAsWritten url={url} style={{ marginTop: '0.75rem' }} />
+        <RequestUrlBar method="gRPC" capitalizeMethod={false} url={url} className="mt-3" />
         {descHtml && (
           <ViewMore collapsedHeight="4.5rem" style={{ marginTop: '1.5rem' }} testId="grpc-request-description">
             <div
@@ -239,7 +239,7 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
                       <ContentTypeBadge
                         label={`${enabledMetadataCount} ${enabledMetadataCount === 1 ? 'field' : 'fields'}`}
                       />
-                    ) : undefined
+                    ) : null
                   }
                 >
                   <GrpcMetadataTable metadata={metadata} testId="grpc-request-metadata" />

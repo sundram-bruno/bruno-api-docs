@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import type { GrpcMessageEntry } from '../../../utils/schemaHelpers';
+import type { GrpcMessageEntry } from '@/utils/schemaHelpers';
 import { GrpcMessageCard } from './GrpcMessageCard/GrpcMessageCard';
 import { ExpandToggle } from '../../ExpandToggle/ExpandToggle';
-import { StyledWrapper } from './StyledWrapper';
 
 const COLLAPSED_COUNT = 3;
 
@@ -33,7 +32,7 @@ export const GrpcMessages: React.FC<GrpcMessagesProps> = ({ messages, testId = '
   };
 
   return (
-    <StyledWrapper className="grpc-messages" data-testid={testId}>
+    <div className="grpc-messages" data-testid={testId}>
       {visible.map((entry, index) => (
         <GrpcMessageCard
           key={`${entry.title}-${index}`}
@@ -51,11 +50,11 @@ export const GrpcMessages: React.FC<GrpcMessagesProps> = ({ messages, testId = '
           moreLabel="Show more"
           lessLabel="Show less"
           onToggle={() => setShowAll((value) => !value)}
-          className="grpc-messages-show-toggle"
+          className="mt-3"
           testId={`${testId}-show-toggle`}
         />
       )}
-    </StyledWrapper>
+    </div>
   );
 };
 

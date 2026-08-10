@@ -1,4 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
+import cx from '@/utils/cx';
+import { prefersReducedMotion } from '@/utils/motion';
 import { ChevronArrow } from '../../../ChevronArrow/ChevronArrow';
 import { Code } from '../../../Code/Code';
 import { StyledWrapper } from './StyledWrapper';
@@ -11,6 +13,8 @@ interface GrpcMessageCardProps {
   testId?: string;
 }
 
+const COLLAPSE_MS = 220;
+
 export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
   title,
   message,
@@ -18,22 +22,40 @@ export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
   onToggle,
   testId = 'grpc-message-card'
 }) => {
-  const [mounted, setMounted] = useState(expanded);
-
+  const [collapsing, setCollapsing] = useState(false);
+  const timerRef = useRef(0);
   const detailId = useId();
-  const detailRef = useRef<HTMLDivElement>(null);
 
-  const handleToggle = () => {
-    if (!expanded) setMounted(true);
+  const isOpen = expanded && !collapsing;
+
+  useEffect(() => () => window.clearTimeout(timerRef.current), []);
+
+  const finishCollapse = () => {
+    window.clearTimeout(timerRef.current);
+    setCollapsing(false);
     onToggle();
   };
 
-  useEffect(() => {
-    const el = detailRef.current;
-    if (!el) return;
-    if (expanded) el.removeAttribute('inert');
-    else el.setAttribute('inert', '');
-  }, [expanded, mounted]);
+  const handleToggle = () => {
+    if (collapsing) {
+      window.clearTimeout(timerRef.current);
+      setCollapsing(false);
+      return;
+    }
+    if (!expanded || prefersReducedMotion()) {
+      onToggle();
+      return;
+    }
+    setCollapsing(true);
+    timerRef.current = window.setTimeout(finishCollapse, COLLAPSE_MS + 60);
+  };
+
+  const handleTransitionEnd = (event: React.TransitionEvent<HTMLDivElement>) => {
+    if (!collapsing) return;
+    if (event.propertyName !== 'grid-template-rows') return;
+    if (event.target !== event.currentTarget) return;
+    finishCollapse();
+  };
 
   return (
     <StyledWrapper className="grpc-message-card" data-testid={testId}>
@@ -41,19 +63,19 @@ export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
         <button
           type="button"
           className="grpc-message-toggle"
-          aria-expanded={expanded}
+          aria-expanded={isOpen}
           aria-controls={detailId}
           data-testid={`${testId}-toggle`}
           onClick={handleToggle}
         >
-          <ChevronArrow open={expanded} size={14} className="grpc-message-chevron" />
+          <ChevronArrow open={isOpen} size={14} className="grpc-message-chevron" />
           <span className="grpc-message-title" data-testid={`${testId}-title`}>{title}</span>
         </button>
       </div>
 
-      <div ref={detailRef} className={`grpc-message-detail ${expanded ? 'is-open' : ''}`}>
+      <div className={cx('grpc-message-detail', { 'is-open': isOpen })} onTransitionEnd={handleTransitionEnd}>
         <div className="grpc-message-detail-clip">
-          {mounted && (
+          {expanded && (
             <div className="grpc-message-detail-body" id={detailId}>
               <Code code={message} language="json" showLineNumbers variableAware testId={`${testId}-code`} />
             </div>

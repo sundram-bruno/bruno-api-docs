@@ -8,7 +8,7 @@ import {
   generatePythonCode,
   type SnippetHeader,
   type SnippetInput
-} from '../../utils/codeSnippets';
+} from '@/utils/codeSnippets';
 
 interface CodeSnippetTabsProps {
   method: string;

@@ -8,7 +8,7 @@ import { StyledWrapper } from './StyledWrapper';
 
 interface RequestUrlBarProps {
   method: string;
-  methodAsWritten?: boolean;
+  capitalizeMethod?: boolean;
   url: string;
   onTry?: () => void;
   tryLabel?: string;
@@ -19,7 +19,7 @@ interface RequestUrlBarProps {
 
 export const RequestUrlBar: React.FC<RequestUrlBarProps> = ({
   method,
-  methodAsWritten = false,
+  capitalizeMethod = true,
   url,
   onTry,
   tryLabel = 'Try',
@@ -29,7 +29,7 @@ export const RequestUrlBar: React.FC<RequestUrlBarProps> = ({
 }) => (
   <StyledWrapper style={style} className={['request-url-bar', className].filter(Boolean).join(' ')} data-testid={testId}>
     <span className="request-url-bar-method" data-testid="request-method">
-      <MethodBadge method={method} asWritten={methodAsWritten} />
+      <MethodBadge method={method} capitalizeMethod={capitalizeMethod} />
     </span>
     <TruncatedText className="request-url-bar-url" testId="request-url" text={url}>
       <VariableText value={url} />

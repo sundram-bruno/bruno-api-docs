@@ -17,7 +17,8 @@ import {
   getItemDescription,
   getRequestExamples,
   isUnsupportedRequestInDocs,
-  isGrpcRequest
+  isGrpcRequest,
+  type RequestItem
 } from '../../utils/schemaHelpers';
 import {
   resolveInheritedAuth,
@@ -57,7 +58,7 @@ import { GrpcRequestContent } from '../../components/GrpcRequestContent/GrpcRequ
 import { StyledWrapper } from './StyledWrapper';
 
 interface RequestProps {
-  item: Item;
+  item: RequestItem;
   ancestry?: Item[];
   collection?: OpenCollection | null;
   onTryClick?: () => void;

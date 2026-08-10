@@ -11,7 +11,7 @@ import { StyledWrapper } from './StyledWrapper';
 // Method types borrow the HTTP method colour tokens rather than defining their own, so both
 // themes stay in step without new tokens. Client-streaming maps to the head colour, which is
 // where this differs from the Bruno app's own mapping.
-const ICON_BY_METHOD_TYPE: Record<string, { icon: React.FC; color: string }> = {
+const ICON_BY_METHOD_TYPE: Record<string, { icon: React.FC<{ size?: number }>; color: string }> = {
   'unary': { icon: UnaryIcon, color: 'var(--oc-request-methods-get)' },
   'server-streaming': { icon: ServerStreamingIcon, color: 'var(--oc-request-methods-put)' },
   'client-streaming': { icon: ClientStreamingIcon, color: 'var(--oc-request-methods-head)' },
@@ -20,10 +20,11 @@ const ICON_BY_METHOD_TYPE: Record<string, { icon: React.FC; color: string }> = {
 
 interface GrpcMethodTypeIconProps {
   methodType?: GrpcMethodType;
+  size?: number;
   className?: string;
 }
 
-export const GrpcMethodTypeIcon: React.FC<GrpcMethodTypeIconProps> = ({ methodType, className }) => {
+export const GrpcMethodTypeIcon: React.FC<GrpcMethodTypeIconProps> = ({ methodType, size = 16, className }) => {
   const entry
     = methodType && Object.prototype.hasOwnProperty.call(ICON_BY_METHOD_TYPE, methodType)
       ? ICON_BY_METHOD_TYPE[methodType]
@@ -33,7 +34,7 @@ export const GrpcMethodTypeIcon: React.FC<GrpcMethodTypeIconProps> = ({ methodTy
   const Icon = entry.icon;
   return (
     <StyledWrapper className={className} style={{ color: entry.color }}>
-      <Icon />
+      <Icon size={size} />
     </StyledWrapper>
   );
 };

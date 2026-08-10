@@ -1,11 +1,13 @@
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
+import { useRenderToDom } from '@/hooks/useRenderToDom';
+
+const useMarkup = (element: React.ReactElement): string => useRenderToDom(element).innerHTML;
 import { GrpcMessageCard } from './GrpcMessageCard';
 
 describe('GrpcMessageCard', () => {
   it('renders the title and the message when expanded', () => {
-    const html = renderToStaticMarkup(
+    const html = useMarkup(
       <GrpcMessageCard title="Message 1" message='{"sku":"SKU-1001"}' expanded onToggle={() => {}} />
     );
     expect(html).toContain('Message 1');
@@ -14,7 +16,7 @@ describe('GrpcMessageCard', () => {
   });
 
   it('renders the title but not the message when collapsed', () => {
-    const html = renderToStaticMarkup(
+    const html = useMarkup(
       <GrpcMessageCard title="Message 2" message='{"sku":"SKU-1002"}' expanded={false} onToggle={() => {}} />
     );
     expect(html).toContain('Message 2');

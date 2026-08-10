@@ -1,6 +1,8 @@
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
+import { useRenderToDom } from '@/hooks/useRenderToDom';
+
+const useMarkup = (element: React.ReactElement): string => useRenderToDom(element).innerHTML;
 import { SnippetTabs, type Snippet } from './SnippetTabs';
 
 const snippets: Snippet[] = [
@@ -10,7 +12,7 @@ const snippets: Snippet[] = [
 
 describe('SnippetTabs', () => {
   it('renders a tab per snippet and shows the first one', () => {
-    const html = renderToStaticMarkup(<SnippetTabs snippets={snippets} />);
+    const html = useMarkup(<SnippetTabs snippets={snippets} />);
 
     expect(html).toContain('grpcURL');
     expect(html).toContain('JavaScript');
@@ -19,11 +21,11 @@ describe('SnippetTabs', () => {
   });
 
   it('renders nothing when there are no snippets', () => {
-    expect(renderToStaticMarkup(<SnippetTabs snippets={[]} />)).toBe('');
+    expect(useMarkup(<SnippetTabs snippets={[]} />)).toBe('');
   });
 
   it('derives every child test id from the testId it is given', () => {
-    const html = renderToStaticMarkup(<SnippetTabs snippets={snippets} testId="grpc-request-code-snippet" />);
+    const html = useMarkup(<SnippetTabs snippets={snippets} testId="grpc-request-code-snippet" />);
 
     expect(html).toContain('data-testid="grpc-request-code-snippet"');
     expect(html).toContain('data-testid="grpc-request-code-snippet-tab-grpcurl"');
@@ -33,19 +35,19 @@ describe('SnippetTabs', () => {
   });
 
   it('falls back to the request base when no testId is given', () => {
-    const html = renderToStaticMarkup(<SnippetTabs snippets={snippets} />);
+    const html = useMarkup(<SnippetTabs snippets={snippets} />);
     expect(html).toContain('data-testid="request-code-snippet-tab-grpcurl"');
   });
 
   it('marks the active tab as selected', () => {
-    const html = renderToStaticMarkup(<SnippetTabs snippets={snippets} />);
+    const html = useMarkup(<SnippetTabs snippets={snippets} />);
 
     expect(html).toContain('aria-selected="true"');
     expect(html).toContain('aria-selected="false"');
   });
 
   it('collapses to a trigger instead of the code box when embedded', () => {
-    const html = renderToStaticMarkup(
+    const html = useMarkup(
       <SnippetTabs snippets={snippets} variant="embedded" testId="example-code-snippet" />
     );
 
@@ -56,14 +58,14 @@ describe('SnippetTabs', () => {
   });
 
   it('renders variables in the code as hover tokens', () => {
-    const html = renderToStaticMarkup(<SnippetTabs snippets={snippets} />);
+    const html = useMarkup(<SnippetTabs snippets={snippets} />);
 
     expect(html).toContain('data-var-name="host"');
     expect(html).toContain('{{host}}');
   });
 
   it('passes the snippet language through to the highlighter', () => {
-    const html = renderToStaticMarkup(
+    const html = useMarkup(
       <SnippetTabs snippets={[{ id: 'json', label: 'JSON', language: 'json', code: '{"a":1}' }]} />
     );
 

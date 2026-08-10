@@ -54,11 +54,6 @@ export const StyledWrapper = styled.div`
     color: var(--text-tertiary);
   }
 
-  .grpc-field-icon svg {
-    width: 1rem;
-    height: 1rem;
-  }
-
   .grpc-field-text {
     flex: 1;
     min-width: 0;
