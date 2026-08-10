@@ -58,7 +58,6 @@ export const StyledWrapper = styled.div`
     flex: 1;
     min-width: 0;
     font-family: var(--font-mono);
-    font-weight: 400;
     font-size: 0.75rem;
     line-height: 1.125rem;
     color: var(--text-primary);

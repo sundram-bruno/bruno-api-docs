@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
-import { useRenderToDom } from '../../hooks/useRenderToDom';
-import { query } from '../../test-utils/dom';
+import { useRenderToDom } from '@/hooks/useRenderToDom';
+import { getByTestId, query } from '@/test-utils/dom';
 import { ExpandToggle } from './ExpandToggle';
 
 const noop = () => {};
@@ -12,7 +12,7 @@ describe('ExpandToggle', () => {
       <ExpandToggle expanded={false} moreLabel="Show more" lessLabel="Show less" onToggle={noop} testId="t" />
     );
 
-    const button = query(root, '[data-testid="t"]');
+    const button = getByTestId(root, 't');
     expect(button.text).toContain('Show more');
     expect(button.text).not.toContain('Show less');
     expect(button.attributes['aria-expanded']).toBe('false');
@@ -23,7 +23,7 @@ describe('ExpandToggle', () => {
       <ExpandToggle expanded moreLabel="Show more" lessLabel="Show less" onToggle={noop} testId="t" />
     );
 
-    const button = query(root, '[data-testid="t"]');
+    const button = getByTestId(root, 't');
     expect(button.text).toContain('Show less');
     expect(button.attributes['aria-expanded']).toBe('true');
   });
@@ -33,7 +33,7 @@ describe('ExpandToggle', () => {
       <ExpandToggle expanded={false} moreLabel="More" lessLabel="Less" onToggle={noop} testId="t" />
     );
 
-    const button = query(root, '[data-testid="t"]');
+    const button = getByTestId(root, 't');
     expect(button.tagName.toLowerCase()).toBe('button');
     expect(button.attributes.type).toBe('button');
   });
@@ -43,7 +43,7 @@ describe('ExpandToggle', () => {
       <ExpandToggle expanded={false} moreLabel="More" lessLabel="Less" onToggle={noop} controls="panel-1" testId="t" />
     );
 
-    expect(query(root, '[data-testid="t"]').attributes['aria-controls']).toBe('panel-1');
+    expect(getByTestId(root, 't').attributes['aria-controls']).toBe('panel-1');
   });
 
   it('omits aria-controls when there is no region to name', () => {
@@ -51,7 +51,7 @@ describe('ExpandToggle', () => {
       <ExpandToggle expanded={false} moreLabel="More" lessLabel="Less" onToggle={noop} testId="t" />
     );
 
-    expect(query(root, '[data-testid="t"]').attributes['aria-controls']).toBeUndefined();
+    expect(getByTestId(root, 't').attributes['aria-controls']).toBeUndefined();
   });
 
   it('hides the chevron from assistive tech and keeps the caller class', () => {
@@ -61,14 +61,14 @@ describe('ExpandToggle', () => {
         moreLabel="More"
         lessLabel="Less"
         onToggle={noop}
-        className="grpc-messages-show-toggle"
+        className="mt-3"
         testId="t"
       />
     );
 
-    const button = query(root, '[data-testid="t"]');
+    const button = getByTestId(root, 't');
     expect(button.attributes.class).toContain('expand-toggle');
-    expect(button.attributes.class).toContain('grpc-messages-show-toggle');
+    expect(button.attributes.class).toContain('mt-3');
     expect(query(root, '.expand-toggle-chevron').attributes['aria-hidden']).toBe('true');
   });
 });
