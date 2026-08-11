@@ -170,7 +170,7 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
 
         <RequestUrlBar method="gRPC" capitalizeMethod={false} url={url} className="mt-3" />
         {descHtml && (
-          <ViewMore collapsedHeight="4.5rem" style={{ marginTop: '1.5rem' }} testId="grpc-request-description">
+          <ViewMore className="mt-6" collapsedHeight="4.5rem" testId="grpc-request-description">
             <div
               className="markdown-documentation"
               data-nav-headings
@@ -209,7 +209,11 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
                   <div className="grpc-field" data-testid="grpc-request-method">
                     <GrpcMethodTypeIcon methodType={methodType} className="grpc-field-icon" />
                     <span className="grpc-field-text">{grpcMethodPath(method)}</span>
-                    {methodTypeLabel && <span className="grpc-field-meta">{methodTypeLabel}</span>}
+                    {methodTypeLabel && (
+                      <span className="grpc-field-meta" data-testid="grpc-request-method-type">
+                        {methodTypeLabel}
+                      </span>
+                    )}
                   </div>
                 </Section>
               )}

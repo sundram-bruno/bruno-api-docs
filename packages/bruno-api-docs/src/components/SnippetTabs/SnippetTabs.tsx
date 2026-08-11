@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { IconCode } from '@tabler/icons';
+import cx from '@/utils/cx';
 import { Code } from '../Code/Code';
 import { CopyButton } from '@/ui/CopyButton/CopyButton';
 import { useResolvedVariables } from '@/hooks';
@@ -29,7 +30,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
   testId = 'request-code-snippet'
 }) => {
   const [active, setActive] = useState<string>(snippets[0]?.id ?? '');
-  const [modalActive, setModalActive] = useState<string>(snippets[0]?.id ?? '');
+  const [activeModalId, setActiveModalId] = useState<string>(snippets[0]?.id ?? '');
   const [expanded, setExpanded] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const { showVars, resolve } = useResolvedVariables();
@@ -37,7 +38,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
   if (snippets.length === 0) return null;
 
   const openModal = () => {
-    setModalActive(active);
+    setActiveModalId(active);
     setExpanded(true);
   };
 
@@ -61,7 +62,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
                 role="tab"
                 aria-selected={activeSnippet.id === snippet.id}
                 data-testid={`${testId}-tab-${snippet.id}`}
-                className={['snippet-tab', activeSnippet.id === snippet.id ? 'is-active' : ''].filter(Boolean).join(' ')}
+                className={cx('snippet-tab', { 'is-active': activeSnippet.id === snippet.id })}
                 onClick={() => setActiveId(snippet.id)}
               >
                 {snippet.label}
@@ -98,7 +99,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
   };
 
   return (
-    <StyledWrapper className={['code-snippet-tabs', className].filter(Boolean).join(' ')} data-testid={testId}>
+    <StyledWrapper className={cx('code-snippet-tabs', className)} data-testid={testId}>
       {variant === 'inline' ? (
         renderSnippetBox('inline', active, setActive)
       ) : (
@@ -122,7 +123,7 @@ export const SnippetTabs: React.FC<SnippetTabsProps> = ({
       >
         {expanded && (
           <StyledWrapper className="code-snippet-tabs is-modal" data-testid={`${testId}-modal`}>
-            {renderSnippetBox('modal', modalActive, setModalActive)}
+            {renderSnippetBox('modal', activeModalId, setActiveModalId)}
           </StyledWrapper>
         )}
       </Modal>

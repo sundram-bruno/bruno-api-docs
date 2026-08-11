@@ -1,26 +1,27 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { useRenderToDom } from '@/hooks/useRenderToDom';
-
-const useMarkup = (element: React.ReactElement): string => useRenderToDom(element).innerHTML;
+import { getByTestId, queryByTestId } from '@/test-utils/dom';
 import { GrpcMessageCard } from './GrpcMessageCard';
 
 describe('GrpcMessageCard', () => {
   it('renders the title and the message when expanded', () => {
-    const html = useMarkup(
+    const root = useRenderToDom(
       <GrpcMessageCard title="Message 1" message='{"sku":"SKU-1001"}' expanded onToggle={() => {}} />
     );
-    expect(html).toContain('Message 1');
-    expect(html).toContain('SKU-1001');
-    expect(html).toContain('aria-expanded="true"');
+
+    expect(getByTestId(root, 'grpc-message-card-title').text).toBe('Message 1');
+    expect(getByTestId(root, 'grpc-message-card-code').text).toContain('SKU-1001');
+    expect(getByTestId(root, 'grpc-message-card-toggle').attributes['aria-expanded']).toBe('true');
   });
 
   it('renders the title but not the message when collapsed', () => {
-    const html = useMarkup(
+    const root = useRenderToDom(
       <GrpcMessageCard title="Message 2" message='{"sku":"SKU-1002"}' expanded={false} onToggle={() => {}} />
     );
-    expect(html).toContain('Message 2');
-    expect(html).not.toContain('SKU-1002');
-    expect(html).toContain('aria-expanded="false"');
+
+    expect(getByTestId(root, 'grpc-message-card-title').text).toBe('Message 2');
+    expect(queryByTestId(root, 'grpc-message-card-code')).toBeNull();
+    expect(getByTestId(root, 'grpc-message-card-toggle').attributes['aria-expanded']).toBe('false');
   });
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useId, useState } from 'react';
 import cx from '@/utils/cx';
 import { prefersReducedMotion } from '@/utils/motion';
 import { ChevronArrow } from '../../../ChevronArrow/ChevronArrow';
@@ -13,8 +13,6 @@ interface GrpcMessageCardProps {
   testId?: string;
 }
 
-const COLLAPSE_MS = 220;
-
 export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
   title,
   message,
@@ -23,22 +21,17 @@ export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
   testId = 'grpc-message-card'
 }) => {
   const [collapsing, setCollapsing] = useState(false);
-  const timerRef = useRef(0);
   const detailId = useId();
 
   const isOpen = expanded && !collapsing;
 
-  useEffect(() => () => window.clearTimeout(timerRef.current), []);
-
   const finishCollapse = () => {
-    window.clearTimeout(timerRef.current);
     setCollapsing(false);
     onToggle();
   };
 
   const handleToggle = () => {
     if (collapsing) {
-      window.clearTimeout(timerRef.current);
       setCollapsing(false);
       return;
     }
@@ -47,7 +40,6 @@ export const GrpcMessageCard: React.FC<GrpcMessageCardProps> = ({
       return;
     }
     setCollapsing(true);
-    timerRef.current = window.setTimeout(finishCollapse, COLLAPSE_MS + 60);
   };
 
   const handleTransitionEnd = (event: React.TransitionEvent<HTMLDivElement>) => {

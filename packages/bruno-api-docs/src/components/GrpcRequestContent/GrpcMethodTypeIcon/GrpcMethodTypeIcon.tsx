@@ -5,7 +5,7 @@ import {
   ServerStreamingIcon,
   ClientStreamingIcon,
   BidiStreamingIcon
-} from '../../../assets/icons';
+} from '@/assets/icons';
 import { StyledWrapper } from './StyledWrapper';
 
 // Method types borrow the HTTP method colour tokens rather than defining their own, so both
@@ -22,9 +22,15 @@ interface GrpcMethodTypeIconProps {
   methodType?: GrpcMethodType;
   size?: number;
   className?: string;
+  testId?: string;
 }
 
-export const GrpcMethodTypeIcon: React.FC<GrpcMethodTypeIconProps> = ({ methodType, size = 16, className }) => {
+export const GrpcMethodTypeIcon: React.FC<GrpcMethodTypeIconProps> = ({
+  methodType,
+  size = 16,
+  className,
+  testId = 'grpc-method-type-icon'
+}) => {
   const entry
     = methodType && Object.prototype.hasOwnProperty.call(ICON_BY_METHOD_TYPE, methodType)
       ? ICON_BY_METHOD_TYPE[methodType]
@@ -33,7 +39,7 @@ export const GrpcMethodTypeIcon: React.FC<GrpcMethodTypeIconProps> = ({ methodTy
 
   const Icon = entry.icon;
   return (
-    <StyledWrapper className={className} style={{ color: entry.color }}>
+    <StyledWrapper className={className} style={{ color: entry.color }} data-testid={testId}>
       <Icon size={size} />
     </StyledWrapper>
   );

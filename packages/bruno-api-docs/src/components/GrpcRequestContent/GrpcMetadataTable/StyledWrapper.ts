@@ -11,7 +11,7 @@ export const StyledWrapper = styled.div`
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
-    font-family: 'Fira Code', var(--font-mono);
+    font-family: var(--font-mono);
     color: var(--oc-colors-text-subtext2);
   }
   .grpc-metadata-value .disabled-badge {
