@@ -1,8 +1,8 @@
 import React, { useId, useState } from 'react';
 import cx from '@/utils/cx';
 import { prefersReducedMotion } from '@/utils/motion';
-import { ChevronArrow } from '../../../ChevronArrow/ChevronArrow';
-import { Code } from '../../../Code/Code';
+import { ChevronArrow } from '@/components/ChevronArrow/ChevronArrow';
+import { Code } from '@/components/Code/Code';
 import { StyledWrapper } from './StyledWrapper';
 
 interface GrpcMessageCardProps {

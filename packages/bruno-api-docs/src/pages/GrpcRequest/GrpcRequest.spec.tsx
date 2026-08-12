@@ -2,15 +2,15 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { useRenderToDom } from '@/hooks/useRenderToDom';
 import { getByTestId, queryByTestId, query } from '@/test-utils/dom';
-import type { GrpcRequest } from '@opencollection/types/requests/grpc';
-import { GrpcRequestContent } from './GrpcRequestContent';
+import type { GrpcRequest as GrpcRequestItem } from '@opencollection/types/requests/grpc';
+import { GrpcRequest } from './GrpcRequest';
 
-const grpcItem = (data: Record<string, unknown>): GrpcRequest => data as unknown as GrpcRequest;
+const grpcItem = (data: Record<string, unknown>): GrpcRequestItem => data as unknown as GrpcRequestItem;
 
-describe('GrpcRequestContent', () => {
+describe('GrpcRequest', () => {
   it('renders the request name, the GRPC badge and the url', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({ info: { name: 'Order Service', type: 'grpc' }, grpc: { url: 'grpc://localhost:50051' } })}
       />
     );
@@ -22,7 +22,7 @@ describe('GrpcRequestContent', () => {
 
   it('renders a request that has no grpc block at all', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent item={grpcItem({ name: 'Bare Method', type: 'grpc', url: '{{grpcUrl}}' })} />
+      <GrpcRequest item={grpcItem({ name: 'Bare Method', type: 'grpc', url: '{{grpcUrl}}' })} />
     );
 
     expect(getByTestId(root, 'grpc-request-title').text).toBe('Bare Method');
@@ -30,7 +30,7 @@ describe('GrpcRequestContent', () => {
   });
 
   it('falls back to a placeholder name and never offers a Try button', () => {
-    const root = useRenderToDom(<GrpcRequestContent item={grpcItem({ info: { type: 'grpc' }, grpc: {} })} />);
+    const root = useRenderToDom(<GrpcRequest item={grpcItem({ info: { type: 'grpc' }, grpc: {} })} />);
 
     expect(getByTestId(root, 'grpc-request-title').text).toBe('Untitled Request');
     expect(queryByTestId(root, 'request-try-button')).toBeNull();
@@ -38,7 +38,7 @@ describe('GrpcRequestContent', () => {
 
   it('renders the docs markdown as html', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Order Service', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051' },
@@ -55,21 +55,21 @@ describe('GrpcRequestContent', () => {
 
   it('omits the description block when there are no docs', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent item={grpcItem({ info: { name: 'Chat', type: 'grpc' }, grpc: {} })} />
+      <GrpcRequest item={grpcItem({ info: { name: 'Chat', type: 'grpc' }, grpc: {} })} />
     );
     expect(queryByTestId(root, 'grpc-request-description')).toBeNull();
   });
 
   it('renders a request with a method', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent item={grpcItem({ info: { name: 'Test Request', type: 'grpc' }, grpc: { method: 'GetOrder' } })} />
+      <GrpcRequest item={grpcItem({ info: { name: 'Test Request', type: 'grpc' }, grpc: { method: 'GetOrder' } })} />
     );
     expect(getByTestId(root, 'grpc-request-method').text).toContain('GetOrder');
   });
 
   it('renders the proto file name and the method with its type label', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Get Book', type: 'grpc' },
           grpc: {
@@ -89,7 +89,7 @@ describe('GrpcRequestContent', () => {
 
   it('hides the proto file path when the request uses reflection', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Get Book', type: 'grpc' },
           grpc: {
@@ -107,7 +107,7 @@ describe('GrpcRequestContent', () => {
 
   it('hides the method section when no method is selected', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent item={grpcItem({ name: 'Bare Method', type: 'grpc', url: '{{grpcUrl}}' })} />
+      <GrpcRequest item={grpcItem({ name: 'Bare Method', type: 'grpc', url: '{{grpcUrl}}' })} />
     );
 
     expect(queryByTestId(root, 'grpc-request-section-method')).toBeNull();
@@ -116,7 +116,7 @@ describe('GrpcRequestContent', () => {
 
   it('renders metadata rows with their descriptions and counts only enabled ones', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Order Service', type: 'grpc' },
           grpc: {
@@ -141,7 +141,7 @@ describe('GrpcRequestContent', () => {
 
   it('reads a metadata description given as an object', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Chat', type: 'grpc' },
           grpc: {
@@ -160,7 +160,7 @@ describe('GrpcRequestContent', () => {
 
   it('hides the metadata section when there is none', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Stream Replies', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051', method: '/hello.HelloService/LotsOfReplies' }
@@ -172,7 +172,7 @@ describe('GrpcRequestContent', () => {
 
   it('shows concrete auth with no inherited badge', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Get Book', type: 'grpc' },
           grpc: {
@@ -192,7 +192,7 @@ describe('GrpcRequestContent', () => {
 
   it('resolves inherited auth up to the collection and says where it came from', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Order Service', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051', method: '/orders.OrderService/GetOrder', auth: 'inherit' }
@@ -207,7 +207,7 @@ describe('GrpcRequestContent', () => {
 
   it('masks a secret rather than printing it', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Get Book', type: 'grpc' },
           grpc: {
@@ -223,7 +223,7 @@ describe('GrpcRequestContent', () => {
 
   it('hides the auth section when the request has no auth', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Chat', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051', method: '/hello.HelloService/BidiHello' }
@@ -235,7 +235,7 @@ describe('GrpcRequestContent', () => {
 
   it('shows a single empty state when the request has no configuration', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent item={grpcItem({ name: 'Bare Method', type: 'grpc', url: '{{grpcUrl}}' })} />
+      <GrpcRequest item={grpcItem({ name: 'Bare Method', type: 'grpc', url: '{{grpcUrl}}' })} />
     );
 
     expect(getByTestId(root, 'grpc-request-config-empty').text).toContain('No request configuration');
@@ -244,7 +244,7 @@ describe('GrpcRequestContent', () => {
 
   it('builds a grpcurl snippet from the request', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Order Service', type: 'grpc' },
           grpc: {
@@ -266,7 +266,7 @@ describe('GrpcRequestContent', () => {
 
   it('omits the code snippet when the request has no method', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Chat', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051', metadata: [{ name: 'x-client', value: 'Bruno' }] }
@@ -278,7 +278,7 @@ describe('GrpcRequestContent', () => {
 
   it('shows sections instead of the empty state when there is any configuration', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Stream Replies', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051', method: '/hello.HelloService/LotsOfReplies' }
@@ -292,7 +292,7 @@ describe('GrpcRequestContent', () => {
 
   it('offers a JavaScript snippet only when a proto file is attached', () => {
     const withProto = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Get Book', type: 'grpc' },
           grpc: {
@@ -307,7 +307,7 @@ describe('GrpcRequestContent', () => {
     expect(queryByTestId(withProto, 'grpc-request-code-snippet-tab-javascript')).not.toBeNull();
 
     const reflectionOnly = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Order Service', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051', method: '/orders.OrderService/GetOrder', methodType: 'unary' }
@@ -319,10 +319,10 @@ describe('GrpcRequestContent', () => {
   });
 });
 
-describe('GrpcRequestContent — execution context', () => {
+describe('GrpcRequest — execution context', () => {
   const useWithRuntime = (runtime: Record<string, unknown>) =>
     useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Order Service', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051', method: '/orders.OrderService/GetOrder' },
@@ -333,7 +333,7 @@ describe('GrpcRequestContent — execution context', () => {
 
   it('renders an empty state when the request carries no runtime', () => {
     const root = useRenderToDom(
-      <GrpcRequestContent
+      <GrpcRequest
         item={grpcItem({
           info: { name: 'Order Service', type: 'grpc' },
           grpc: { url: 'grpc://localhost:50051', method: '/orders.OrderService/GetOrder' }

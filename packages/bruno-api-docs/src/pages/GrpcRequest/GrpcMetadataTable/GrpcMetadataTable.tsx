@@ -2,9 +2,9 @@ import React from 'react';
 import type { GrpcMetadata } from '@opencollection/types/requests/grpc';
 import { getDescription } from '@/utils/request';
 import { Table, type TableColumn } from '@/ui/Table/Table';
-import { TruncatedText } from '../../TruncatedText/TruncatedText';
-import { VariableText } from '../../VariableText/VariableText';
-import { DisabledBadge } from '../../DisabledBadge/DisabledBadge';
+import { TruncatedText } from '@/components/TruncatedText/TruncatedText';
+import { VariableText } from '@/components/VariableText/VariableText';
+import { DisabledBadge } from '@/components/DisabledBadge/DisabledBadge';
 import { StyledWrapper } from './StyledWrapper';
 
 const COLUMNS: TableColumn[] = [

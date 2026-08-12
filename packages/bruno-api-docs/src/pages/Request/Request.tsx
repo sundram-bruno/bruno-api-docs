@@ -54,7 +54,7 @@ import { CodeSnippetTabs } from '../../components/CodeSnippetTabs/CodeSnippetTab
 import { Examples } from '../../components/Examples/Examples';
 import { ExecutionContext } from '../../components/ExecutionContext/ExecutionContext';
 import { UnsupportedRequest } from '../../components/UnsupportedRequest/UnsupportedRequest';
-import { GrpcRequestContent } from '../../components/GrpcRequestContent/GrpcRequestContent';
+import { GrpcRequest } from '../GrpcRequest/GrpcRequest';
 import { StyledWrapper } from './StyledWrapper';
 
 interface RequestProps {
@@ -307,7 +307,7 @@ export const Request: React.FC<RequestProps> = ({
 }) => {
   if (isGrpcRequest(item)) {
     return (
-      <GrpcRequestContent
+      <GrpcRequest
         item={item}
         ancestry={ancestry}
         collection={collection}

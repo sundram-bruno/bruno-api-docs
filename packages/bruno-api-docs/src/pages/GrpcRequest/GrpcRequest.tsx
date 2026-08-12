@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { OpenCollection } from '@opencollection/types';
 import type { Item } from '@opencollection/types/collection/item';
-import type { GrpcRequest } from '@opencollection/types/requests/grpc';
+import type { GrpcRequest as GrpcRequestItem } from '@opencollection/types/requests/grpc';
 import type { Auth } from '@opencollection/types/common/auth';
 import {
   getItemName,
@@ -25,26 +25,26 @@ import {
 } from '@/utils/request';
 import { collectAssertions } from '@/utils/assertions';
 import { collectTests, collectRawTestScripts } from '@/utils/fileUtils';
-import { ExecutionContext } from '../ExecutionContext/ExecutionContext';
+import { ExecutionContext } from '@/components/ExecutionContext/ExecutionContext';
 import { generateGrpcurlCommand, generateGrpcJavaScriptCode, grpcMethodPath } from '@/utils/grpcSnippets';
-import { SnippetTabs, type Snippet } from '../SnippetTabs/SnippetTabs';
+import { SnippetTabs, type Snippet } from '@/components/SnippetTabs/SnippetTabs';
 import { useMarkdownRenderer, useResolvedVariables } from '@/hooks';
 import { singleReferenceName } from '@/utils/variableResolution';
 import { buildBreadcrumbSegments } from '@/utils/common';
 import { AUTH_MODE_LABELS, GRPC_METHOD_TYPE_LABELS } from '@/constants';
-import { Section } from '../Section/Section';
-import { ContentTypeBadge } from '../ContentTypeBadge/ContentTypeBadge';
-import { InheritedAuthBadge } from '../InheritedAuthBadge/InheritedAuthBadge';
-import { AuthDetails } from '../AuthDetails/AuthDetails';
+import { Section } from '@/components/Section/Section';
+import { ContentTypeBadge } from '@/components/ContentTypeBadge/ContentTypeBadge';
+import { InheritedAuthBadge } from '@/components/InheritedAuthBadge/InheritedAuthBadge';
+import { AuthDetails } from '@/components/AuthDetails/AuthDetails';
 import { GrpcMethodTypeIcon } from './GrpcMethodTypeIcon/GrpcMethodTypeIcon';
 import { GrpcMessages } from './GrpcMessages/GrpcMessages';
 import { GrpcMetadataTable } from './GrpcMetadataTable/GrpcMetadataTable';
-import { PageWrapper } from '../PageWrapper/PageWrapper';
-import { Heading } from '../Heading/Heading';
-import { ViewMore } from '../ViewMore/ViewMore';
+import { PageWrapper } from '@/components/PageWrapper/PageWrapper';
+import { Heading } from '@/components/Heading/Heading';
+import { ViewMore } from '@/components/ViewMore/ViewMore';
 import { Breadcrumb, type BreadcrumbSegment } from '@/ui/Breadcrumb/Breadcrumb';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
-import { RequestUrlBar } from '../Request/RequestUrlBar/RequestUrlBar';
+import { RequestUrlBar } from '@/components/Request/RequestUrlBar/RequestUrlBar';
 import { StyledWrapper } from './StyledWrapper';
 import { FileIcon, RefreshIcon } from '@/assets/icons';
 
@@ -53,15 +53,15 @@ const NO_ANCESTRY: Item[] = [];
 const NAV_GROUP = { configuration: 'Configuration' } as const;
 const NAV_LEVEL = { section: 1, configItem: 2 } as const;
 
-interface GrpcRequestContentProps {
-  item: GrpcRequest;
+interface GrpcRequestProps {
+  item: GrpcRequestItem;
   collection?: OpenCollection | null;
   ancestry?: Item[];
   onBreadcrumbClick?: (uuid: string) => void;
   testId?: string;
 }
 
-export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
+export const GrpcRequest: React.FC<GrpcRequestProps> = ({
   item,
   ancestry = NO_ANCESTRY,
   collection,
@@ -320,4 +320,4 @@ export const GrpcRequestContent: React.FC<GrpcRequestContentProps> = ({
   );
 };
 
-export default GrpcRequestContent;
+export default GrpcRequest;
