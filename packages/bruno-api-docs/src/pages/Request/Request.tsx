@@ -280,7 +280,6 @@ const RequestContent: React.FC<RequestContentProps> = ({
               tests={tests}
               testScripts={testScripts}
               flow={scriptFlow}
-              method={method}
               url={url}
               onNavigate={onBreadcrumbClick}
             />

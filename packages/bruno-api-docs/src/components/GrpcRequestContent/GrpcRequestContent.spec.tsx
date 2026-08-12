@@ -376,4 +376,9 @@ describe('GrpcRequestContent — execution context', () => {
     const root = useWithRuntime({ scripts: [{ type: 'before-request', code: 'bru.setVar(\'requestedAt\', Date.now());' }] });
     expect(queryByTestId(root, 'grpc-request-execution-context-empty')).toBeNull();
   });
+
+  it('labels the script-chain request marker as GRPC', () => {
+    const root = useWithRuntime({ scripts: [{ type: 'before-request', code: 'bru.setVar(\'requestedAt\', Date.now());' }] });
+    expect(getByTestId(root, 'script-chain-request-label').text).toBe('GRPC');
+  });
 });
