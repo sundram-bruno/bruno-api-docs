@@ -7,8 +7,12 @@ import {
   PARAM_REQUEST,
   PARAM_EXAMPLE,
   readPlaygroundParams,
-  writePlaygroundParams
+  writePlaygroundParams,
+  DOCK_STORAGE_KEY,
+  readStoredDock,
+  writeStoredDock
 } from './playgroundDock';
+import { fakeStorage } from '@/test-utils/storage';
 
 describe('isDockMode', () => {
   it('accepts the three dock modes', () => {
@@ -131,5 +135,28 @@ describe('writePlaygroundParams', () => {
 
   it('defaults the dock when the param is missing (no persistence)', () => {
     expect(readPlaygroundParams(new URLSearchParams('pg=1')).dock).toBe(DEFAULT_DOCK);
+  });
+});
+
+describe('dock sessionStorage helpers', () => {
+  it('round-trips a dock mode', () => {
+    const storage = fakeStorage();
+    writeStoredDock(storage, 'inline');
+    expect(readStoredDock(storage)).toBe('inline');
+  });
+
+  it('returns null when nothing is stored', () => {
+    expect(readStoredDock(fakeStorage())).toBeNull();
+  });
+
+  it('returns null for an invalid stored value', () => {
+    const storage = fakeStorage();
+    storage.setItem(DOCK_STORAGE_KEY, 'sideways');
+    expect(readStoredDock(storage)).toBeNull();
+  });
+
+  it('is a no-op with no storage (SSR)', () => {
+    expect(readStoredDock(null)).toBeNull();
+    expect(() => writeStoredDock(null, 'modal')).not.toThrow();
   });
 });

@@ -45,7 +45,9 @@ export class PlaygroundComponent extends BaseComponent {
   readonly closeButton = this.page.getByTestId('playground-close');
   readonly collapseButton = this.page.getByTestId('playground-collapse');
   readonly inlinePanel = this.page.getByTestId('playground-dock-inline-panel');
+  readonly inlineResizer = this.page.getByTestId('playground-dock-inline-resizer');
   readonly bottomPanel = this.page.getByTestId('playground-dock-bottom-panel');
+  readonly bottomResizer = this.page.getByTestId('playground-dock-bottom-resizer');
   readonly modalPanel = this.page.getByTestId('playground-dock-modal-panel');
   readonly mobilePanel = this.page.getByTestId('playground-dock-mobile-panel');
   readonly divider = this.page.getByTestId('playground-divider');
@@ -147,5 +149,23 @@ export class PlaygroundComponent extends BaseComponent {
 
   async grabSidebarResizer(): Promise<void> {
     await this.grabHandle(this.sidebarResizer);
+  }
+
+  async bottomPanelHeight(): Promise<number> {
+    const box = await this.bottomPanel.boundingBox();
+    return box?.height ?? 0;
+  }
+
+  async inlinePanelWidth(): Promise<number> {
+    const box = await this.inlinePanel.boundingBox();
+    return box?.width ?? 0;
+  }
+
+  async grabBottomResizer(): Promise<void> {
+    await this.grabHandle(this.bottomResizer);
+  }
+
+  async grabInlineResizer(): Promise<void> {
+    await this.grabHandle(this.inlineResizer);
   }
 }

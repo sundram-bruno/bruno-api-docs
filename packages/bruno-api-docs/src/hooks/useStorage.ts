@@ -22,6 +22,11 @@ export const writeStored = (storage: Storage | null, key: string, value: unknown
   }
 };
 
+export const readStoredNumber = (storage: Storage | null, key: string, fallback: number): number => {
+  const stored = readStored<unknown>(storage, key, fallback);
+  return typeof stored === 'number' && Number.isFinite(stored) ? stored : fallback;
+};
+
 export const areaFor = (area: StorageArea): Storage | null => {
   if (typeof window === 'undefined') return null;
   return area === 'local' ? window.localStorage : window.sessionStorage;

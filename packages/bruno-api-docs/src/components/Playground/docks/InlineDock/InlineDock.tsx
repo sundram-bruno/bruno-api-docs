@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import PlaygroundHeader from '../../PlaygroundHeader/PlaygroundHeader';
 import { useDockResize } from '@/hooks/useDockResize';
+import { areaFor, readStoredNumber, writeStored } from '@/hooks/useStorage';
 import type { DockMode } from '@/utils/playgroundDock';
 import { StyledWrapper } from './StyledWrapper';
+
+const WIDTH_STORAGE_KEY = 'oc-docs:playgroundInlineWidth';
 
 interface InlineDockProps {
   dock: DockMode;
@@ -14,12 +17,20 @@ interface InlineDockProps {
 }
 
 const InlineDock: React.FC<InlineDockProps> = ({ dock, onDockChange, sidebarOpen, onToggleSidebar, onClose, children }) => {
+  const initialWidth = useMemo(
+    () => readStoredNumber(areaFor('session'), WIDTH_STORAGE_KEY, Math.round(window.innerWidth * 0.4)),
+    []
+  );
   const { size, dragging, startDrag } = useDockResize({
     axis: 'x',
-    initial: Math.round(window.innerWidth * 0.4),
+    initial: initialWidth,
     min: 360,
     max: () => Math.round(window.innerWidth * 0.7)
   });
+
+  useEffect(() => {
+    if (!dragging) writeStored(areaFor('session'), WIDTH_STORAGE_KEY, size);
+  }, [dragging, size]);
 
   return (
     <StyledWrapper
@@ -27,7 +38,13 @@ const InlineDock: React.FC<InlineDockProps> = ({ dock, onDockChange, sidebarOpen
       className={dragging ? 'dragging' : ''}
       data-testid="playground-dock-inline-panel"
     >
-      <div className="resize-handle" role="separator" aria-orientation="vertical" onPointerDown={startDrag} />
+      <div
+        className="resize-handle"
+        role="separator"
+        aria-orientation="vertical"
+        onPointerDown={startDrag}
+        data-testid="playground-dock-inline-resizer"
+      />
       <div className="dock-body">
         <PlaygroundHeader
           dock={dock}

@@ -11,24 +11,41 @@ export const PARAM_EXAMPLE = 'pgEx';
 export const isDockMode = (value: string | null | undefined): value is DockMode =>
   value === 'inline' || value === 'bottom' || value === 'modal';
 
+export const DOCK_STORAGE_KEY = 'oc-docs:playgroundDock';
+
+export const readStoredDock = (storage: Storage | null): DockMode | null => {
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(DOCK_STORAGE_KEY);
+    return isDockMode(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+};
+
+export const writeStoredDock = (storage: Storage | null, dock: DockMode): void => {
+  if (!storage) return;
+  try {
+    storage.setItem(DOCK_STORAGE_KEY, dock);
+  } catch {
+    // storage may be full or unavailable; the URL still carries the dock
+  }
+};
 export interface PlaygroundUrlState {
   open: boolean;
   dock: DockMode;
   requestSlug: string | null;
-  // The saved example open under the request, if any. Only meaningful with a
-  // requestSlug (an example is always addressed relative to its parent request).
   exampleSlug: string | null;
 }
 
-// Dock lives only in the URL (so a shared link reproduces the sender's dock).
-// It is never persisted; a fresh open with no `dock` param falls back to the
-// default, matching the playground's "refresh resets everything" rule.
+// The URL is the source of truth for the dock (a shared link reproduces the
+// sender's dock). sessionStorage remembers the last dock only as the fallback
+// for a fresh open with no `dock` param (see usePlaygroundUrlState).
 export const readPlaygroundParams = (params: URLSearchParams): PlaygroundUrlState => {
   const open = params.get(PARAM_OPEN) === '1';
   const dockParam = params.get(PARAM_DOCK);
   const dock = isDockMode(dockParam) ? dockParam : DEFAULT_DOCK;
   const requestSlug = params.get(PARAM_REQUEST);
-  // An example slug only makes sense with a parent request; drop it otherwise.
   const exampleSlug = requestSlug ? params.get(PARAM_EXAMPLE) : null;
   return { open, dock, requestSlug, exampleSlug };
 };
@@ -53,7 +70,6 @@ export const writePlaygroundParams = (params: URLSearchParams, input: WriteInput
   if (input.dock) next.set(PARAM_DOCK, input.dock);
   if (input.requestSlug) next.set(PARAM_REQUEST, input.requestSlug);
   else next.delete(PARAM_REQUEST);
-  // The example is scoped to its request: keep pgEx only when both are present.
   if (input.requestSlug && input.exampleSlug) next.set(PARAM_EXAMPLE, input.exampleSlug);
   else next.delete(PARAM_EXAMPLE);
   return next;

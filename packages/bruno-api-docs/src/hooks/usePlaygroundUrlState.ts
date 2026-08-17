@@ -5,8 +5,11 @@ import {
   type PlaygroundUrlState,
   DEFAULT_DOCK,
   readPlaygroundParams,
-  writePlaygroundParams
+  readStoredDock,
+  writePlaygroundParams,
+  writeStoredDock
 } from '@/utils/playgroundDock';
+import { areaFor } from './useStorage';
 
 export interface PlaygroundUrlApi extends PlaygroundUrlState {
   openPlayground: (requestSlug?: string | null) => void;
@@ -23,13 +26,10 @@ export const usePlaygroundUrlState = (): PlaygroundUrlApi => {
   const openPlayground = useCallback(
     (requestSlug?: string | null) => {
       setParams((prev) => {
-        // Keep the current dock when the playground is already open (e.g. Try
-        // clicked while docked inline/modal); only fall back to the default when
-        // opening fresh.
         const current = readPlaygroundParams(prev);
         return writePlaygroundParams(prev, {
           open: true,
-          dock: current.open ? current.dock : DEFAULT_DOCK,
+          dock: current.open ? current.dock : readStoredDock(areaFor('session')) ?? DEFAULT_DOCK,
           requestSlug
         });
       });
@@ -43,12 +43,10 @@ export const usePlaygroundUrlState = (): PlaygroundUrlApi => {
 
   const setDock = useCallback(
     (dock: DockMode) => {
+      writeStoredDock(areaFor('session'), dock);
       setParams(
         (prev) => {
           const current = readPlaygroundParams(prev);
-          // A dock switch is presentation only: preserve the full view state,
-          // including the open example, so switching docks never yanks the user
-          // off an example (pgEx survives only when both slugs are written).
           return writePlaygroundParams(prev, {
             open: true,
             dock,
@@ -72,8 +70,6 @@ export const usePlaygroundUrlState = (): PlaygroundUrlApi => {
     [setParams]
   );
 
-  // Open a specific example: writes pgReq + pgEx together so a reload / share
-  // restores the same example (they must move as one, see writePlaygroundParams).
   const setRequestExample = useCallback(
     (requestSlug?: string | null, exampleSlug?: string | null) => {
       setParams((prev) => {

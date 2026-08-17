@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readStored, writeStored } from './useStorage';
+import { readStored, readStoredNumber, writeStored } from './useStorage';
 import { fakeStorage } from '@/test-utils/storage';
 
 describe('readStored', () => {
@@ -37,5 +37,31 @@ describe('writeStored', () => {
     writeStored(null, 'k', 1);
     writeStored(storage, '', 1);
     expect(storage.length).toBe(0);
+  });
+});
+
+describe('readStoredNumber', () => {
+  it('returns a stored finite number', () => {
+    const storage = fakeStorage();
+    storage.setItem('k', '640');
+    expect(readStoredNumber(storage, 'k', 100)).toBe(640);
+  });
+
+  it('falls back when nothing is stored', () => {
+    expect(readStoredNumber(fakeStorage(), 'k', 100)).toBe(100);
+  });
+
+  it('falls back for corrupt or non-numeric values', () => {
+    const storage = fakeStorage();
+    storage.setItem('k', '{not json');
+    expect(readStoredNumber(storage, 'k', 100)).toBe(100);
+    storage.setItem('k', '"wide"');
+    expect(readStoredNumber(storage, 'k', 100)).toBe(100);
+    storage.setItem('k', 'null');
+    expect(readStoredNumber(storage, 'k', 100)).toBe(100);
+  });
+
+  it('falls back with no storage (SSR)', () => {
+    expect(readStoredNumber(null, 'k', 100)).toBe(100);
   });
 });
