@@ -131,22 +131,26 @@ export class RequestExecutor {
     return headers;
   }
 
+  // Existing headers win so pre-request scripts can set their own auth (desktop parity).
   private setAuthHeaders(headers: Record<string, string>, auth: any) {
+    const hasHeader = (name: string) =>
+      Object.keys(headers).some((key) => key.toLowerCase() === name.toLowerCase());
+
     switch (auth.type) {
       case 'basic':
-        if (auth.username && auth.password) {
+        if (auth.username && auth.password && !hasHeader('Authorization')) {
           const credentials = btoa(`${auth.username}:${auth.password}`);
           headers['Authorization'] = `Basic ${credentials}`;
         }
         break;
       case 'bearer':
-        if (auth.token) {
+        if (auth.token && !hasHeader('Authorization')) {
           headers['Authorization'] = `Bearer ${auth.token}`;
         }
         break;
       case 'apikey':
         if (auth.key && auth.value) {
-          if (auth.placement === 'header') {
+          if (auth.placement === 'header' && !hasHeader(auth.key)) {
             headers[auth.key] = auth.value;
           }
         }
