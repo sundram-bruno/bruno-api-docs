@@ -131,7 +131,6 @@ export class RequestExecutor {
     return headers;
   }
 
-  // Existing headers win so pre-request scripts can set their own auth (desktop parity).
   private setAuthHeaders(headers: Record<string, string>, auth: any) {
     const hasHeader = (name: string) =>
       Object.keys(headers).some((key) => key.toLowerCase() === name.toLowerCase());
