@@ -168,7 +168,7 @@ items:
               disabled: true
           message: |-
             {
-              "orderId": "12345",
+              "orderId": "{{orderId}}",
               "includeItems" : true
             }
           auth: inherit

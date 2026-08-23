@@ -24,6 +24,10 @@ export class GrpcMessagesComponent extends BaseComponent {
     return this.page.getByTestId(`${this.base}-card-${index}-code`);
   }
 
+  codeCopy(index: number): Locator {
+    return this.page.getByTestId(`${this.base}-card-${index}-code-copy`);
+  }
+
   async expand(index: number): Promise<void> {
     await this.toggle(index).click();
   }

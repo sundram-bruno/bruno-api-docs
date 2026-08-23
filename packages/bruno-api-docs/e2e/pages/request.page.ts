@@ -7,6 +7,7 @@ import { CodeSnippetComponent } from '../components/request/code-snippet.compone
 import { ExamplesComponent } from '../components/request/examples.component';
 import { ExecutionContextComponent } from '../components/request/execution-context.component';
 import { VariableCardComponent } from '../components/variable-card/variable-card.component';
+import { CodeBlockComponent } from '../components/code-block.component';
 
 export class RequestPage extends BasePage {
   readonly root = this.page.getByTestId('request-page');
@@ -23,6 +24,7 @@ export class RequestPage extends BasePage {
 
   readonly variableCard = new VariableCardComponent(this.page, this.root);
   readonly bodyVariableCard = new VariableCardComponent(this.page, this.section('body'));
+  readonly bodyCode = new CodeBlockComponent(this.page, this.section('body'));
 
   async open(path: string[]): Promise<void> {
     await this.navigate('/');

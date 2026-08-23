@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useEffect, useMemo, useRef } from 'react';
+import { useResolvedVariables } from '@/hooks';
 import { CopyButton } from '../../ui/CopyButton/CopyButton';
 import { StyledWrapper } from './CodeViewer/StyledWrapper';
 import { HighlightedCode } from './HighlightedCode';
@@ -39,6 +40,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
   testId
 }) => {
   const preRef = useRef<HTMLPreElement>(null);
+  const { resolve } = useResolvedVariables();
 
   useEffect(() => {
     if (!variableAware && preRef.current) {
@@ -64,7 +66,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
       <div className="relative">
         {showCopy && (
           <CopyButton
-            text={copyText ?? code}
+            text={copyText ?? (variableAware ? resolve(code) : code)}
             label="Copy code"
             className="code-copy-floating"
             testId={testId ? `${testId}-copy` : undefined}
