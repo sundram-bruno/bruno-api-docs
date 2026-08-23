@@ -24,7 +24,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@slices': resolve(__dirname, 'src/store/slices'),
-      '@': resolve(__dirname, 'src')
+      '@': resolve(__dirname, 'src'),
+      'atob': 'atob/node-atob.js'
     }
   },
   build: {
