@@ -81,7 +81,9 @@ request:
          bru.setVar('collection-var-set-by-collection-script', 'collection-var-value-set-by-collection-script');
         }
     - type: after-response
-      code: wefewfewfewfewfwefwefewfewfewfewfewfewfewfewf
+      code: |-
+        // Collection · post-response (L0)
+        console.log('POST > L0 collection');
     - type: tests
       code: |-
         // used by \`scripting/js/folder-collection script-tests\`
@@ -650,6 +652,17 @@ items:
                 // Folder "customers" · tests (folder-scoped — inherited by every request inside)
                 test('customers folder scripts ran before the request', () => {
                   expect(bru.getVar('execChain')).to.contain('F2(customers)');
+                });
+                const moment = require('moment');
+                const CryptoJS = require('crypto-js');
+                const { v4: uuidv4, validate: uuidValidate } = require('uuid');
+                const jwtLib = require('jsonwebtoken');
+                test('safe-mode libraries work in the playground', () => {
+                  expect(moment('2026-01-02').format('YYYY-MM-DD')).to.equal('2026-01-02');
+                  expect(CryptoJS.SHA256('abc').toString()).to.have.lengthOf(64);
+                  expect(uuidValidate(uuidv4())).to.equal(true);
+                  const token = jwtLib.sign({ ok: true }, 'e2e-secret', { noTimestamp: true });
+                  expect(jwtLib.verify(token, 'e2e-secret').ok).to.equal(true);
                 });
         items:
           - info:
