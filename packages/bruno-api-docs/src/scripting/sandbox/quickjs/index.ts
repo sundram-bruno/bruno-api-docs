@@ -3,9 +3,13 @@ import addBrunoRequestShimToContext from './shims/bruno-request';
 import addConsoleShimToContext from './shims/console';
 import addBrunoResponseShimToContext from './shims/bruno-response';
 import addTestShimToContext from './shims/test';
+import addCryptoUtilsShimToContext from './shims/lib/crypto-utils';
+import addAxiosShimToContext from './shims/lib/axios';
 import { newQuickJSWASMModule, memoizePromiseFactory } from 'quickjs-emscripten';
 import { marshallToVm } from './utils';
 import { getBundledCode } from './bundled-libraries.iife.js';
+import addLocalModuleShimToContext from './shims/local-module';
+import { getRequireCode } from './shims/require';
 
 let QuickJSSyncContext: any;
 const loader = memoizePromiseFactory(() => newQuickJSWASMModule());
@@ -95,51 +99,26 @@ const executeQuickJsVmAsync = async ({
   externalScript = externalScript?.trim();
 
   try {
-    const module = await newQuickJSWASMModule();
+    const module = await loader();
     const vm = module.newContext();
+
+    addCryptoUtilsShimToContext(vm);
+    addLocalModuleShimToContext(vm);
 
     const bundledCode = getBundledCode?.toString() || '';
 
-    const moduleLoaderCode = function () {
-      return `
-        globalThis.require = (mod) => {
-          let lib = globalThis.requireObject[mod];
-          let isModuleAPath = (module) => (module?.startsWith('.') || module?.startsWith?.(''))
-          if (lib) {
-            return lib;
-          }
-          else if (isModuleAPath(mod)) {
-            // fetch local module
-            let localModuleCode = globalThis.__brunoLoadLocalModule(mod);
-
-            // compile local module as iife
-            (function (){
-              const initModuleExportsCode = "const module = { exports: {} };"
-              const copyModuleExportsCode = "\\n;globalThis.requireObject[mod] = module.exports;";
-              const patchedRequire = ${`
-                "\\n;" +
-                "let require = (subModule) => isModuleAPath(subModule) ? globalThis.require(path.resolve('', mod, '..', subModule)) : globalThis.require(subModule)" +
-                "\\n;" 
-              `}
-              eval(initModuleExportsCode + patchedRequire + localModuleCode + copyModuleExportsCode);
-            })();
-
-            // resolve module
-            return globalThis.requireObject[mod];
-          }
-          else {
-            throw new Error("Cannot find module " + mod);
-          }
-        }
-      `;
-    };
-
-    vm.evalCode(
+    const bootResult = vm.evalCode(
       `
         (${bundledCode})();
-        ${moduleLoaderCode()}
+        ${getRequireCode()}
       `
     );
+    if (bootResult.error) {
+      const bootError = vm.dump(bootResult.error);
+      bootResult.error.dispose();
+      throw new Error(`Failed to load sandbox libraries: ${bootError?.message || String(bootError)}`);
+    }
+    bootResult.value.dispose();
 
     const { bru, req, res, test, __brunoTestResults, console: consoleFn } = externalContext;
 
@@ -148,6 +127,8 @@ const executeQuickJsVmAsync = async ({
     if (req) addBrunoRequestShimToContext(vm, req);
     if (res) addBrunoResponseShimToContext(vm, res);
     if (test && __brunoTestResults) addTestShimToContext(vm, __brunoTestResults);
+
+    addAxiosShimToContext(vm);
 
     const script = `
       (async () => {
