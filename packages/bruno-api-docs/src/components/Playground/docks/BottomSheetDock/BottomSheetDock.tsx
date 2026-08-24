@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import PlaygroundHeader from '../../PlaygroundHeader/PlaygroundHeader';
 import { useDockResize } from '@/hooks/useDockResize';
-import { areaFor, readStoredNumber, writeStored } from '@/hooks/useStorage';
+import { areaFor, readStored, readStoredNumber, writeStored } from '@/hooks/useStorage';
 import type { DockMode } from '@/utils/playgroundDock';
 import { StyledWrapper } from './StyledWrapper';
 
@@ -9,6 +9,9 @@ const HEADER_HEIGHT = 52;
 const COLLAPSE_EPSILON = 8;
 const getDefaultHeight = () => Math.round(window.innerHeight * 0.6);
 const HEIGHT_STORAGE_KEY = 'oc-docs:playgroundBottomHeight';
+const COLLAPSED_STORAGE_KEY = 'oc-docs:playgroundBottomCollapsed';
+
+const readStoredHeight = () => readStoredNumber(areaFor('session'), HEIGHT_STORAGE_KEY, getDefaultHeight());
 
 interface BottomSheetDockProps {
   dock: DockMode;
@@ -29,11 +32,10 @@ const BottomSheetDock: React.FC<BottomSheetDockProps> = ({
   openNonce,
   children
 }) => {
-  const defaultHeight = getDefaultHeight();
-  const initialHeight = useMemo(
-    () => readStoredNumber(areaFor('session'), HEIGHT_STORAGE_KEY, getDefaultHeight()),
-    []
-  );
+  const initialHeight = useMemo(() => {
+    const storedCollapsed = readStored<unknown>(areaFor('session'), COLLAPSED_STORAGE_KEY, false) === true;
+    return storedCollapsed ? HEADER_HEIGHT : readStoredHeight();
+  }, []);
   const { size, dragging, startDrag, setSize } = useDockResize({
     axis: 'y',
     initial: initialHeight,
@@ -41,32 +43,24 @@ const BottomSheetDock: React.FC<BottomSheetDockProps> = ({
     max: () => window.innerHeight
   });
 
-  const lastExpanded = useRef<number>(initialHeight);
   const collapsed = size <= HEADER_HEIGHT + COLLAPSE_EPSILON;
 
   const sizeRef = useRef(size);
   sizeRef.current = size;
-  const defaultHeightRef = useRef(defaultHeight);
-  defaultHeightRef.current = defaultHeight;
 
   useEffect(() => {
-    if (openNonce === undefined) return;
-    if (sizeRef.current <= HEADER_HEIGHT + COLLAPSE_EPSILON) setSize(defaultHeightRef.current);
+    if (!openNonce) return;
+    if (sizeRef.current <= HEADER_HEIGHT + COLLAPSE_EPSILON) setSize(readStoredHeight());
   }, [openNonce, setSize]);
 
   useEffect(() => {
-    if (!dragging && size > HEADER_HEIGHT + COLLAPSE_EPSILON) {
-      writeStored(areaFor('session'), HEIGHT_STORAGE_KEY, size);
-    }
-  }, [dragging, size]);
+    if (dragging) return;
+    writeStored(areaFor('session'), COLLAPSED_STORAGE_KEY, collapsed);
+    if (!collapsed) writeStored(areaFor('session'), HEIGHT_STORAGE_KEY, size);
+  }, [dragging, size, collapsed]);
 
   const toggleCollapse = () => {
-    if (collapsed) {
-      setSize(lastExpanded.current > HEADER_HEIGHT + COLLAPSE_EPSILON ? lastExpanded.current : defaultHeight);
-    } else {
-      lastExpanded.current = size;
-      setSize(HEADER_HEIGHT);
-    }
+    setSize(collapsed ? readStoredHeight() : HEADER_HEIGHT);
   };
 
   return (

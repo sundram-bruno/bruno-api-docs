@@ -80,10 +80,9 @@ test.describe('playground layout persistence (desktop)', () => {
     await expect(playground.bottomPanel).toBeVisible();
   });
 
-  test('a collapsed bottom sheet reopens expanded after a reload', async ({ page, playground }) => {
+  test('a collapsed bottom sheet stays collapsed after a reload', async ({ page, playground }) => {
     await playground.open('bottom');
     await expect(playground.bottomPanel).toBeVisible();
-    const expanded = await playground.bottomPanelHeight();
 
     await playground.grabBottomResizer();
     await playground.movePointerToY(890);
@@ -92,6 +91,48 @@ test.describe('playground layout persistence (desktop)', () => {
 
     await page.reload();
     await expect(playground.bottomPanel).toBeVisible();
-    expect(Math.abs((await playground.bottomPanelHeight()) - expanded)).toBeLessThan(5);
+    expect(await playground.bottomPanelHeight()).toBeLessThan(100);
+  });
+
+  test('expanding after a collapsed reload restores the pre-collapse height', async ({ page, playground }) => {
+    await playground.open('bottom');
+    await expect(playground.bottomPanel).toBeVisible();
+
+    await playground.grabBottomResizer();
+    await playground.movePointerToY(300);
+    await playground.releasePointer();
+    const resized = await playground.bottomPanelHeight();
+    expect(resized).toBeGreaterThan(560);
+
+    await playground.grabBottomResizer();
+    await playground.movePointerToY(890);
+    await playground.releasePointer();
+    expect(await playground.bottomPanelHeight()).toBeLessThan(100);
+
+    await page.reload();
+    await expect(playground.bottomPanel).toBeVisible();
+    expect(await playground.bottomPanelHeight()).toBeLessThan(100);
+
+    await playground.toggleCollapse();
+    expect(Math.abs((await playground.bottomPanelHeight()) - resized)).toBeLessThan(5);
+  });
+
+  test('Try it after collapsing expands to the persisted height', async ({ requestPage, playground }) => {
+    await requestPage.open(REQUEST_PATH);
+    await requestPage.urlBar.tryButton.click();
+    await expect(playground.bottomPanel).toBeVisible();
+
+    await playground.grabBottomResizer();
+    await playground.movePointerToY(200);
+    await playground.releasePointer();
+    const resized = await playground.bottomPanelHeight();
+    expect(resized).toBeGreaterThan(650);
+
+    await playground.toggleCollapse();
+    expect(await playground.bottomPanelHeight()).toBeLessThan(100);
+
+    await requestPage.urlBar.tryButton.click();
+    await expect(playground.content).toBeVisible();
+    expect(Math.abs((await playground.bottomPanelHeight()) - resized)).toBeLessThan(5);
   });
 });
