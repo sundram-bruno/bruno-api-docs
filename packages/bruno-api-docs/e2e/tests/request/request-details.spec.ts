@@ -39,6 +39,22 @@ test.describe('Request page — Details', () => {
     await expect(requestPage.description).toContainText('Retrieves customers created within a date range.');
   });
 
+  test.describe('Tags section', () => {
+    test('shows the request tags as chips', async ({ requestPage, page }) => {
+      await requestPage.open(['echo json']);
+      const tags = requestPage.section('Tags');
+      await expect(tags).toBeVisible();
+      await expect(page.getByTestId('request-tags-chip')).toHaveCount(2);
+      await expect(tags).toContainText('echo');
+      await expect(tags).toContainText('smoke');
+    });
+
+    test('renders no tags section for an untagged request', async ({ requestPage }) => {
+      await requestPage.open(['patch user']);
+      await expect(requestPage.section('Tags')).toHaveCount(0);
+    });
+  });
+
   test.describe('Params section', () => {
     test('lists the query parameters', async ({ requestPage }) => {
       const params = requestPage.section('Params');

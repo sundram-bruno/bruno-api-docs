@@ -85,6 +85,27 @@ export const getItemSeq = (item: OpenCollectionItem | null | undefined): number 
   return undefined;
 };
 
+const normalizeTags = (raw: unknown): string[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((tag): tag is string => typeof tag === 'string' && tag.trim().length > 0);
+};
+
+/**
+ * Get the tags of an item (from info block or root for backwards compatibility).
+ * Tags are protocol-agnostic: any request type, and folders, may carry them.
+ */
+export const getItemTags = (item: OpenCollectionItem | null | undefined): string[] => {
+  if (!item) return [];
+  const info = 'info' in item ? (item as { info?: { tags?: unknown } }).info : undefined;
+  if (info && Array.isArray(info.tags)) return normalizeTags(info.tags);
+  if ('tags' in item) return normalizeTags((item as { tags?: unknown }).tags);
+  return [];
+};
+
+/** Get the collection-level tags from the info block. */
+export const getCollectionTags = (collection: OpenCollection | null | undefined): string[] =>
+  normalizeTags((collection as { info?: { tags?: unknown } } | null | undefined)?.info?.tags);
+
 /**
  * Check if an item is a folder
  */

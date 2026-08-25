@@ -14,6 +14,7 @@ import {
   getGrpcMessages,
   getGrpcProtoFileName,
   getGrpcProtoFilePath,
+  getItemTags,
   countEnabled
 } from '@/utils/schemaHelpers';
 import {
@@ -28,6 +29,7 @@ import { collectTests, collectRawTestScripts } from '@/utils/fileUtils';
 import { ExecutionContext } from '@/components/ExecutionContext/ExecutionContext';
 import { generateGrpcurlCommand, generateGrpcJavaScriptCode, grpcMethodPath } from '@/utils/grpcSnippets';
 import { SnippetTabs, type Snippet } from '@/components/SnippetTabs/SnippetTabs';
+import { Tags } from '@/components/Tags/Tags';
 import { useMarkdownRenderer, useResolvedVariables } from '@/hooks';
 import { singleReferenceName } from '@/utils/variableResolution';
 import { buildBreadcrumbSegments } from '@/utils/common';
@@ -69,6 +71,7 @@ export const GrpcRequest: React.FC<GrpcRequestProps> = ({
   testId = 'grpc-request-page'
 }) => {
   const name = getItemName(item) || 'Untitled Request';
+  const tags = getItemTags(item);
   const url = getRequestUrl(item);
 
   const method = getGrpcMethod(item);
@@ -268,11 +271,18 @@ export const GrpcRequest: React.FC<GrpcRequestProps> = ({
               )}
             </div>
 
-            {snippets.length > 0 && (
+            {(snippets.length > 0 || tags.length > 0) && (
               <div className="grpc-request-col-right">
-                <Section label="Code snippet" testId="grpc-request-section-code-snippet" hideFromNav>
-                  <SnippetTabs snippets={snippets} testId="grpc-request-code-snippet" />
-                </Section>
+                {snippets.length > 0 && (
+                  <Section label="Code snippet" testId="grpc-request-section-code-snippet" hideFromNav>
+                    <SnippetTabs snippets={snippets} testId="grpc-request-code-snippet" />
+                  </Section>
+                )}
+                {tags.length > 0 && (
+                  <Section label="Tags" testId="grpc-request-section-tags" hideFromNav>
+                    <Tags tags={tags} testId="grpc-request-tags" />
+                  </Section>
+                )}
               </div>
             )}
           </div>

@@ -33,15 +33,18 @@ export class SearchComponent extends BaseComponent {
   readonly clearButton = this.root.getByRole('button', { name: 'Clear search' });
   /** Below-desktop Topbar trigger that reveals the search. */
   readonly toggleIcon = this.root.getByRole('button', { name: /^search$/i });
-  readonly folderButton = this.root.getByRole('button', { name: 'Folder', exact: true });
-  readonly folderMenu = this.root.getByRole('listbox', { name: 'Filter by folder' });
+  /** The trigger's label changes with the selection ("Tags" → a tag name → "2 tags"),
+   * so match the first button inside the filter rather than a fixed label. */
+  readonly tagButton = this.root.getByTestId('search-tag-filter').getByRole('button', { name: /.+/ }).first();
+  readonly tagFilter = this.root.getByTestId('search-tag-filter');
+  readonly tagMenu = this.root.getByRole('listbox', { name: 'Filter by tags' });
 
   methodChip(label: string): Locator {
     return this.root.getByRole('button', { name: label, exact: true });
   }
 
-  folderOption(name: string): Locator {
-    return this.folderMenu.getByRole('button', { name, exact: true });
+  tagOption(name: string): Locator {
+    return this.tagMenu.getByRole('button', { name, exact: true });
   }
 
   result(text: string): Locator {

@@ -15,7 +15,7 @@ import Fuse from 'fuse.js';
 import type { IFuseOptions, FuseResultMatch } from 'fuse.js';
 import type { Folder } from '@opencollection/types/collection/item';
 import type { NavEntry } from '@/routing/types';
-import { getRequestUrl } from '@/utils/schemaHelpers';
+import { getRequestUrl, getItemTags } from '@/utils/schemaHelpers';
 import { getItemUuid } from '@/utils/itemUtils';
 import { countFolderRequests } from '@/utils/folder';
 
@@ -27,8 +27,8 @@ interface SearchRecordBase {
   name: string;
   /** Ancestor folder names, outermost first; joined for display, never searched. */
   ancestorNames: string[];
-  /** Ancestor folder slugs, for the folder filter chip. */
-  ancestorSlugs: string[];
+  /** Own tags plus tags inherited from ancestor folders (deduped), for the tag filter. */
+  tags: string[];
 }
 
 export interface RequestSearchRecord extends SearchRecordBase {
@@ -44,27 +44,32 @@ export interface FolderSearchRecord extends SearchRecordBase {
 
 export type SearchRecord = RequestSearchRecord | FolderSearchRecord;
 
-/** A folder offered in the palette's folder filter dropdown. */
-export interface FolderOption {
-  slug: string;
-  name: string;
-}
-
 const BREADCRUMB_SEPARATOR = ' / ';
 
 /** Build the searchable records (requests + folders) from the nav model. */
 export const buildSearchRecords = (entries: NavEntry[]): SearchRecord[] => {
+  const folderTagsBySlug = new Map<string, string[]>();
+  for (const entry of entries) {
+    if (entry.type !== 'folder' || !entry.item) continue;
+    const folderTags = getItemTags(entry.item);
+    if (folderTags.length > 0) folderTagsBySlug.set(entry.slug, folderTags);
+  }
+
   const records: SearchRecord[] = [];
   for (const entry of entries) {
     if (!entry.item) continue;
     const id = getItemUuid(entry.item);
     if (!id) continue; // unhydrated, cannot key to the sidebar; skip
+    const tags = new Set(getItemTags(entry.item));
+    for (const ancestor of entry.ancestors) {
+      for (const tag of folderTagsBySlug.get(ancestor.slug) ?? []) tags.add(tag);
+    }
     const common = {
       id,
       slug: entry.slug,
       name: entry.name,
       ancestorNames: entry.ancestors.map((a) => a.name),
-      ancestorSlugs: entry.ancestors.map((a) => a.slug)
+      tags: [...tags]
     };
 
     if (entry.type === 'folder') {
@@ -107,11 +112,14 @@ export const formatBreadcrumb = (ancestorNames: string[]): BreadcrumbText => {
   return { full, display: ends.join(BREADCRUMB_SEPARATOR) };
 };
 
-/** Top-level folders, for the folder filter dropdown. */
-export const collectTopLevelFolders = (entries: NavEntry[]): FolderOption[] =>
-  entries
-    .filter((e) => e.type === 'folder' && e.depth === 0)
-    .map((e) => ({ slug: e.slug, name: e.name }));
+/** Distinct tags across the rendered records, alphabetical, for the tag filter. */
+export const collectTags = (records: SearchRecord[]): string[] => {
+  const seen = new Set<string>();
+  for (const record of records) {
+    for (const tag of record.tags) seen.add(tag);
+  }
+  return [...seen].sort((a, b) => a.localeCompare(b));
+};
 
 /** Canonical display order for method filters; anything not listed sorts last. */
 const METHOD_DISPLAY_ORDER = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT'];

@@ -371,41 +371,80 @@ test.describe('Search palette', () => {
     expect((opt?.y ?? 0) + (opt?.height ?? 0)).toBeLessThanOrEqual((box?.y ?? 0) + (box?.height ?? 0) + 1);
   });
 
-  test('folder dropdown closes on an outside click', async ({ page, search }) => {
+  test('tag dropdown closes on an outside click', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto(FIXTURE);
     await search.field.click();
 
-    await search.folderButton.click();
-    await expect(search.folderMenu).toBeVisible();
+    await search.tagButton.click();
+    await expect(search.tagMenu).toBeVisible();
 
     await search.field.click(); // click outside the dropdown
-    await expect(search.folderMenu).toHaveCount(0);
+    await expect(search.tagMenu).toHaveCount(0);
   });
 
-  test('folder filter scopes results to the chosen folder', async ({ page, search }) => {
+  test('tag filter narrows results to records carrying the tag', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto(FIXTURE);
     await search.field.click();
 
-    await search.folderButton.click();
-    await search.folderOption('Authentication').click();
+    await search.tagButton.click();
+    await search.tagOption('auth').click();
 
     await expect(search.panel).toContainText('Login');
+    await expect(search.panel).toContainText('Refresh Token');
     await expect(search.panel).not.toContainText('Create Booking');
   });
 
-  test('the filtered folder appears as its own result, ahead of its contents', async ({ page, search }) => {
+  test('multiple tags narrow to records carrying all of them', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto(FIXTURE);
     await search.field.click();
 
-    await search.folderButton.click();
-    await search.folderOption('Bookings').click();
+    await search.tagButton.click();
+    await search.tagOption('auth').click();
+    await search.tagOption('smoke').click();
+
+    await expect(search.panel).toContainText('Login');
+    await expect(search.panel).not.toContainText('Refresh Token');
+    await expect(search.panel).not.toContainText('Health Check');
+  });
+
+  test('folder tags are inherited: the folder matches itself and everything beneath it', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+
+    await search.tagButton.click();
+    await search.tagOption('bookings').click();
 
     await expect(search.folderResults).toHaveCount(3);
     await expect(search.folderResults.nth(0)).toContainText('Bookings');
-    await expect(search.results.first()).toContainText('Bookings');
+    await expect(search.panel).toContainText('Create Booking');
+    await expect(search.panel).not.toContainText('Login');
+  });
+
+  test('tag filter combines with method chips', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+
+    await search.tagButton.click();
+    await search.tagOption('bookings').click();
+    await search.field.click();
+    await search.methodChip('DEL').click();
+
+    await expect(search.results).toHaveCount(1);
+    await expect(search.results.first()).toContainText('Cancel Booking');
+  });
+
+  test('a collection without tags offers no tag filter', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto('/?fixture=vars');
+    await search.field.click();
+
+    await expect(search.filters).toBeVisible();
+    await expect(search.tagFilter).toHaveCount(0);
   });
 
   test('tablet: the toggle reveals a panel that stays within the viewport', async ({ page, search }) => {

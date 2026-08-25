@@ -3,7 +3,7 @@ import type { OpenCollection } from '@opencollection/types';
 import type { Item, Folder as FolderItem } from '@opencollection/types/collection/item';
 import { useMarkdownRenderer } from '@/hooks';
 import { AUTH_MODE_LABELS } from '@/constants';
-import { getItemName, getItemDocs, getItemDescription } from '@/utils/schemaHelpers';
+import { getItemName, getItemDocs, getItemDescription, getItemTags } from '@/utils/schemaHelpers';
 import { buildBreadcrumbSegments } from '@/utils/common';
 import { getFolderConfig, hasFolderConfig, countFolderRequests, requestCountLabel } from '@/utils/folder';
 import { PageWrapper } from '../../components/PageWrapper/PageWrapper';
@@ -13,6 +13,7 @@ import { Breadcrumb, type BreadcrumbSegment } from '@/ui/Breadcrumb/Breadcrumb';
 import { ViewMore } from '../../components/ViewMore/ViewMore';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { FolderConfiguration } from '../../components/FolderConfiguration/FolderConfiguration';
+import { Tags } from '@/components/Tags/Tags';
 import { FolderIcon } from '@/assets/icons';
 import { StyledWrapper } from './StyledWrapper';
 
@@ -27,6 +28,7 @@ export const Folder: React.FC<FolderProps> = ({ item, ancestry = [], collection,
   const md = useMarkdownRenderer();
 
   const name = getItemName(item) || 'Untitled Folder';
+  const tags = getItemTags(item);
   const requestCount = useMemo(() => countFolderRequests(item), [item]);
   const config = useMemo(() => getFolderConfig(collection, ancestry, item), [collection, ancestry, item]);
   const showConfig = useMemo(() => hasFolderConfig(config), [config]);
@@ -57,6 +59,12 @@ export const Folder: React.FC<FolderProps> = ({ item, ancestry = [], collection,
             </span>
           </div>
         </header>
+
+        {tags.length > 0 && (
+          <Section label="Tags" testId="folder-section-tags" className="folder-fullwidth">
+            <Tags tags={tags} testId="folder-tags" />
+          </Section>
+        )}
 
         {docsHtml && (
           <Section label="Documentation" testId="folder-section-documentation" className="folder-fullwidth" labelClassName="section-label-muted">

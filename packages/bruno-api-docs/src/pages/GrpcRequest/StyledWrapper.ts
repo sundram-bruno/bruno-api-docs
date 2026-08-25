@@ -33,6 +33,9 @@ export const StyledWrapper = styled.div`
 
   .grpc-request-col-right {
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
     position: sticky;
     top: 1.25rem;
     align-self: start;

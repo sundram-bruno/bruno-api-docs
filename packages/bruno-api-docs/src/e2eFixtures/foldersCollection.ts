@@ -15,8 +15,8 @@ export const foldersFixtureCollection = {
       type: 'folder',
       seq: 1,
       items: [
-        { name: 'Login', type: 'http', seq: 1, method: 'POST', url: '{{host}}/auth/login' },
-        { name: 'Refresh Token', type: 'http', seq: 2, method: 'POST', url: '{{host}}/auth/refresh' },
+        { name: 'Login', type: 'http', seq: 1, method: 'POST', url: '{{host}}/auth/login', tags: ['auth', 'smoke'] },
+        { name: 'Refresh Token', type: 'http', seq: 2, method: 'POST', url: '{{host}}/auth/refresh', tags: ['auth'] },
         { name: 'Logout', type: 'http', seq: 3, method: 'POST', url: '{{host}}/auth/logout' },
         { name: 'Get Current User', type: 'http', seq: 4, method: 'GET', url: '{{host}}/auth/me' }
       ]
@@ -51,6 +51,7 @@ export const foldersFixtureCollection = {
       name: 'Bookings',
       type: 'folder',
       seq: 3,
+      tags: ['bookings'],
       items: [
         { name: 'List Bookings', type: 'http', seq: 1, method: 'GET', url: '{{host}}/bookings' },
         { name: 'Get Booking', type: 'http', seq: 2, method: 'GET', url: '{{host}}/bookings/:id' },
@@ -59,9 +60,9 @@ export const foldersFixtureCollection = {
           type: 'folder',
           seq: 3,
           items: [
-            { name: 'Create Booking', type: 'http', seq: 1, method: 'POST', url: '{{host}}/bookings' },
+            { name: 'Create Booking', type: 'http', seq: 1, method: 'POST', url: '{{host}}/bookings', tags: ['write'] },
             { name: 'Confirm Booking', type: 'http', seq: 2, method: 'PATCH', url: '{{host}}/bookings/:id/confirm' },
-            { name: 'Cancel Booking', type: 'http', seq: 3, method: 'DELETE', url: '{{host}}/bookings/:id' }
+            { name: 'Cancel Booking', type: 'http', seq: 3, method: 'DELETE', url: '{{host}}/bookings/:id', tags: ['write'] }
           ]
         },
         {
@@ -118,7 +119,7 @@ export const foldersFixtureCollection = {
         }
       ]
     },
-    { name: 'Health Check', type: 'http', seq: 5, method: 'GET', url: '{{host}}/ping' },
+    { name: 'Health Check', type: 'http', seq: 5, method: 'GET', url: '{{host}}/ping', tags: ['smoke'] },
     {
       name: 'Setup Script',
       type: 'script',

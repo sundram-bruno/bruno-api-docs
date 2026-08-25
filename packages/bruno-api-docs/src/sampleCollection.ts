@@ -161,6 +161,7 @@ items:
           name: "GraphQL Details"
           type: "graphql"
           description: "Fetches a country's name, capital, and emoji by its ISO country code."
+          tags: ["catalog"]
         graphql:
           method: "POST"
           url: "https://api.example.com/graphql"
@@ -227,6 +228,7 @@ items:
       - info:
           name: "Order Service"
           type: "grpc"
+          tags: ["orders"]
         grpc:
           url: "{{grpcUrl}}"
           method: "/orders.OrderService/GetOrder"
@@ -598,6 +600,7 @@ items:
       name: billing
       type: folder
       seq: 4
+      tags: ["billing"]
     docs: |
       ## Billing
 
@@ -2065,6 +2068,7 @@ items:
   - name: "echo json"
     type: "http"
     seq: 2
+    tags: ["echo", "smoke"]
     method: "POST"
     url: "{{host}}/api/echo/json"
     headers:
@@ -2226,6 +2230,7 @@ items:
   - name: "get users"
     type: "http"
     seq: 1
+    tags: ["users", "smoke"]
     method: "GET"
     url: "{{host}}/api/users?page=1&limit=10"
     headers:
@@ -2297,6 +2302,7 @@ items:
   - name: "update user"
     type: "http"
     seq: 4
+    tags: ["users"]
     method: "PUT"
     url: "{{host}}/api/users/1"
     headers:

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildSearchRecords,
-  collectTopLevelFolders,
+  collectTags,
   collectMethods,
   createSearchIndex,
   formatBreadcrumb,
@@ -74,7 +74,7 @@ describe('buildSearchRecords', () => {
     expect(recs[0]).not.toHaveProperty('description');
   });
 
-  it('carries the ancestor chain as names and slugs', () => {
+  it('carries the ancestor chain as names', () => {
     const entry = requestEntry({
       uuid: 'u1',
       ancestors: [
@@ -83,7 +83,6 @@ describe('buildSearchRecords', () => {
       ]
     });
     expect(requestRecords([entry])[0].ancestorNames).toEqual(['Billing', 'Lookups']);
-    expect(requestRecords([entry])[0].ancestorSlugs).toEqual(['billing', 'billing/lookups']);
   });
 
   it('emits a folder record for a folder at any depth', () => {
@@ -98,7 +97,7 @@ describe('buildSearchRecords', () => {
     const recs = folderRecords([top, nested]);
     expect(recs.map((r) => r.id)).toEqual(['f1', 'f2']);
     expect(recs[1].slug).toBe('hotels/rooms');
-    expect(recs[1].ancestorSlugs).toEqual(['hotels']);
+    expect(recs[1].ancestorNames).toEqual(['Hotels']);
   });
 
   it('gives a folder its own breadcrumb, so same-named folders stay distinguishable', () => {
@@ -196,13 +195,60 @@ describe('formatBreadcrumb', () => {
   });
 });
 
-describe('collectTopLevelFolders', () => {
-  it('returns only depth-0 folders', () => {
-    const top: NavEntry = { slug: 'hotels', type: 'folder', name: 'Hotels', item: {} as never, ancestors: [], depth: 0 };
-    const nested: NavEntry = { slug: 'hotels/x', type: 'folder', name: 'X', item: {} as never, ancestors: [], depth: 1 };
-    expect(collectTopLevelFolders([top, nested, requestEntry({ uuid: 'u1' })])).toEqual([
-      { slug: 'hotels', name: 'Hotels' }
-    ]);
+describe('tags on search records', () => {
+  it('carries the item tags on request and folder records', () => {
+    const folder = folderEntry({ uuid: 'f1' });
+    (folder.item as { info: { tags?: string[] } }).info.tags = ['catalog'];
+    const request = requestEntry({ uuid: 'u1', ancestors: [] });
+    (request.item as { info: { tags?: string[] } }).info.tags = ['auth', 'smoke'];
+    expect(folderRecords([folder])[0].tags).toEqual(['catalog']);
+    expect(requestRecords([request])[0].tags).toEqual(['auth', 'smoke']);
+  });
+
+  it('merges ancestor folder tags, deduped', () => {
+    const folder = folderEntry({ uuid: 'f1', slug: 'hotels' });
+    (folder.item as { info: { tags?: string[] } }).info.tags = ['catalog', 'smoke'];
+    const request = requestEntry({ uuid: 'u1' });
+    (request.item as { info: { tags?: string[] } }).info.tags = ['smoke'];
+    expect(requestRecords([folder, request])[0].tags).toEqual(['smoke', 'catalog']);
+  });
+
+  it('inherits through the whole ancestor chain, folders included', () => {
+    const top = folderEntry({ uuid: 'f1', slug: 'billing', name: 'Billing' });
+    (top.item as { info: { tags?: string[] } }).info.tags = ['billing'];
+    const nested = folderEntry({
+      uuid: 'f2',
+      slug: 'billing/lookups',
+      name: 'Lookups',
+      ancestors: [{ name: 'Billing', slug: 'billing' }],
+      depth: 1
+    });
+    const request = requestEntry({
+      uuid: 'u1',
+      ancestors: [
+        { name: 'Billing', slug: 'billing' },
+        { name: 'Lookups', slug: 'billing/lookups' }
+      ]
+    });
+    const records = buildSearchRecords([top, nested, request]);
+    expect(records.find((r) => r.id === 'f2')!.tags).toEqual(['billing']);
+    expect(records.find((r) => r.id === 'u1')!.tags).toEqual(['billing']);
+  });
+
+  it('yields empty tags for untagged items', () => {
+    expect(requestRecords([requestEntry({ uuid: 'u1' })])[0].tags).toEqual([]);
+    expect(folderRecords([folderEntry({ uuid: 'f1' })])[0].tags).toEqual([]);
+  });
+});
+
+describe('collectTags', () => {
+  it('returns distinct tags sorted alphabetically', () => {
+    const records = [rec({ tags: ['smoke', 'auth'] }), folderRec({ tags: ['auth', 'bookings'] })];
+    expect(collectTags(records)).toEqual(['auth', 'bookings', 'smoke']);
+  });
+
+  it('returns an empty list for an untagged collection', () => {
+    expect(collectTags([rec({}), folderRec({})])).toEqual([]);
   });
 });
 
@@ -222,11 +268,11 @@ describe('collectMethods', () => {
 });
 
 const rec = (over: Partial<RequestSearchRecord>): RequestSearchRecord => ({
-  type: 'request', id: 'id', slug: 's', name: '', method: 'GET', ancestorNames: [], ancestorSlugs: [], url: '', ...over
+  type: 'request', id: 'id', slug: 's', name: '', method: 'GET', ancestorNames: [], tags: [], url: '', ...over
 });
 
 const folderRec = (over: Partial<FolderSearchRecord>): FolderSearchRecord => ({
-  type: 'folder', id: 'fid', slug: 'f', name: '', ancestorNames: [], ancestorSlugs: [], requestCount: 0, ...over
+  type: 'folder', id: 'fid', slug: 'f', name: '', ancestorNames: [], tags: [], requestCount: 0, ...over
 });
 
 /** Substrings the reported ranges actually cover, for match-locality assertions. */

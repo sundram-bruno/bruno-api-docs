@@ -9,6 +9,7 @@ import { getByTestId, queryByTestId } from '@/test-utils/dom';
 const makeData = (overrides: Partial<RequestPageData> = {}): RequestPageData =>
   ({
     name: 'Get Users',
+    tags: [],
     url: '{{baseUrl}}/users',
     descHtml: '',
     pathParams: [],

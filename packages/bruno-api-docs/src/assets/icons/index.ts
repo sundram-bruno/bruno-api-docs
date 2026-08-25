@@ -26,6 +26,7 @@ export * from './DockBottomIcon';
 export * from './DockModalIcon';
 export * from './SidebarToggleIcon';
 export * from './SettingsIcon';
+export * from './TagIcon';
 export * from './TrashIcon';
 export * from './ExampleIcon';
 export * from './DotIcon';

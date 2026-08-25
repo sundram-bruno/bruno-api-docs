@@ -12,6 +12,7 @@ import {
   getRequestAuth,
   getItemDocs,
   getItemDescription,
+  getItemTags,
   type SupportedRequestItem
 } from '@/utils/schemaHelpers';
 import {
@@ -38,6 +39,7 @@ export const useRequestPageData = (
   const md = useMarkdownRenderer();
 
   const name = getItemName(item) || 'Untitled Request';
+  const tags = getItemTags(item);
   const url = getRequestUrl(item);
   const headers = getRequestHeaders(item);
   const params = getRequestParams(item);
@@ -102,6 +104,7 @@ export const useRequestPageData = (
 
   return {
     name,
+    tags,
     url,
     descHtml,
     pathParams,

@@ -52,6 +52,27 @@ const item: HttpRequest = {
 };
 
 describe('Request page', () => {
+  it('shows a tags section when the request has tags', () => {
+    const tagged = { ...item, info: { ...item.info, tags: ['auth', 'smoke'] } } as unknown as HttpRequest;
+    const root = useRenderToDom(
+      <MemoryRouter>
+        <Request item={tagged} ancestry={ancestry} collection={collection} onTryClick={() => {}} />
+      </MemoryRouter>
+    );
+    const section = getByTestId(root, 'request-section-tags');
+    expect(section.text).toContain('auth');
+    expect(section.text).toContain('smoke');
+  });
+
+  it('renders no tags section for an untagged request', () => {
+    const root = useRenderToDom(
+      <MemoryRouter>
+        <Request item={item} ancestry={ancestry} collection={collection} onTryClick={() => {}} />
+      </MemoryRouter>
+    );
+    expect(queryByTestId(root, 'request-section-tags')).toBeNull();
+  });
+
   it('renders the breadcrumb, heading, url bar, description and all populated sections', () => {
     const root = useRenderToDom(
       <MemoryRouter>

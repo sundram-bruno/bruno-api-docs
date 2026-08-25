@@ -3,7 +3,7 @@ import { useNavModel } from '@/routing/hooks';
 import { useClickOutside, useDocsNavigate } from '@/hooks';
 import {
   buildSearchRecords,
-  collectTopLevelFolders,
+  collectTags,
   collectMethods,
   createSearchIndex,
   searchHits,
@@ -13,29 +13,21 @@ import {
 } from '../searchIndex';
 import { SearchIcon, CloseIcon } from '@/assets/icons';
 import MethodChips from '../MethodChips/MethodChips';
-import FolderFilter from '../FolderFilter/FolderFilter';
+import TagFilter from '../TagFilter/TagFilter';
 import SearchResultItem from '../SearchResultItem/SearchResultItem';
 import { StyledWrapper } from './StyledWrapper';
 
 const RESULTS_ID = 'search-listbox';
 
-// A single character can't clear Fuse's `minMatchCharLength`, so treat a query
-// shorter than this as "not typing yet": keep the initial prompt rather than
-// flashing "no matching requests" after the first keystroke.
+// Fuse never matches a single character (minMatchCharLength in searchIndex.ts),
+// so a 1-char query would always show "no matches". Treat it as "still typing"
+// and keep showing the initial prompt instead.
 const MIN_QUERY_LENGTH = 2;
 
 interface SearchBarProps {
-  /** Open state, controlled by the shell so it is shared with the Topbar's
-   *  below-desktop search row (one source of truth: icon, row and panel agree). */
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Changes on each hotkey press to refocus the field even when already open. */
   focusNonce?: number;
-  /**
-   * Below-desktop layout: the field is revealed as a full-width row, so the
-   * panel widens to center within the docs area. Driven by the shell's
-   * docs-area-derived mode rather than a viewport media query.
-   */
   collapsed?: boolean;
   testId?: string;
 }
@@ -43,12 +35,8 @@ interface SearchBarProps {
 /**
  * Header-anchored collection search. Typo-tolerant (Fuse/Bitap) search over
  * request names and URLs and over folder names, plus palette-local method +
- * folder filters. Results render in the palette itself and selecting one
+ * tag filters. Results render in the palette itself and selecting one
  * navigates via the slug route, to a request or a folder page.
- *
- * Expands in place (a combobox whose listbox drops directly below the field)
- * rather than opening a centered modal. Open state is controlled so the Topbar
- * search icon/row and this panel share one state (no redundant affordances).
  */
 export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusNonce, collapsed = false, testId = 'search' }) => {
   const docsNavigate = useDocsNavigate();
@@ -56,13 +44,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
 
   const records = useMemo(() => buildSearchRecords(model.ordered), [model]);
   const fuse = useMemo(() => createSearchIndex(records), [records]);
-  const folders = useMemo(() => collectTopLevelFolders(model.ordered), [model]);
+  const tagOptions = useMemo(() => collectTags(records), [records]);
   // One chip per method present in the collection (canonical order).
   const methodOptions = useMemo(() => collectMethods(model.ordered), [model]);
 
   const [query, setQueryText] = useState('');
   const [methods, setMethods] = useState<Set<string>>(() => new Set());
-  const [folder, setFolder] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(() => new Set());
   // -1 = no keyboard selection yet, so no row shows the active highlight until
   // the user actually arrow-keys (mouse filtering shouldn't pre-highlight row 0).
   const [activeIdx, setActiveIdx] = useState(-1);
@@ -74,7 +62,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
   const optionId = (i: number) => `${RESULTS_ID}-opt-${i}`;
 
   const hasQuery = query.trim().length >= MIN_QUERY_LENGTH;
-  const hasFilter = methods.size > 0 || folder !== null;
+  const hasFilter = methods.size > 0 || selectedTags.size > 0;
 
   const results = useMemo<SearchHit[]>(() => {
     const base: SearchHit[] = hasQuery
@@ -86,14 +74,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
       // A folder carries no method, so any active method chip excludes them all.
       const passesMethod
         = methods.size === 0 || (r.type === 'request' && !!r.method && methods.has(r.method.toUpperCase()));
-      // The filtered folder matches itself, not only the items beneath it.
-      const passesFolder = folder === null || r.ancestorSlugs.includes(folder) || r.slug === folder;
-      return passesMethod && passesFolder;
+      const passesTags = selectedTags.size === 0 || [...selectedTags].every((tag) => r.tags.includes(tag));
+      return passesMethod && passesTags;
     });
-    // `searchHits` already groups folders first; the filter-only list is raw nav
-    // order, so it needs the same grouping to rank consistently.
     return hasQuery ? filtered : orderFoldersFirst(filtered);
-  }, [query, methods, folder, records, fuse, hasQuery, hasFilter]);
+  }, [query, methods, selectedTags, records, fuse, hasQuery, hasFilter]);
 
   useEffect(() => setActiveIdx(-1), [results]);
 
@@ -125,9 +110,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
     [refocusInput]
   );
 
-  const setFolderFilter = useCallback(
-    (slug: string | null) => {
-      setFolder(slug);
+  const toggleTag = useCallback(
+    (tag: string) => {
+      setSelectedTags((prev) => {
+        const next = new Set(prev);
+        if (next.has(tag)) next.delete(tag);
+        else next.add(tag);
+        return next;
+      });
       refocusInput();
     },
     [refocusInput]
@@ -135,7 +125,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
 
   const clearFilters = useCallback(() => {
     setMethods(new Set());
-    setFolder(null);
+    setSelectedTags(new Set());
     refocusInput();
   }, [refocusInput]);
 
@@ -151,14 +141,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
     (rec: SearchRecord) => {
       docsNavigate(rec.slug);
       resetAndClose();
-      inputRef.current?.blur(); // navigating away, so drop focus from the palette
+      inputRef.current?.blur();
     },
     [docsNavigate, resetAndClose]
   );
 
-  // Move the highlight and keep it in view. All option rows are already
-  // rendered (activeIdx only toggles a class), so we can scroll imperatively
-  // here rather than from an effect watching activeIdx.
   const moveActive = (delta: number) => {
     const next = Math.min(Math.max(activeIdx + delta, 0), results.length - 1);
     setActiveIdx(next);
@@ -184,7 +171,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
       return;
     }
     if (e.key === 'Enter') {
-      // Enter selects the highlighted row, or the first result if none navigated.
       const hit = activeIdx >= 0 ? results[activeIdx] : results[0];
       if (hit) {
         e.preventDefault();
@@ -235,7 +221,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
           <>
             <div className="search-filters" data-testid="search-filters">
               <MethodChips methods={methodOptions} active={methods} onToggle={toggleMethod} />
-              <FolderFilter folders={folders} value={folder} onChange={setFolderFilter} />
+              <TagFilter tags={tagOptions} selected={selectedTags} onToggle={toggleTag} />
               {hasFilter && (
                 <button type="button" className="search-clear" onClick={clearFilters}>
                   Clear all
@@ -284,8 +270,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
                       role="option"
                       aria-selected={i === activeIdx}
                       onMouseMove={(e) => {
-                        // Only real pointer movement (not scroll-induced mousemove
-                        // under a parked cursor) should steal the highlight.
                         if (e.movementX !== 0 || e.movementY !== 0) setActiveIdx(i);
                       }}
                     >

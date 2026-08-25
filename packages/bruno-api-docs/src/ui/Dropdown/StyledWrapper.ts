@@ -64,13 +64,13 @@ export const StyledWrapper = styled.div`
     gap: 8px;
     width: 100%;
     height: 27px;
-    padding: 7px 8px;
+    padding: 0 8px;
     box-sizing: border-box;
     cursor: pointer;
     font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 400;
-    line-height: 1;
+    line-height: 1.4;
     text-align: left;
     color: var(--oc-text);
     background: transparent;
