@@ -438,6 +438,39 @@ test.describe('Search palette', () => {
     await expect(search.results.first()).toContainText('Cancel Booking');
   });
 
+  test('tag filter narrows typed-query results too', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+    await search.field.fill('payment');
+
+    // The Payments requests match the query and inherit "bookings" from their
+    // ancestor folder; Login matches neither.
+    await search.tagButton.click();
+    await search.tagOption('bookings').click();
+
+    await expect(search.panel).toContainText('Charge Payment');
+    await expect(search.panel).toContainText('Refund Payment');
+    await expect(search.panel).not.toContainText('Login');
+  });
+
+  test('"Clear all" resets the method and tag filters together', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(FIXTURE);
+    await search.field.click();
+
+    await search.tagButton.click();
+    await search.tagOption('auth').click();
+    await search.field.click(); // close the menu
+    await search.methodChip('POST').click();
+
+    await search.root.getByRole('button', { name: 'Clear all' }).click();
+
+    // With no query and no filters the palette returns to its initial prompt.
+    await expect(search.panel).toContainText('Search the collection');
+    await expect(search.tagButton).toHaveText(/Tags/);
+  });
+
   test('a collection without tags offers no tag filter', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto('/?fixture=vars');

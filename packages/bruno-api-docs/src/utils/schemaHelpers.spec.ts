@@ -327,6 +327,11 @@ describe('getItemTags', () => {
   it('drops non-string and blank entries', () => {
     expect(getItemTags(item({ info: { tags: ['auth', '', '   ', 7, null] } }))).toEqual(['auth']);
   });
+
+  it('trims whitespace and dedupes, so " auth" and "auth" are one tag', () => {
+    expect(getItemTags(item({ info: { tags: [' auth', 'auth', 'auth '] } }))).toEqual(['auth']);
+    expect(getItemTags(item({ info: { tags: ['  smoke  ', 'auth'] } }))).toEqual(['smoke', 'auth']);
+  });
 });
 
 describe('getCollectionTags', () => {

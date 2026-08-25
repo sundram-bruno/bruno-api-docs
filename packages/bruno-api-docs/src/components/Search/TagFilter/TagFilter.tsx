@@ -23,7 +23,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({ tags, selected, onToggle, 
   if (tags.length === 0) return null;
 
   return (
-    <Dropdown label={triggerLabel(selected)} active={selected.size > 0} menuLabel="Filter by tags" testId={testId}>
+    <Dropdown label={triggerLabel(selected)} active={selected.size > 0} menuLabel="Filter by tags" multiselect testId={testId}>
       {() =>
         tags.map((tag) => (
           <li key={tag} role="option" aria-selected={selected.has(tag)}>

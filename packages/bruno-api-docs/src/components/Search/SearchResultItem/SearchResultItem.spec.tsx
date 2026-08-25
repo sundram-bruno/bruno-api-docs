@@ -4,6 +4,8 @@ import { describe, it, expect } from 'vitest';
 import { SearchResultItem } from './SearchResultItem';
 import type { RequestSearchRecord, FolderSearchRecord } from '../searchIndex';
 
+// Match "<text>" wrapped in a bold element, regardless of its attributes, so the
+// assertion keys off the tag (the highlight contract) and not a styling class.
 const boldElement = /<b(?:\s[^>]*)?>([^<]*)<\/b>/g;
 const boldedText = (html: string): string[] => [...html.matchAll(boldElement)].map((m) => m[1]);
 
@@ -43,6 +45,7 @@ describe('SearchResultItem', () => {
   });
 
   it('wraps the matched ranges of a field in a bold element', () => {
+    // "Hotels" sits at indices 8-13 of "Get All Hotels".
     const html = renderToStaticMarkup(
       <SearchResultItem record={record} matches={{ name: [[8, 13]] }} onSelect={() => {}} />
     );
@@ -55,6 +58,8 @@ describe('SearchResultItem', () => {
   });
 
   it('shows a deep breadcrumb elided, naming the node with the whole chain', () => {
+    // The hidden folders are unreachable by pointer for keyboard and AT users,
+    // so the label has to carry them.
     const deep = { ...record, ancestorNames: ['Hotels', 'Auth', 'Auth 2', 'Legacy', 'v3'] };
     const html = renderToStaticMarkup(<SearchResultItem record={deep} onSelect={() => {}} />);
     expect(html).toContain('Hotels / … / v3');
@@ -119,6 +124,7 @@ describe('SearchResultItem - folder variant', () => {
   });
 
   it('bolds the matched range of the folder name', () => {
+    // "Auth" sits at indices 6-9 of "Basic Auth".
     const html = renderToStaticMarkup(
       <SearchResultItem record={folder} matches={{ name: [[6, 9]] }} onSelect={() => {}} />
     );

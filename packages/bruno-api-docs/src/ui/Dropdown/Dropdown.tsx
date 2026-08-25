@@ -10,6 +10,7 @@ interface DropdownProps {
   active?: boolean;
   /** Accessible name for the listbox menu. */
   menuLabel: string;
+  multiselect?: boolean;
   /** Menu content; receives `close` to dismiss after a selection. */
   children: (api: { close: () => void }) => React.ReactNode;
   testId?: string;
@@ -21,7 +22,14 @@ interface DropdownProps {
  * render-prop and call `close` after a selection. Options should use the
  * `dropdown-option` / `dropdown-label` classes for consistent styling.
  */
-export const Dropdown: React.FC<DropdownProps> = ({ label, active = false, menuLabel, children, testId }) => {
+export const Dropdown: React.FC<DropdownProps> = ({
+  label,
+  active = false,
+  menuLabel,
+  multiselect = false,
+  children,
+  testId
+}) => {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -48,6 +56,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ label, active = false, menuL
       <button
         type="button"
         className={`dropdown-button${active ? ' is-active' : ''}`}
+        data-testid={testId ? `${testId}-button` : undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
@@ -60,7 +69,13 @@ export const Dropdown: React.FC<DropdownProps> = ({ label, active = false, menuL
       </button>
 
       {open && (
-        <ul id={menuId} className="dropdown-menu" role="listbox" aria-label={menuLabel}>
+        <ul
+          id={menuId}
+          className="dropdown-menu"
+          role="listbox"
+          aria-label={menuLabel}
+          aria-multiselectable={multiselect || undefined}
+        >
           {children({ close })}
         </ul>
       )}

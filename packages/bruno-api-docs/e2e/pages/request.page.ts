@@ -12,6 +12,7 @@ export class RequestPage extends BasePage {
   readonly root = this.page.getByTestId('request-page');
   readonly title = this.page.getByTestId('request-title');
   readonly description = this.page.getByTestId('request-description');
+  readonly tagChips = this.page.getByTestId('request-tags-chip');
 
   readonly sidebar = new SidebarComponent(this.page);
   readonly breadcrumb = new BreadcrumbComponent(this.page, 'request-breadcrumb');

@@ -13,8 +13,8 @@ import {
 } from './searchIndex';
 import type { NavEntry } from '@/routing/types';
 
-const requestEntry = (over: Partial<NavEntry> & { uuid: string }): NavEntry => {
-  const { uuid, ...rest } = over;
+const requestEntry = (over: Partial<NavEntry> & { uuid: string; tags?: string[] }): NavEntry => {
+  const { uuid, tags, ...rest } = over;
   return {
     slug: 'hotels/get-all',
     type: 'request',
@@ -24,7 +24,7 @@ const requestEntry = (over: Partial<NavEntry> & { uuid: string }): NavEntry => {
     depth: 1,
     item: {
       uuid,
-      info: { name: 'Get All Hotels', type: 'http', description: 'List hotels' },
+      info: { name: 'Get All Hotels', type: 'http', description: 'List hotels', tags },
       http: { method: 'GET', url: '{{baseUrl}}/api/v1/hotels', params: [{ name: 'page', value: '1' }] }
     } as never,
     ...rest
@@ -38,15 +38,15 @@ const childItem = (name: string, type: 'http' | 'folder' | 'script', items?: unk
   ...(items ? { items } : {})
 });
 
-const folderEntry = (over: Partial<NavEntry> & { uuid: string; items?: unknown[] }): NavEntry => {
-  const { uuid, items, ...rest } = over;
+const folderEntry = (over: Partial<NavEntry> & { uuid: string; items?: unknown[]; tags?: string[] }): NavEntry => {
+  const { uuid, items, tags, ...rest } = over;
   return {
     slug: 'hotels',
     type: 'folder',
     name: 'Hotels',
     ancestors: [],
     depth: 0,
-    item: { uuid, info: { name: 'Hotels', type: 'folder' }, items: items ?? [] } as never,
+    item: { uuid, info: { name: 'Hotels', type: 'folder', tags }, items: items ?? [] } as never,
     ...rest
   };
 };
@@ -197,25 +197,20 @@ describe('formatBreadcrumb', () => {
 
 describe('tags on search records', () => {
   it('carries the item tags on request and folder records', () => {
-    const folder = folderEntry({ uuid: 'f1' });
-    (folder.item as { info: { tags?: string[] } }).info.tags = ['catalog'];
-    const request = requestEntry({ uuid: 'u1', ancestors: [] });
-    (request.item as { info: { tags?: string[] } }).info.tags = ['auth', 'smoke'];
+    const folder = folderEntry({ uuid: 'f1', tags: ['catalog'] });
+    const request = requestEntry({ uuid: 'u1', ancestors: [], tags: ['auth', 'smoke'] });
     expect(folderRecords([folder])[0].tags).toEqual(['catalog']);
     expect(requestRecords([request])[0].tags).toEqual(['auth', 'smoke']);
   });
 
   it('merges ancestor folder tags, deduped', () => {
-    const folder = folderEntry({ uuid: 'f1', slug: 'hotels' });
-    (folder.item as { info: { tags?: string[] } }).info.tags = ['catalog', 'smoke'];
-    const request = requestEntry({ uuid: 'u1' });
-    (request.item as { info: { tags?: string[] } }).info.tags = ['smoke'];
+    const folder = folderEntry({ uuid: 'f1', slug: 'hotels', tags: ['catalog', 'smoke'] });
+    const request = requestEntry({ uuid: 'u1', tags: ['smoke'] });
     expect(requestRecords([folder, request])[0].tags).toEqual(['smoke', 'catalog']);
   });
 
   it('inherits through the whole ancestor chain, folders included', () => {
-    const top = folderEntry({ uuid: 'f1', slug: 'billing', name: 'Billing' });
-    (top.item as { info: { tags?: string[] } }).info.tags = ['billing'];
+    const top = folderEntry({ uuid: 'f1', slug: 'billing', name: 'Billing', tags: ['billing'] });
     const nested = folderEntry({
       uuid: 'f2',
       slug: 'billing/lookups',

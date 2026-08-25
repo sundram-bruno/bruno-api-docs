@@ -87,7 +87,13 @@ export const getItemSeq = (item: OpenCollectionItem | null | undefined): number 
 
 const normalizeTags = (raw: unknown): string[] => {
   if (!Array.isArray(raw)) return [];
-  return raw.filter((tag): tag is string => typeof tag === 'string' && tag.trim().length > 0);
+  const seen = new Set<string>();
+  for (const tag of raw) {
+    if (typeof tag !== 'string') continue;
+    const trimmed = tag.trim();
+    if (trimmed) seen.add(trimmed);
+  }
+  return [...seen];
 };
 
 /**

@@ -25,9 +25,17 @@ const RESULTS_ID = 'search-listbox';
 const MIN_QUERY_LENGTH = 2;
 
 interface SearchBarProps {
+  /** Open state, controlled by the shell so it is shared with the Topbar's
+   *  below-desktop search row (one source of truth: icon, row and panel agree). */
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Changes on each hotkey press to refocus the field even when already open. */
   focusNonce?: number;
+  /**
+   * Below-desktop layout: the field is revealed as a full-width row, so the
+   * panel widens to center within the docs area. Driven by the shell's
+   * docs-area-derived mode rather than a viewport media query.
+   */
   collapsed?: boolean;
   testId?: string;
 }
@@ -146,6 +154,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
     [docsNavigate, resetAndClose]
   );
 
+  // Move the highlight and keep it in view. All option rows are already
+  // rendered (activeIdx only toggles a class), so we can scroll imperatively
+  // here rather than from an effect watching activeIdx.
   const moveActive = (delta: number) => {
     const next = Math.min(Math.max(activeIdx + delta, 0), results.length - 1);
     setActiveIdx(next);
@@ -270,6 +281,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
                       role="option"
                       aria-selected={i === activeIdx}
                       onMouseMove={(e) => {
+                        // Only real pointer movement (not scroll-induced mousemove
+                        // under a parked cursor) should steal the highlight.
                         if (e.movementX !== 0 || e.movementY !== 0) setActiveIdx(i);
                       }}
                     >
