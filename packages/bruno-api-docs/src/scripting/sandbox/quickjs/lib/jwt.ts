@@ -53,6 +53,7 @@ const toHmacSecret = (secret: any): CryptoJS.lib.WordArray | string => {
   if (secret && typeof secret === 'object' && typeof secret.length === 'number') {
     const bytes = Array.from(secret as ArrayLike<number>);
     const words: number[] = [];
+    // crypto-js stores bytes packed four-per-word, most significant byte first.
     for (let i = 0; i < bytes.length; i++) {
       words[i >>> 2] = (words[i >>> 2] || 0) | (bytes[i] << (24 - (i % 4) * 8));
     }
@@ -65,8 +66,18 @@ const base64UrlFromWordArray = (words: CryptoJS.lib.WordArray): string => {
   return words.toString(CryptoJS.enc.Base64).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
+const base64UrlEncodeString = (value: string): string => {
+  return base64UrlFromWordArray(CryptoJS.enc.Utf8.parse(value));
+};
+
 const base64UrlEncodeJson = (value: unknown): string => {
-  return base64UrlFromWordArray(CryptoJS.enc.Utf8.parse(JSON.stringify(value)));
+  return base64UrlEncodeString(JSON.stringify(value));
+};
+
+const assertSymmetricSecret = (secret: unknown) => {
+  if (typeof secret === 'string' && secret.includes('-----BEGIN')) {
+    throw new Error('an asymmetric key was provided for an HMAC (HS) algorithm');
+  }
 };
 
 const base64UrlDecodeToString = (segment: string): string => {
@@ -130,6 +141,7 @@ const signSync = (payload: any, secret: any, options: any): string => {
   if (secret === undefined || secret === null || secret === '') {
     throw new Error('secretOrPrivateKey must have a value');
   }
+  assertSymmetricSecret(secret);
 
   const isObjectPayload = typeof payload === 'object' && payload !== null;
   const claims: any = isObjectPayload && options?.mutatePayload !== true ? { ...payload } : payload;
@@ -151,7 +163,8 @@ const signSync = (payload: any, secret: any, options: any): string => {
   }
 
   const header = { alg: algorithm, typ: 'JWT', ...(options?.header || {}) };
-  const signingInput = `${base64UrlEncodeJson(header)}.${base64UrlEncodeJson(claims)}`;
+  const encodedPayload = typeof claims === 'string' ? base64UrlEncodeString(claims) : base64UrlEncodeJson(claims);
+  const signingInput = `${base64UrlEncodeJson(header)}.${encodedPayload}`;
   const signature = base64UrlFromWordArray(hmac(signingInput, toHmacSecret(secret)));
   return `${signingInput}.${signature}`;
 };
@@ -192,6 +205,10 @@ const verifySync = (token: any, secret: any, options: any): any => {
   if (typeof token !== 'string' || token.split('.').length !== 3) {
     throw new Error('jwt malformed');
   }
+  if (secret === undefined || secret === null || secret === '') {
+    throw new Error('secret or public key must be provided');
+  }
+  assertSymmetricSecret(secret);
 
   const [headerSegment, payloadSegment, signatureSegment] = token.split('.');
   if (signatureSegment === '') {

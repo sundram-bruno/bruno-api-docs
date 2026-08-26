@@ -3,6 +3,7 @@ import { marshallToVm } from '../../utils';
 
 const METHODS = ['get', 'post', 'put', 'delete', 'patch'];
 const METHODS_WITH_BODY = new Set(['post', 'put', 'patch']);
+const UNSUPPORTED_METHODS = ['head', 'options', 'request', 'create', 'all'];
 
 interface AxiosShimConfig {
   url?: string;
@@ -74,8 +75,11 @@ const parseResponseData = async (response: Response) => {
 };
 
 const performAxiosRequest = async (config: AxiosShimConfig) => {
-  if (typeof config.url !== 'string' || config.url.trim() === '') {
-    throw buildAxiosError({ message: `Invalid URL: ${String(config.url)}`, code: 'ERR_INVALID_URL' }, config);
+  if (typeof config.url !== 'string' || !/^https?:\/\//i.test(config.url.trim())) {
+    throw buildAxiosError(
+      { message: `Only absolute http(s) URLs are supported here, received: ${String(config.url)}`, code: 'ERR_INVALID_URL' },
+      config
+    );
   }
 
   const headers: Record<string, string> = { ...(config.headers || {}) };
@@ -100,6 +104,9 @@ const performAxiosRequest = async (config: AxiosShimConfig) => {
   const fetchOptions: RequestInit = {
     method: (config.method || 'get').toUpperCase(),
     headers,
+    // Never send the docs site's own cookies, so a published script cannot make
+    // authenticated calls to the host origin on the reader's behalf.
+    credentials: 'omit',
     ...(body !== undefined && { body }),
     ...(config.timeout && { signal: AbortSignal.timeout(config.timeout) })
   };
@@ -115,6 +122,7 @@ const performAxiosRequest = async (config: AxiosShimConfig) => {
       {
         message: 'Network Error',
         code: 'ERR_NETWORK',
+        cause: `${err?.name || 'Error'}: ${err?.message || String(err)}`,
         hint: 'The browser blocked or failed the request. If the API works in this Bruno app, the server may not allow cross-origin (CORS) requests from this docs site.'
       },
       config
@@ -143,7 +151,13 @@ const performAxiosRequest = async (config: AxiosShimConfig) => {
     );
   }
 
-  return { status: response.status, headers: responseHeaders, data };
+  return {
+    status: response.status,
+    statusText: response.statusText,
+    headers: responseHeaders,
+    data,
+    config: { url: config.url, method: config.method, headers: config.headers, data: config.data }
+  };
 };
 
 const addAxiosShimToContext = (vm: any) => {
@@ -168,14 +182,23 @@ const addAxiosShimToContext = (vm: any) => {
   registerAxiosFunction('__bruno__axios', null);
   METHODS.forEach((method) => registerAxiosFunction(`__bruno__axios__${method}`, method));
 
-  vm.evalCode(`
+  const bootResult = vm.evalCode(`
     globalThis.axios = __bruno__axios;
     ${METHODS.map((method) => `globalThis.axios.${method} = __bruno__axios__${method};`).join('\n')}
+    ${UNSUPPORTED_METHODS.map((method) => `globalThis.axios.${method} = () => {
+      throw new Error("axios.${method} is not supported in the docs playground; use axios(config) or axios.get/post/put/patch/delete.");
+    };`).join('\n')}
     globalThis.requireObject = {
       ...globalThis.requireObject,
       axios: globalThis.axios,
     };
   `);
+  if (bootResult.error) {
+    const error = vm.dump(bootResult.error);
+    bootResult.error.dispose();
+    throw new Error(`Failed to install axios shim: ${error?.message || String(error)}`);
+  }
+  bootResult.value.dispose();
 };
 
 export default addAxiosShimToContext;

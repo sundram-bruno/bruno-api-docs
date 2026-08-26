@@ -64,8 +64,8 @@ const addCryptoUtilsShimToContext = (vm: any) => {
   randomBytesHandle.dispose();
   getRandomValuesHandle.dispose();
 
-  vm.evalCode(`
-    ${serializeTypedArray.toString()}
+  const bootResult = vm.evalCode(`
+    const serializeTypedArray = ${serializeTypedArray.toString()};
 
     const cryptoModule = {
       randomBytes: function(size) {
@@ -81,6 +81,12 @@ const addCryptoUtilsShimToContext = (vm: any) => {
 
     globalThis.crypto = cryptoModule;
     `);
+  if (bootResult.error) {
+    const error = vm.dump(bootResult.error);
+    bootResult.error.dispose();
+    throw new Error(`Failed to install crypto shim: ${error?.message || String(error)}`);
+  }
+  bootResult.value.dispose();
 };
 
 export default addCryptoUtilsShimToContext;

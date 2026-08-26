@@ -21,6 +21,9 @@ const marshallToVm = (value: any, vm: any) => {
     } else {
       const obj = vm.newObject();
       for (const key in value) {
+        if (key === '__proto__') {
+          continue;
+        }
         vm.setProp(obj, key, marshallToVm(value[key], vm));
       }
       return obj;

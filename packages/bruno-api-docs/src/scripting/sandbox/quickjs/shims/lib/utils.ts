@@ -12,11 +12,12 @@ const ALLOWED_TYPED_ARRAYS = new Set([
   'BigUint64Array'
 ]);
 
-function serializeTypedArray(ta: any) {
+// Stringified and injected into the sandbox, so it must not reference anything outside its own body.
+function serializeTypedArray(typedArray: any) {
   return {
-    type: ta.constructor.name,
-    array: Array.from(ta),
-    length: ta.length
+    type: typedArray.constructor.name,
+    array: Array.from(typedArray),
+    length: typedArray.length
   };
 }
 

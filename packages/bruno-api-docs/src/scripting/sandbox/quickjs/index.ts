@@ -8,7 +8,6 @@ import addAxiosShimToContext from './shims/lib/axios';
 import { newQuickJSWASMModule, memoizePromiseFactory } from 'quickjs-emscripten';
 import { marshallToVm } from './utils';
 import { getBundledCode } from './bundled-libraries.iife.js';
-import addLocalModuleShimToContext from './shims/local-module';
 import { getRequireCode } from './shims/require';
 
 let QuickJSSyncContext: any;
@@ -103,9 +102,11 @@ const executeQuickJsVmAsync = async ({
     const vm = module.newContext();
 
     addCryptoUtilsShimToContext(vm);
-    addLocalModuleShimToContext(vm);
 
-    const bundledCode = getBundledCode?.toString() || '';
+    if (typeof getBundledCode !== 'function') {
+      throw new Error('Sandbox library bundle is missing; run build:lib-bundle before executing scripts.');
+    }
+    const bundledCode = getBundledCode.toString();
 
     const bootResult = vm.evalCode(
       `
