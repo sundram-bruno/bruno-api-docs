@@ -112,11 +112,14 @@ const withOptionalCallback = <T>(callback: any, run: () => T): T | undefined => 
   if (typeof callback !== 'function') {
     return run();
   }
+  let result: T;
   try {
-    callback(null, run());
+    result = run();
   } catch (error) {
     callback(error, undefined);
+    return undefined;
   }
+  callback(null, result);
   return undefined;
 };
 
@@ -144,6 +147,15 @@ const signSync = (payload: any, secret: any, options: any): string => {
   assertSymmetricSecret(secret);
 
   const isObjectPayload = typeof payload === 'object' && payload !== null;
+
+  if (!isObjectPayload) {
+    const invalidOption = ['expiresIn', 'notBefore', 'noTimestamp', 'audience', 'issuer', 'subject', 'jwtid']
+      .find((name) => options?.[name] !== undefined);
+    if (invalidOption) {
+      throw new Error(`invalid ${invalidOption} option for string payload`);
+    }
+  }
+
   const claims: any = isObjectPayload && options?.mutatePayload !== true ? { ...payload } : payload;
 
   if (isObjectPayload) {
@@ -162,7 +174,9 @@ const signSync = (payload: any, secret: any, options: any): string => {
     if (options?.jwtid !== undefined) claims.jti = options.jwtid;
   }
 
-  const header = { alg: algorithm, typ: 'JWT', ...(options?.header || {}) };
+  const header = isObjectPayload
+    ? { alg: algorithm, typ: 'JWT', ...(options?.header || {}) }
+    : { alg: algorithm, ...(options?.header || {}) };
   const encodedPayload = typeof claims === 'string' ? base64UrlEncodeString(claims) : base64UrlEncodeJson(claims);
   const signingInput = `${base64UrlEncodeJson(header)}.${encodedPayload}`;
   const signature = base64UrlFromWordArray(hmac(signingInput, toHmacSecret(secret)));
