@@ -6,7 +6,7 @@ import ScriptRuntime from '@/scripting/runtime/script-runtime';
 import type { RunRequestCallback } from '@/scripting/utils/bru';
 import AssertRuntime, { type AssertionResult } from '@/scripting/runtime/assert-runtime';
 import { getTreePathFromCollectionToItem, mergeHeaders, mergeScripts, mergeAuth, interpolateVars, findItemByPath } from './utils';
-import { getCollectionFolderRequestVariables } from './utils/variable-merger';
+import { getCollectionFolderRequestVariables, getCollectionVariables } from './utils/variable-merger';
 import { coerceVariableValue, parseValueByDataType, type CoercedVariableValue } from '@/utils/variableDataType';
 import { externalSecretValues, type ExternalSecretEntry } from '@/utils/variableResolution';
 import type { Variables, JsonValue } from './utils/variable-interpolator';
@@ -16,6 +16,7 @@ import {
   isHttpRequest, getItemType, getItemName, getHttpMethod, getRequestUrl, type InternalHttpRequest
 } from '@/utils/schemaHelpers';
 import { getItemUuid } from '@/utils/itemUtils';
+import { cloneDeep, isEqual } from 'lodash-es';
 
 const MAX_RUN_REQUEST_DEPTH = 25;
 
@@ -23,6 +24,7 @@ interface RunContext {
   collection: OpenCollectionCollection;
   environment?: Environment;
   environmentVariables: Variables;
+  collectionVariables: Variables;
   runtimeVariables: Variables;
   processEnvVars: Variables;
   timeout: number;
@@ -31,6 +33,24 @@ interface RunContext {
 
 const requestKey = (item: HttpRequest): string =>
   getItemUuid(item) || `${getItemName(item) ?? ''}|${getHttpMethod(item)}|${getRequestUrl(item)}`;
+
+const diffVariables = (
+  before: Variables,
+  after: Variables,
+  ignore: Set<string> = new Set()
+): { upserts: Variables; deleted: string[]; changed: boolean } => {
+  const upserts: Variables = {};
+  for (const [key, value] of Object.entries(after)) {
+    if (key === '__name__' || ignore.has(key)) continue;
+    if (!Object.prototype.hasOwnProperty.call(before, key) || !isEqual(before[key], value)) {
+      upserts[key] = value;
+    }
+  }
+  const deleted = Object.keys(before).filter(
+    (key) => key !== '__name__' && !ignore.has(key) && !Object.prototype.hasOwnProperty.call(after, key)
+  );
+  return { upserts, deleted, changed: Object.keys(upserts).length > 0 || deleted.length > 0 };
+};
 
 interface DeclaredEnvironmentVariable {
   name?: string;
@@ -102,6 +122,8 @@ export interface RunRequestResponse {
   assertionResults?: AssertionResultsResponse;
   testResults?: TestResultsResponse;
   warnings?: string[] | null;
+  environmentVariables?: { envName: string; variables: Variables; deleted: string[] };
+  collectionVariables?: { variables: Variables; deleted: string[] };
 }
 
 export class RequestRunner {
@@ -121,12 +143,49 @@ export class RequestRunner {
       collection,
       environment,
       environmentVariables: this.getEnvironmentVariables(environment),
+      collectionVariables: getCollectionVariables(collection),
       processEnvVars: (typeof process !== 'undefined' && process.env ? process.env : {}) as Record<string, string>,
       runtimeVariables,
       timeout,
       warnings: []
     };
-    return this.runRequestWithContext(item, context, 0, []);
+
+    const initialEnvVariables = cloneDeep(context.environmentVariables);
+    const initialCollectionVariables = cloneDeep(context.collectionVariables);
+    const response = await this.runRequestWithContext(item, context, 0, []);
+
+    const declaredEnvNames = new Set(
+      (environment?.variables ?? [])
+        .filter((variable) => !variable.disabled)
+        .map((variable) => variable.name)
+        .filter((name): name is string => Boolean(name))
+    );
+    const externalNames = new Set(
+      ((environment?.externalSecrets?.variables ?? []) as { name?: string }[])
+        .map((entry) => entry.name)
+        .filter((name): name is string => Boolean(name))
+        .filter((name) => !declaredEnvNames.has(name))
+    );
+    const envDelta = diffVariables(initialEnvVariables, context.environmentVariables, externalNames);
+    if (envDelta.changed) {
+      if (environment?.name) {
+        response.environmentVariables = {
+          envName: environment.name,
+          variables: envDelta.upserts,
+          deleted: envDelta.deleted
+        };
+      } else {
+        context.warnings.push('bru.setEnvVar: no environment is selected, so the changes were not saved.');
+        response.warnings = context.warnings;
+      }
+    }
+
+    const collectionDelta = diffVariables(initialCollectionVariables, context.collectionVariables);
+    if (collectionDelta.changed) {
+      response.collectionVariables = { variables: collectionDelta.upserts, deleted: collectionDelta.deleted };
+    }
+
+    return response;
   }
 
   private makeNestedRunRequest(
@@ -170,14 +229,16 @@ export class RequestRunner {
     depth: number,
     chain: string[]
   ): Promise<RunRequestResponse> {
-    const { collection, environmentVariables, runtimeVariables, processEnvVars, timeout, warnings } = context;
+    const {
+      collection, environmentVariables, collectionVariables, runtimeVariables, processEnvVars, timeout, warnings
+    } = context;
     const requestId = this.generateRequestId();
 
     try {
       const processedRequest: InternalHttpRequest = await this.preprocessRequest(item, collection);
       processedRequest.__bruno__executionMode = 'standalone';
 
-      const { collectionVariables, folderVariables, requestVariables } = getCollectionFolderRequestVariables(collection, processedRequest);
+      const { folderVariables, requestVariables } = getCollectionFolderRequestVariables(collection, processedRequest);
 
       const allVariables = {
         environmentVariables,
@@ -317,7 +378,10 @@ export class RequestRunner {
     }
     if (!environment?.variables) return vars;
 
-    return environment.variables.reduce((acc, variable: DeclaredEnvironmentVariable) => {
+    const declared = environment.variables as DeclaredEnvironmentVariable[];
+    const secretsLast = [...declared.filter((v) => !v.secret), ...declared.filter((v) => v.secret)];
+
+    return secretsLast.reduce((acc, variable) => {
       const name = variable.name;
       if (name && !variable.disabled) {
         // Coerce typed values (number/boolean/object) to native, like folder/collection/request vars.

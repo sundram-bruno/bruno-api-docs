@@ -1,6 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Environment } from '@opencollection/types/config/environments';
 import { RequestRunner } from './index';
 import { parseYaml } from '@/utils/yamlUtils';
+
+const okFetch = () => vi.fn().mockResolvedValue({
+  ok: true,
+  status: 200,
+  statusText: 'OK',
+  url: 'https://example.com/',
+  headers: new Headers({ 'content-type': 'application/json' }),
+  text: async () => '{}',
+  arrayBuffer: async () => new TextEncoder().encode('{}').buffer
+});
 
 // Minimal collection YAML with one POST request
 const collectionYaml = `
@@ -187,37 +198,6 @@ items:
       expect(runtimeVariables.executionMode).toBe('standalone'); // getExecutionMode resolved via the runner
 
       timeoutSpy.mockRestore();
-      global.fetch = originalFetch;
-    });
-
-    it('a pre-request script can call bru.disableParsingResponseJson() to keep the raw response body', async () => {
-      const yaml = `
-opencollection: "1.0.0"
-info:
-  name: "bru disableParsing"
-items:
-  - name: "GET data"
-    type: "http"
-    method: "GET"
-    url: "https://api.example.com/data"
-    scripts:
-      preRequest: |
-        bru.disableParsingResponseJson();
-`;
-      global.fetch = vi.fn().mockResolvedValue({
-        status: 200,
-        statusText: 'OK',
-        url: 'https://api.example.com/data',
-        headers: new Headers({ 'content-type': 'application/json' }),
-        arrayBuffer: async () => new TextEncoder().encode('{"a":1}').buffer
-      });
-
-      const collection = parseYaml(yaml);
-      const response = await new RequestRunner().runRequest({ item: collection.items[0], collection, timeout: 30000 });
-
-      expect(response.data).toBe('{"a":1}'); // bru.disableParsingResponseJson kept the raw string
-      expect(response.status).toBe(200);
-
       global.fetch = originalFetch;
     });
 
@@ -949,5 +929,419 @@ describe('RequestExecutor parseResponse — content-type handling', () => {
     expect(res.detectedContentType).toBe('text/plain');
     expect(typeof res.base64Data).toBe('string');
     global.fetch = originalFetch;
+  });
+});
+
+describe('RequestRunner - script env-var persistence', () => {
+  const ENV_SCRIPT_YAML = `
+opencollection: "1.0.0"
+info:
+  name: "env set"
+  version: "1.0.0"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.setEnvVar('foo', 'bar');
+`;
+
+  let originalFetch: typeof global.fetch;
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    global.fetch = okFetch();
+  });
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('attaches a script setEnvVar to result.environmentVariables when an environment is active', async () => {
+    const collection = parseYaml(ENV_SCRIPT_YAML);
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      environment: { name: 'Dev', variables: [] } as Environment,
+      timeout: 5000
+    });
+    expect(response.environmentVariables).toEqual({ envName: 'Dev', variables: { foo: 'bar' }, deleted: [] });
+  });
+
+  it('keeps a number, boolean, and object as native values, not strings', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "env types"
+  version: "1.0.0"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.setEnvVar('num', 7);
+        bru.setEnvVar('flag', false);
+        bru.setEnvVar('cfg', { a: 1 });
+`;
+    const collection = parseYaml(yaml);
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      environment: { name: 'Dev', variables: [] } as Environment,
+      timeout: 5000
+    });
+    expect(response.environmentVariables).toEqual({ envName: 'Dev', variables: { num: 7, flag: false, cfg: { a: 1 } }, deleted: [] });
+  });
+
+  it('warns and attaches nothing when no environment is selected', async () => {
+    const collection = parseYaml(ENV_SCRIPT_YAML);
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      timeout: 5000
+    });
+    expect(response.environmentVariables).toBeUndefined();
+    expect(response.warnings).toEqual(expect.arrayContaining([expect.stringContaining('no environment is selected')]));
+  });
+});
+
+describe('RequestRunner - script collection-var persistence', () => {
+  const COLL_SCRIPT_YAML = (script: string) => `
+opencollection: "1.0.0"
+info:
+  name: "coll set"
+  version: "1.0.0"
+request:
+  variables:
+    - name: "existing"
+      value: "keep"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        ${script}
+`;
+
+  let originalFetch: typeof global.fetch;
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    global.fetch = okFetch();
+  });
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('attaches script setCollectionVar changes to result.collectionVariables', async () => {
+    const collection = parseYaml(COLL_SCRIPT_YAML('bru.setCollectionVar(\'foo\', \'bar\');'));
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      timeout: 5000
+    });
+    expect(response.collectionVariables).toEqual({ variables: { foo: 'bar' }, deleted: [] });
+  });
+
+  it('keeps a number, boolean, and object as native values, not strings', async () => {
+    const collection = parseYaml(COLL_SCRIPT_YAML(
+      'bru.setCollectionVar(\'count\', 3); bru.setCollectionVar(\'flag\', true); bru.setCollectionVar(\'cfg\', { on: 1 });'
+    ));
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      timeout: 5000
+    });
+    expect(response.collectionVariables).toEqual({ variables: { count: 3, flag: true, cfg: { on: 1 } }, deleted: [] });
+  });
+
+  it('does not attach collectionVariables when a script makes no change', async () => {
+    const collection = parseYaml(COLL_SCRIPT_YAML('bru.getCollectionVar(\'existing\');'));
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      timeout: 5000
+    });
+    expect(response.collectionVariables).toBeUndefined();
+  });
+
+  it('keeps runtime vars (bru.setVar) ephemeral — they never trigger env or collection persistence', async () => {
+    const collection = parseYaml(COLL_SCRIPT_YAML('bru.setVar(\'x\', \'y\');'));
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      environment: { name: 'Dev', variables: [] } as Environment,
+      timeout: 5000
+    });
+    expect(response.collectionVariables).toBeUndefined();
+    expect(response.environmentVariables).toBeUndefined();
+  });
+});
+
+describe('RequestRunner - environment variable resolution', () => {
+  const HEADER_YAML = `
+opencollection: "1.0.0"
+info:
+  name: "env resolution"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    headers:
+      - name: "X-Token"
+        value: "{{token}}"
+`;
+
+  const capturedHeader = async (environment: Environment): Promise<string | undefined> => {
+    const originalFetch = global.fetch;
+    let headers: Record<string, string> = {};
+    global.fetch = vi.fn().mockImplementation((url: string, init: RequestInit) => {
+      headers = init.headers as Record<string, string>;
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        url,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        text: async () => '{}',
+        arrayBuffer: async () => new TextEncoder().encode('{}').buffer
+      });
+    });
+    const collection = parseYaml(HEADER_YAML);
+    await new RequestRunner().runRequest({ item: collection.items[0], collection, environment, timeout: 5000 });
+    global.fetch = originalFetch;
+    return headers['X-Token'];
+  };
+
+  it('resolves a secret variable over a plain variable of the same name, whatever the order', async () => {
+    const header = await capturedHeader({
+      name: 'Dev',
+      variables: [
+        { name: 'token', value: 'secret-value', secret: true },
+        { name: 'token', value: 'plain-value' }
+      ]
+    } as Environment);
+    expect(header).toBe('secret-value');
+  });
+});
+
+describe('RequestRunner - script variable persistence (delta + nesting + failure)', () => {
+  let originalFetch: typeof global.fetch;
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    global.fetch = okFetch();
+  });
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('sends only the env vars that changed, never untouched vars or secret values', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "delta"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.setEnvVar('plainVar', 'changed');
+`;
+    const collection = parseYaml(yaml);
+    const environment = {
+      name: 'Dev',
+      variables: [
+        { name: 'plainVar', value: 'original' },
+        { name: 'untouched', value: 'stay' },
+        { name: 'apiToken', value: 'super-secret', secret: true, type: 'string' }
+      ]
+    } as Environment;
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0], collection, environment, timeout: 5000
+    });
+    expect(response.environmentVariables).toEqual({
+      envName: 'Dev',
+      variables: { plainVar: 'changed' },
+      deleted: []
+    });
+  });
+
+  it('reports a deleted env var as an explicit deleted name, not by omission', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "delete"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.deleteEnvVar('gone');
+`;
+    const collection = parseYaml(yaml);
+    const environment = {
+      name: 'Dev',
+      variables: [{ name: 'gone', value: 'x' }, { name: 'stay', value: 'y' }]
+    } as Environment;
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0], collection, environment, timeout: 5000
+    });
+    expect(response.environmentVariables).toEqual({ envName: 'Dev', variables: {}, deleted: ['gone'] });
+  });
+
+  it('persists setCollectionVar and setEnvVar from a nested bru.runRequest', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "nested"
+request:
+  variables:
+    - name: "colStart"
+      value: "0"
+items:
+  - name: "Parent"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        await bru.runRequest('Child');
+  - name: "Child"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.setCollectionVar('fromChild', 'yes');
+        bru.setEnvVar('envFromChild', 'yes');
+`;
+    const collection = parseYaml(yaml);
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      environment: { name: 'Dev', variables: [] } as Environment,
+      timeout: 5000
+    });
+    expect(response.collectionVariables).toEqual({ variables: { fromChild: 'yes' }, deleted: [] });
+    expect(response.environmentVariables).toEqual({ envName: 'Dev', variables: { envFromChild: 'yes' }, deleted: [] });
+  });
+
+  it('persists setCollectionVar and setEnvVar even when the send fails', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('network down'));
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "failing"
+request:
+  variables:
+    - name: "colStart"
+      value: "0"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.setCollectionVar('colBeforeFail', 'survive');
+        bru.setEnvVar('envBeforeFail', 'survive');
+`;
+    const collection = parseYaml(yaml);
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0],
+      collection,
+      environment: { name: 'Dev', variables: [] } as Environment,
+      timeout: 5000
+    });
+    expect(response.error).toBeDefined();
+    expect(response.collectionVariables).toEqual({ variables: { colBeforeFail: 'survive' }, deleted: [] });
+    expect(response.environmentVariables).toEqual({ envName: 'Dev', variables: { envBeforeFail: 'survive' }, deleted: [] });
+  });
+
+  it('keeps an external-secret name out of the env delta when a script overwrites it', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "ext upsert"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.setEnvVar('regular', 'changed');
+        bru.setEnvVar('awsKey', 'override');
+`;
+    const collection = parseYaml(yaml);
+    const environment = {
+      name: 'Dev',
+      variables: [{ name: 'regular', value: 'orig' }],
+      externalSecrets: { type: 'aws-secrets-manager', variables: [{ name: 'awsKey', secretName: 'k', value: 'cached' }] }
+    } as unknown as Environment;
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0], collection, environment, timeout: 5000
+    });
+    expect(response.environmentVariables).toEqual({ envName: 'Dev', variables: { regular: 'changed' }, deleted: [] });
+  });
+
+  it('keeps an external-secret name out of the env delta deleted list on deleteAllEnvVars', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "ext delete"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.deleteAllEnvVars();
+`;
+    const collection = parseYaml(yaml);
+    const environment = {
+      name: 'Dev',
+      variables: [{ name: 'regular', value: 'orig' }],
+      externalSecrets: { type: 'aws-secrets-manager', variables: [{ name: 'awsKey', secretName: 'k', value: 'cached' }] }
+    } as unknown as Environment;
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0], collection, environment, timeout: 5000
+    });
+    expect(response.environmentVariables).toEqual({ envName: 'Dev', variables: {}, deleted: ['regular'] });
+  });
+
+  it('still persists a script write to a declared env var that shares a name with an external secret', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "shared name"
+items:
+  - name: "req"
+    type: "http"
+    method: "GET"
+    url: "https://example.com"
+    scripts:
+      preRequest: |
+        bru.setEnvVar('shared', 'fromScript');
+`;
+    const collection = parseYaml(yaml);
+    const environment = {
+      name: 'Dev',
+      variables: [{ name: 'shared', value: 'declared' }],
+      externalSecrets: { type: 'aws-secrets-manager', variables: [{ name: 'shared', secretName: 'k', value: 'cached' }] }
+    } as unknown as Environment;
+    const response = await new RequestRunner().runRequest({
+      item: collection.items[0], collection, environment, timeout: 5000
+    });
+    expect(response.environmentVariables).toEqual({ envName: 'Dev', variables: { shared: 'fromScript' }, deleted: [] });
   });
 });

@@ -1,10 +1,12 @@
 import type { Environment } from '@opencollection/types/config/environments';
-import type { Variable, VariableValueType } from '@opencollection/types/common/variables';
+import type { Variable, SecretVariable, VariableValueType } from '@opencollection/types/common/variables';
 import { MANAGER_LABELS } from '@/constants';
 import { getDescription, getVariableTypeLabel } from './request';
 import { descriptionText, resolveDescription } from './description';
 import { isSecretVariable, unwrapVariableValue, type ExternalSecretEntry } from './variableResolution';
 import { rowToVariable, toDataType } from './variableDataType';
+import { reconcileScriptVariables } from './scriptVariables';
+import type { JsonValue } from '@/runner/utils/variable-interpolator';
 
 const humanizeManager = (type: string | undefined): string => {
   if (!type) return 'External';
@@ -143,6 +145,19 @@ const getExternalSecrets = (environment: Environment): EnvironmentExternalSecret
 
   if (!variables.length) return null;
   return { type: config?.type ?? '', typeLabel: humanizeManager(config?.type), variables };
+};
+
+export const applyScriptEnvVars = (
+  environment: Environment,
+  upserts: Record<string, JsonValue>,
+  deleted: Set<string> = new Set()
+): (Variable | SecretVariable)[] => {
+  const externalNames = new Set(
+    (environment.externalSecrets?.variables ?? [])
+      .map((entry) => entry.name)
+      .filter((name): name is string => Boolean(name))
+  );
+  return reconcileScriptVariables(environment.variables ?? [], upserts, { skip: externalNames, deleted });
 };
 
 export const getEnvironmentVariables = (environment: Environment | null | undefined): EnvironmentVariableGroups => {
