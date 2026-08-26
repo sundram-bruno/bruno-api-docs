@@ -66,15 +66,23 @@ describe('jwt (sandbox jsonwebtoken replacement)', () => {
   });
 
   it('supports the node callback form', () => {
-    let result: any;
-    jwt.sign({ b: 2 }, SECRET, { noTimestamp: true }, (signError: any, token: string) => {
-      expect(signError).toBeNull();
-      jwt.verify(token, SECRET, (verifyError: any, decoded: any) => {
-        expect(verifyError).toBeNull();
-        result = decoded;
-      });
+    let signError: any = 'not-called';
+    let signedToken: string | undefined;
+    jwt.sign({ b: 2 }, SECRET, { noTimestamp: true }, (error: any, token: string) => {
+      signError = error;
+      signedToken = token;
     });
-    expect(result).toEqual({ b: 2 });
+    expect(signError).toBeNull();
+    expect(typeof signedToken).toBe('string');
+
+    let verifyError: any = 'not-called';
+    let decodedPayload: any;
+    jwt.verify(signedToken as string, SECRET, (error: any, decoded: any) => {
+      verifyError = error;
+      decodedPayload = decoded;
+    });
+    expect(verifyError).toBeNull();
+    expect(decodedPayload).toEqual({ b: 2 });
   });
 
   it('rejects the alg=none attack token and asymmetric algorithms', () => {
@@ -83,5 +91,23 @@ describe('jwt (sandbox jsonwebtoken replacement)', () => {
     expect(() => jwt.verify(`${header}.${payload}.`, SECRET)).toThrowError('jwt signature is required');
     expect(() => jwt.sign({ a: 1 }, 'key', { algorithm: 'RS256' }))
       .toThrowError(/RS256 is not supported in the docs playground/);
+  });
+
+  it('throws when verify is called without a secret', () => {
+    const token = jwt.sign({ a: 1 }, SECRET, { noTimestamp: true });
+    expect(() => jwt.verify(token, undefined as any)).toThrowError('secret or public key must be provided');
+  });
+
+  it('rejects an asymmetric key handed to an HMAC algorithm (RS/HS confusion)', () => {
+    const pem = '-----BEGIN PUBLIC KEY-----\nMFkw\n-----END PUBLIC KEY-----';
+    expect(() => jwt.sign({ a: 1 }, pem)).toThrowError('an asymmetric key was provided for an HMAC (HS) algorithm');
+    const token = jwt.sign({ a: 1 }, SECRET, { noTimestamp: true });
+    expect(() => jwt.verify(token, pem)).toThrowError('an asymmetric key was provided for an HMAC (HS) algorithm');
+  });
+
+  it('signs a string payload verbatim (no JSON quoting)', () => {
+    const token = jwt.sign('hello', SECRET, { noTimestamp: true });
+    expect(jwt.decode(token)).toBe('hello');
+    expect(jwt.verify(token, SECRET)).toBe('hello');
   });
 });

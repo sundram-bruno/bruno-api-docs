@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { newQuickJSWASMModule } from 'quickjs-emscripten';
 import addCryptoUtilsShimToContext from './shims/lib/crypto-utils';
 import addAxiosShimToContext from './shims/lib/axios';
-import addLocalModuleShimToContext from './shims/local-module';
 import { getRequireCode } from './shims/require';
 import { getBundledCode } from './bundled-libraries.iife.js';
 
@@ -33,10 +32,8 @@ describe('sandbox library parity with desktop safe mode', () => {
     const module = await newQuickJSWASMModule();
     vm = module.newContext();
     addCryptoUtilsShimToContext(vm);
-    addLocalModuleShimToContext(vm);
     const boot = vm.evalCode(
       `(${getBundledCode.toString()})(); ${getRequireCode()}; `
-      + `globalThis.bru = { cwd: () => '' }; `
       + `globalThis.console = { log() {}, debug() {}, info() {}, warn() {}, error() {} };`
     );
     expect(boot.error).toBeUndefined();
@@ -76,7 +73,11 @@ describe('sandbox library parity with desktop safe mode', () => {
     expect(errorMessageOf(`require('lodash')`)).toContain('only available in the Bruno desktop app\'s developer mode');
     expect(errorMessageOf(`require('fs')`)).toContain('is a Node.js builtin');
     expect(errorMessageOf(`require('node:fs')`)).toContain('is a Node.js builtin');
-    expect(errorMessageOf(`require('./helper.js')`)).toContain('Local file require is not available in the docs playground');
+    expect(errorMessageOf(`require('./helper.js')`)).toContain('Local file require');
+    expect(errorMessageOf(`require('./helper.js')`)).toContain('is not available in the docs playground');
+    expect(inVm(`typeof require('node:buffer').Buffer`)).toBe('function');
+    expect(inVm(`typeof require('node:path').resolve`)).toBe('function');
+    expect(errorMessageOf(`require('node:chai')`)).toContain('Cannot find module node:chai');
     expect(errorMessageOf(`require('left-pad-9000')`)).toBe('Cannot find module left-pad-9000');
   });
 });
