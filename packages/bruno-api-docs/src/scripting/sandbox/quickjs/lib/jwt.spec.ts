@@ -19,7 +19,7 @@ describe('jwt (sandbox jsonwebtoken replacement)', () => {
   });
 
   it('rejects a tampered token with the real library message', () => {
-    const token = jwt.sign({ a: 1 }, SECRET, { noTimestamp: true });
+    const token = jwt.sign({ a: 1 }, SECRET, { noTimestamp: true }) as string;
     const tampered = token.slice(0, -4) + 'AAAA';
     expect(() => jwt.verify(tampered, SECRET)).toThrowError('invalid signature');
   });
@@ -143,7 +143,7 @@ describe('jwt (sandbox jsonwebtoken replacement)', () => {
       ['HS256', 'sha256'], ['HS384', 'sha384'], ['HS512', 'sha512']
     ];
     for (const [alg, nodeAlg] of algs) {
-      const token = jwt.sign({ userId: 7 }, SECRET, { algorithm: alg, noTimestamp: true });
+      const token = jwt.sign({ userId: 7 }, SECRET, { algorithm: alg, noTimestamp: true }) as string;
       const [header, payload, signature] = token.split('.');
       const reference = createHmac(nodeAlg, SECRET).update(`${header}.${payload}`).digest('base64url');
       expect(signature).toBe(reference);
@@ -152,7 +152,7 @@ describe('jwt (sandbox jsonwebtoken replacement)', () => {
 
   it('signs a string-payload token a strict jws verifier accepts (interop)', async () => {
     const { createHmac } = await import('node:crypto');
-    const token = jwt.sign('raw-string', SECRET);
+    const token = jwt.sign('raw-string', SECRET) as string;
     const [header, payload, signature] = token.split('.');
     const reference = createHmac('sha256', SECRET).update(`${header}.${payload}`).digest('base64url');
     expect(signature).toBe(reference);
