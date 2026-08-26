@@ -10,6 +10,7 @@ const makeData = (overrides: Partial<RequestPageData> = {}): RequestPageData =>
   ({
     name: 'Get Users',
     tags: [],
+    inheritedTags: [],
     url: '{{baseUrl}}/users',
     descHtml: '',
     pathParams: [],

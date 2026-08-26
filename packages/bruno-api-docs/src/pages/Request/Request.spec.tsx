@@ -64,13 +64,28 @@ describe('Request page', () => {
     expect(section.text).toContain('smoke');
   });
 
-  it('renders no tags section for an untagged request', () => {
+  it('renders no tags section for an untagged request with untagged ancestors', () => {
     const root = useRenderToDom(
       <MemoryRouter>
         <Request item={item} ancestry={ancestry} collection={collection} onTryClick={() => {}} />
       </MemoryRouter>
     );
     expect(queryByTestId(root, 'request-section-tags')).toBeNull();
+  });
+
+  it('shows folder tags as inherited with a count badge', () => {
+    const taggedAncestry = [
+      { uuid: 'folder-1', info: { name: 'Authentication', type: 'folder', tags: ['billing'] } } as unknown as Item
+    ];
+    const root = useRenderToDom(
+      <MemoryRouter>
+        <Request item={item} ancestry={taggedAncestry} collection={collection} onTryClick={() => {}} />
+      </MemoryRouter>
+    );
+    const section = getByTestId(root, 'request-section-tags');
+    expect(section.text).toContain('billing');
+    expect(section.text).toContain('1 tag inherited');
+    expect(queryByTestId(root, 'request-tags-inherited-chip')).not.toBeNull();
   });
 
   it('renders the breadcrumb, heading, url bar, description and all populated sections', () => {

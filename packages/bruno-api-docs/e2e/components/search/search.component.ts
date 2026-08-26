@@ -35,7 +35,7 @@ export class SearchComponent extends BaseComponent {
   readonly toggleIcon = this.root.getByRole('button', { name: /^search$/i });
   readonly tagFilter = this.root.getByTestId('search-tag-filter');
   readonly tagButton = this.root.getByTestId('search-tag-filter-button');
-  readonly tagMenu = this.root.getByRole('listbox', { name: 'Filter by tags' });
+  readonly tagMenu = this.root.getByTestId('search-tag-filter-menu');
 
   methodChip(label: string): Locator {
     return this.root.getByRole('button', { name: label, exact: true });

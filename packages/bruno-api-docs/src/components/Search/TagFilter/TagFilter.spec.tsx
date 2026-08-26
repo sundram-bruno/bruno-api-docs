@@ -1,37 +1,35 @@
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
+import { useRenderToDom } from '@/hooks/useRenderToDom';
+import { getByTestId, queryByTestId } from '@/test-utils/dom';
 import TagFilter from './TagFilter';
 
 describe('TagFilter', () => {
   it('renders nothing when the collection has no tags', () => {
-    const html = renderToStaticMarkup(
-      <TagFilter tags={[]} selected={new Set()} onToggle={() => {}} />
-    );
-    expect(html).toBe('');
+    const root = useRenderToDom(<TagFilter tags={[]} selected={new Set()} onToggle={() => {}} />);
+    expect(queryByTestId(root, 'search-tag-filter')).toBeNull();
   });
 
   it('shows the neutral label when nothing is selected', () => {
-    const html = renderToStaticMarkup(
-      <TagFilter tags={['auth', 'smoke']} selected={new Set()} onToggle={() => {}} />
-    );
-    expect(html).toContain('Tags');
-    expect(html).toContain('data-testid="search-tag-filter"');
-    expect(html).toContain('class="dropdown-button"');
+    const root = useRenderToDom(<TagFilter tags={['auth', 'smoke']} selected={new Set()} onToggle={() => {}} />);
+    const button = getByTestId(root, 'search-tag-filter-button');
+    expect(button.text).toContain('Tags');
+    expect(button.classNames).not.toContain('is-active');
   });
 
   it('shows the tag name when exactly one is selected', () => {
-    const html = renderToStaticMarkup(
+    const root = useRenderToDom(
       <TagFilter tags={['auth', 'smoke']} selected={new Set(['auth'])} onToggle={() => {}} />
     );
-    expect(html).toContain('auth');
-    expect(html).toContain('class="dropdown-button is-active"');
+    const button = getByTestId(root, 'search-tag-filter-button');
+    expect(button.text).toContain('auth');
+    expect(button.classNames).toContain('is-active');
   });
 
   it('shows a count when several are selected', () => {
-    const html = renderToStaticMarkup(
+    const root = useRenderToDom(
       <TagFilter tags={['auth', 'smoke', 'bookings']} selected={new Set(['auth', 'smoke'])} onToggle={() => {}} />
     );
-    expect(html).toContain('2 tags');
+    expect(getByTestId(root, 'search-tag-filter-button').text).toContain('2 tags');
   });
 });

@@ -19,6 +19,7 @@ import {
   getGrpcProtoFileName,
   getItemTags,
   getCollectionTags,
+  getInheritedTags,
   type RequestItem
 } from './schemaHelpers';
 
@@ -331,6 +332,21 @@ describe('getItemTags', () => {
   it('trims whitespace and dedupes, so " auth" and "auth" are one tag', () => {
     expect(getItemTags(item({ info: { tags: [' auth', 'auth', 'auth '] } }))).toEqual(['auth']);
     expect(getItemTags(item({ info: { tags: ['  smoke  ', 'auth'] } }))).toEqual(['smoke', 'auth']);
+  });
+});
+
+describe('getInheritedTags', () => {
+  it('collects ancestor folder tags the item does not carry itself', () => {
+    const ancestry = [
+      item({ info: { name: 'billing', type: 'folder', tags: ['billing'] } }),
+      item({ info: { name: 'customers', type: 'folder', tags: ['customers', 'smoke'] } })
+    ];
+    expect(getInheritedTags(ancestry, ['smoke'])).toEqual(['billing', 'customers']);
+  });
+
+  it('returns an empty list for untagged ancestors', () => {
+    expect(getInheritedTags([item({ info: { name: 'f', type: 'folder' } })], ['auth'])).toEqual([]);
+    expect(getInheritedTags([], [])).toEqual([]);
   });
 });
 

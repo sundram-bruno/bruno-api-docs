@@ -102,15 +102,27 @@ const normalizeTags = (raw: unknown): string[] => {
  */
 export const getItemTags = (item: OpenCollectionItem | null | undefined): string[] => {
   if (!item) return [];
-  const info = 'info' in item ? (item as { info?: { tags?: unknown } }).info : undefined;
+  const info = 'info' in item ? (item as { info?: { tags?: string[] } }).info : undefined;
   if (info && Array.isArray(info.tags)) return normalizeTags(info.tags);
-  if ('tags' in item) return normalizeTags((item as { tags?: unknown }).tags);
+  if ('tags' in item) return normalizeTags((item as { tags?: string[] }).tags);
   return [];
 };
 
 /** Get the collection-level tags from the info block. */
 export const getCollectionTags = (collection: OpenCollection | null | undefined): string[] =>
-  normalizeTags((collection as { info?: { tags?: unknown } } | null | undefined)?.info?.tags);
+  normalizeTags((collection as { info?: { tags?: string[] } } | null | undefined)?.info?.tags);
+
+/** Tags carried by ancestor folders that the item does not carry itself. */
+export const getInheritedTags = (ancestry: OpenCollectionItem[], ownTags: string[]): string[] => {
+  const own = new Set(ownTags);
+  const seen = new Set<string>();
+  for (const ancestor of ancestry) {
+    for (const tag of getItemTags(ancestor)) {
+      if (!own.has(tag)) seen.add(tag);
+    }
+  }
+  return [...seen];
+};
 
 /**
  * Check if an item is a folder

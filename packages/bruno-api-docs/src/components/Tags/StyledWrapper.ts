@@ -8,15 +8,20 @@ export const StyledWrapper = styled.div`
   .tag-chip {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    height: 28px;
-    padding: 0 4px;
+    gap: 0.25rem;
+    height: 1.75rem;
+    padding: 0 0.25rem;
     box-sizing: border-box;
     border: 1px solid var(--oc-border-border0);
     border-radius: var(--oc-radius);
     font-family: var(--font-sans);
     font-size: 0.875rem;
     color: var(--oc-colors-text-subtext2);
+  }
+
+  .tag-chip.is-inherited {
+    border-style: dashed;
+    color: var(--oc-colors-text-subtext0);
   }
 
   .tag-chip svg {

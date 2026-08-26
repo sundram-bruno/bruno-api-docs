@@ -72,6 +72,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
         <ul
           id={menuId}
           className="dropdown-menu"
+          data-testid={testId ? `${testId}-menu` : undefined}
           role="listbox"
           aria-label={menuLabel}
           aria-multiselectable={multiselect || undefined}

@@ -1,17 +1,35 @@
-import { renderToStaticMarkup } from 'react-dom/server';
+import React from 'react';
 import { describe, it, expect } from 'vitest';
+import { useRenderToDom } from '@/hooks/useRenderToDom';
+import { queryByTestId } from '@/test-utils/dom';
 import { Tags } from './Tags';
 
 describe('Tags', () => {
   it('renders nothing for an empty tag list', () => {
-    expect(renderToStaticMarkup(<Tags tags={[]} />)).toBe('');
+    const root = useRenderToDom(<Tags tags={[]} />);
+    expect(queryByTestId(root, 'tags')).toBeNull();
   });
 
   it('renders one chip per tag with the derived test id', () => {
-    const html = renderToStaticMarkup(<Tags tags={['auth', 'smoke']} testId="request-tags" />);
-    expect(html).toContain('data-testid="request-tags"');
-    expect(html).toContain('auth');
-    expect(html).toContain('smoke');
-    expect(html.match(/data-testid="request-tags-chip"/g)).toHaveLength(2);
+    const root = useRenderToDom(<Tags tags={['auth', 'smoke']} testId="request-tags" />);
+    const chips = root.querySelectorAll('[data-testid="request-tags-chip"]');
+    expect(chips).toHaveLength(2);
+    expect(chips[0].text).toContain('auth');
+    expect(chips[1].text).toContain('smoke');
+  });
+
+  it('renders inherited tags as muted chips after the own tags', () => {
+    const root = useRenderToDom(<Tags tags={['smoke']} inheritedTags={['billing']} testId="request-tags" />);
+    expect(root.querySelectorAll('[data-testid="request-tags-chip"]')).toHaveLength(1);
+    const inherited = root.querySelectorAll('[data-testid="request-tags-inherited-chip"]');
+    expect(inherited).toHaveLength(1);
+    expect(inherited[0].classNames).toContain('is-inherited');
+    expect(inherited[0].text).toContain('billing');
+  });
+
+  it('renders inherited-only tags without any own chips', () => {
+    const root = useRenderToDom(<Tags tags={[]} inheritedTags={['billing']} testId="request-tags" />);
+    expect(root.querySelectorAll('[data-testid="request-tags-inherited-chip"]')).toHaveLength(1);
+    expect(queryByTestId(root, 'request-tags-chip')).toBeNull();
   });
 });

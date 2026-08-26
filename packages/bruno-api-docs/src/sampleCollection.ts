@@ -4,6 +4,7 @@ info:
   name: "Bruno Testbench"
   summary: "A comprehensive API collection for testing OpenCollection features"
   version: "1.0.0"
+  tags: ["testbench"]
 config:
   environments:
     - name: "Local"
@@ -136,6 +137,7 @@ items:
       - name: "Live Updates"
         description: "Streams live order updates over a WebSocket connection."
         type: "websocket"
+        tags: ["realtime"]
         url: "{{host}}/ws/updates"
         docs: |
           # Websockets
@@ -635,6 +637,7 @@ items:
           name: customers
           type: folder
           seq: 1
+          tags: ["customers"]
         request:
           auth: inherit
           scripts:
@@ -659,6 +662,7 @@ items:
               name: Get All Customers
               type: http
               seq: 1
+              tags: ["smoke"]
             http:
               method: GET
               url: '{{baseUrl}}/billing/customers'
@@ -1818,6 +1822,7 @@ items:
               name: Get All Subscriptions
               type: http
               seq: 1
+              tags: ["billing"]
             http:
               method: GET
               url: '{{baseUrl}}/billing/subscriptions'

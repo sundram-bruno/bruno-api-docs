@@ -31,7 +31,6 @@ const requestEntry = (over: Partial<NavEntry> & { uuid: string; tags?: string[] 
   };
 };
 
-/** A child item of a folder, as the collection schema shapes it. */
 const childItem = (name: string, type: 'http' | 'folder' | 'script', items?: unknown[]) => ({
   uuid: `${type}-${name}`,
   info: { name, type },
@@ -147,6 +146,15 @@ describe('buildSearchRecords', () => {
     expect(folderRecords([entry])[0].requestCount).toBe(1);
   });
 
+  it('emits a request record for a graphql entry, with its badge as the method', () => {
+    const entry = requestEntry({ uuid: 'g1', type: 'graphql', name: 'Country Lookup', method: 'GQL', tags: ['catalog'] });
+    const recs = requestRecords([entry]);
+    expect(recs).toHaveLength(1);
+    expect(recs[0].method).toBe('GQL');
+    expect(recs[0].tags).toEqual(['catalog']);
+    expect(collectMethods([entry])).toEqual(['GQL']);
+  });
+
   it('excludes built-in pages from records', () => {
     const overview: NavEntry = {
       slug: '', type: 'overview', name: 'Overview', item: null, ancestors: [], depth: -1
@@ -182,12 +190,10 @@ describe('formatBreadcrumb', () => {
   });
 
   it('counts folders, not separators, so a name holding " / " cannot mis-segment', () => {
-    // Three folders, the middle one carrying a separator inside its own name.
     expect(formatBreadcrumb(['Billing', 'A / B', 'Payments'])).toEqual({
       full: 'Billing / A / B / Payments',
       display: 'Billing / A / B / Payments'
     });
-    // Four folders elide from the ends, however many separators the names hold.
     expect(formatBreadcrumb(['Billing', 'A / B', 'Payments', 'v3'])).toEqual({
       full: 'Billing / A / B / Payments / v3',
       display: 'Billing / … / v3'
@@ -270,13 +276,11 @@ const folderRec = (over: Partial<FolderSearchRecord>): FolderSearchRecord => ({
   type: 'folder', id: 'fid', slug: 'f', name: '', ancestorNames: [], tags: [], requestCount: 0, ...over
 });
 
-/** Substrings the reported ranges actually cover, for match-locality assertions. */
 const matchedText = (text: string, ranges?: Array<[number, number]>): string[] =>
   (ranges ?? []).map(([start, end]) => text.slice(start, end + 1));
 
 const ids = (hits: ReturnType<typeof searchHits>): string[] => hits.map((h) => h.record.id);
 
-// A small, representative billing collection reused across the matching tests.
 const BILLING: RequestSearchRecord[] = [
   rec({ id: 'payments', name: 'Get All Payments', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/payments' }),
   rec({ id: 'invoices', name: 'Get All Invoices', ancestorNames: ['Billing'], url: '{{baseUrl}}/billing/invoices' }),
@@ -335,8 +339,8 @@ describe('searchHits - exact matches per field', () => {
 describe('searchHits - typo tolerance', () => {
   it('tolerates a one-character error', () => {
     const fuse = createSearchIndex(BILLING);
-    expect(ids(searchHits(fuse, 'paymnt'))).toContain('payments'); // dropped letter
-    expect(ids(searchHits(fuse, 'invoises'))).toContain('invoices'); // substitution
+    expect(ids(searchHits(fuse, 'paymnt'))).toContain('payments');
+    expect(ids(searchHits(fuse, 'invoises'))).toContain('invoices');
     expect(ids(searchHits(fuse, 'custmers'))).toContain('customers');
   });
 
@@ -365,9 +369,7 @@ describe('searchHits - match locality (no cross-word stitching)', () => {
     const hit = searchHits(fuse, 'billing').find((h) => h.record.id === 'payments')!;
     const { url } = BILLING.find((r) => r.id === 'payments')!;
     const subs = matchedText(url, hit.matches.url);
-    // The matched span is the word "billing" itself...
     expect(subs).toContain('billing');
-    // ...never the "b" of "{{baseUrl}}" at index 2.
     expect(hit.matches.url?.map(([start]) => start)).not.toContain(2);
   });
 });
@@ -418,7 +420,6 @@ describe('searchHits - reported matches for highlighting', () => {
   it('reports ranges only for the fields that actually matched', () => {
     const fuse = createSearchIndex([rec({ id: 'x', name: 'Get All Payments', url: '{{baseUrl}}/billing/invoices' })]);
     const hit = searchHits(fuse, 'payments')[0];
-    // "payments" is in the name but not in the url.
     expect(hit.matches.name).toBeTruthy();
     expect(hit.matches.url).toBeUndefined();
   });
@@ -451,18 +452,12 @@ describe('searchHits - transposition typos (adjacent letter swap)', () => {
 
   it('swap variants do not introduce unrelated records (near-exact gate)', () => {
     const fuse = createSearchIndex(BILLING);
-    // Scrambling "cursor" must not back-door "currencies" in via a variant.
     expect(ids(searchHits(fuse, 'cursor'))).not.toContain('currencies');
     expect(searchHits(fuse, 'zzzzz')).toEqual([]);
   });
 });
 
 describe('searchHits - abbreviations are intentionally out of scope', () => {
-  // Bitap only matches contiguous approximate spans, never a gapped subsequence
-  // like a consonant-skeleton abbreviation. Supporting those would need a much
-  // looser threshold that reopens the prefix-bleed false positives above, so it
-  // is deliberately left unsupported. These guard that boundary: if the matcher
-  // ever starts accepting abbreviations, precision has almost certainly slipped.
   it('does not match a consonant-skeleton abbreviation', () => {
     const hotels = createSearchIndex([rec({ id: 'h', name: 'Get All Hotels', url: '{{baseUrl}}/api/v1/hotels' })]);
     expect(ids(searchHits(hotels, 'htl'))).not.toContain('h'); // htl -> hotel

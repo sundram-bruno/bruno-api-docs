@@ -29,6 +29,18 @@ describe('GrpcRequest', () => {
     expect(getByTestId(root, 'request-url').text).toContain('{{grpcUrl}}');
   });
 
+  it('shows the tags of a request that has no other configuration', () => {
+    const root = useRenderToDom(
+      <GrpcRequest
+        item={grpcItem({ info: { name: 'Bare Tagged', type: 'grpc', tags: ['orders'] }, grpc: { url: 'grpc://x' } })}
+      />
+    );
+
+    const section = getByTestId(root, 'grpc-request-section-tags');
+    expect(section.text).toContain('orders');
+    expect(queryByTestId(root, 'grpc-request-config-empty')).not.toBeNull();
+  });
+
   it('falls back to a placeholder name and never offers a Try button', () => {
     const root = useRenderToDom(<GrpcRequest item={grpcItem({ info: { type: 'grpc' }, grpc: {} })} />);
 

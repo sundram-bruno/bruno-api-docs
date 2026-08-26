@@ -471,6 +471,22 @@ test.describe('Search palette', () => {
     await expect(search.tagButton).toHaveText(/Tags/);
   });
 
+  test('a graphql request is searchable and filterable by its tag', async ({ page, search }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto('/'); // the testbench holds the tagged GraphQL request
+    await search.field.click();
+    await search.field.fill('graphql details');
+
+    await expect(search.panel).toContainText('GraphQL Details');
+
+    await search.field.clear();
+    await search.tagButton.click();
+    await search.tagOption('catalog').click();
+
+    await expect(search.panel).toContainText('GraphQL Details');
+    await expect(search.panel).not.toContainText('Order Service');
+  });
+
   test('a collection without tags offers no tag filter', async ({ page, search }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto('/?fixture=vars');

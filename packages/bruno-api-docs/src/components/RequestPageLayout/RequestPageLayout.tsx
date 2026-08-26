@@ -54,6 +54,7 @@ export const RequestPageLayout: React.FC<RequestPageLayoutProps> = ({
   const {
     name,
     tags,
+    inheritedTags,
     url,
     descHtml,
     pathParams,
@@ -167,9 +168,19 @@ export const RequestPageLayout: React.FC<RequestPageLayoutProps> = ({
                 auth={effectiveAuth}
               />
             </Section>
-            {tags.length > 0 && (
-              <Section label="Tags" testId="request-section-tags" hideFromNav labelClassName="section-label-lower">
-                <Tags tags={tags} testId="request-tags" />
+            {(tags.length > 0 || inheritedTags.length > 0) && (
+              <Section
+                label="Tags"
+                testId="request-section-tags"
+                hideFromNav
+                labelClassName="section-label-lower"
+                badge={
+                  inheritedTags.length > 0 ? (
+                    <ContentTypeBadge label={inheritedCountLabel(inheritedTags.length, 'tag')} />
+                  ) : undefined
+                }
+              >
+                <Tags tags={tags} inheritedTags={inheritedTags} testId="request-tags" />
               </Section>
             )}
           </div>

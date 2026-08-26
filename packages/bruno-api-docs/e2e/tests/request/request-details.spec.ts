@@ -117,4 +117,29 @@ test.describe('Request page — Tags section', () => {
     await requestPage.open(['patch user']);
     await expect(requestPage.section('Tags')).toHaveCount(0);
   });
+
+  test('shows tags inherited from the whole folder chain with a count badge', async ({ requestPage }) => {
+    await requestPage.open(['billing', 'customers', 'Get Customers - Filter by Status']);
+    const tags = requestPage.section('Tags');
+    await expect(tags).toBeVisible();
+    await expect(tags).toContainText('2 tags inherited');
+    await expect(requestPage.inheritedTagChips).toHaveCount(2);
+    await expect(requestPage.inheritedTagChips.first()).toContainText('billing');
+    await expect(requestPage.inheritedTagChips.last()).toContainText('customers');
+  });
+
+  test('shows own and inherited tags side by side', async ({ requestPage }) => {
+    await requestPage.open(['billing', 'customers', 'Get All Customers']);
+    await expect(requestPage.tagChips).toHaveCount(1);
+    await expect(requestPage.tagChips.first()).toContainText('smoke');
+    await expect(requestPage.inheritedTagChips).toHaveCount(2);
+  });
+
+  test('a tag owned and inherited shows once, as own', async ({ requestPage }) => {
+    await requestPage.open(['billing', 'subscriptions', 'Get All Subscriptions']);
+    await expect(requestPage.tagChips).toHaveCount(1);
+    await expect(requestPage.tagChips.first()).toContainText('billing');
+    await expect(requestPage.inheritedTagChips).toHaveCount(0);
+    await expect(requestPage.section('Tags')).not.toContainText('inherited');
+  });
 });

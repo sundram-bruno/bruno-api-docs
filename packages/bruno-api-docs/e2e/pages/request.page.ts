@@ -13,6 +13,7 @@ export class RequestPage extends BasePage {
   readonly title = this.page.getByTestId('request-title');
   readonly description = this.page.getByTestId('request-description');
   readonly tagChips = this.page.getByTestId('request-tags-chip');
+  readonly inheritedTagChips = this.page.getByTestId('request-tags-inherited-chip');
 
   readonly sidebar = new SidebarComponent(this.page);
   readonly breadcrumb = new BreadcrumbComponent(this.page, 'request-breadcrumb');
