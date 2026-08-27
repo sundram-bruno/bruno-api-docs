@@ -166,7 +166,10 @@ const collectMatches = (matches: readonly FuseResultMatch[] | undefined): FieldM
   }
   return byField;
 };
-
+/**
+* Keeping a threshold of 24 for queries, a longer string is far more likely a
+* pasted string like a URL rather than a mistyped word.
+*/
 const MAX_SWAP_QUERY_LENGTH = 24;
 
 const adjacentSwaps = (query: string): string[] => {
