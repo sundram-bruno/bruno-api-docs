@@ -57,6 +57,25 @@ describe('SnippetTabs', () => {
     expect(queryByTestId(root, 'example-code-snippet-expand')).toBeNull();
   });
 
+  it('collapses to an icon-only trigger when the variant is icon', () => {
+    const root = useRenderToDom(<SnippetTabs snippets={snippets} variant="icon" testId="query-bar-code-snippet" />);
+
+    const trigger = getByTestId(root, 'query-bar-code-snippet-trigger');
+    expect(trigger.classNames).toContain('snippet-icon-trigger');
+    // Icon only — no label, no inline code box.
+    expect(trigger.text.trim()).toBe('');
+    expect(queryByTestId(root, 'query-bar-code-snippet-code')).toBeNull();
+    expect(queryByTestId(root, 'query-bar-code-snippet-expand')).toBeNull();
+  });
+
+  it('labels the icon trigger for screen readers and marks it as opening a dialog', () => {
+    const root = useRenderToDom(<SnippetTabs snippets={snippets} variant="icon" testId="query-bar-code-snippet" />);
+
+    const trigger = getByTestId(root, 'query-bar-code-snippet-trigger');
+    expect(trigger.attributes['aria-label']).toBe('Generate Code');
+    expect(trigger.attributes['aria-haspopup']).toBe('dialog');
+  });
+
   it('renders variables in the code as hover tokens', () => {
     const root = useRenderToDom(<SnippetTabs snippets={snippets} />);
 

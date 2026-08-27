@@ -6,6 +6,7 @@ import { RequestAuthComponent } from './playground/auth.component';
 import { MethodSelectorComponent } from './playground/method-selector.component';
 import { PlaygroundVariableComponent } from './playground/playground-variable.component';
 import { EnvSwitcherComponent } from './layout/env-switcher.component';
+import { CodeSnippetComponent } from './request/code-snippet.component';
 import type { DockMode } from '../../src/utils/playgroundDock';
 
 export class PlaygroundComponent extends BaseComponent {
@@ -20,7 +21,9 @@ export class PlaygroundComponent extends BaseComponent {
   readonly testsEditor = new CodeEditorComponent(this.page, 'tests-editor');
   readonly variable = new PlaygroundVariableComponent(this.page);
   readonly envSwitcher = new EnvSwitcherComponent(this.page, 'playground-env-switcher');
+  readonly codeSnippet = new CodeSnippetComponent(this.page, 'query-bar-code-snippet');
 
+  readonly urlInput = this.page.getByTestId('query-bar-url');
   readonly header = this.page.getByTestId('playground-header');
   readonly switcher = this.page.getByTestId('playground-dock-switcher');
   readonly content = this.page.getByTestId('playground-content');

@@ -16,7 +16,7 @@ interface CodeSnippetTabsProps {
   headers?: HttpRequestHeader[];
   body?: HttpRequestBody | HttpRequestBodyVariant[];
   auth?: Auth;
-  variant?: 'inline' | 'embedded';
+  variant?: 'inline' | 'embedded' | 'icon';
   className?: string;
   testId?: string;
 }

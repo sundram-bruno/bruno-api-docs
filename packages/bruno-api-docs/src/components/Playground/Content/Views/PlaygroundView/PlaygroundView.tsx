@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import type { HttpRequest } from '@opencollection/types/requests/http';
+import type { HttpRequest, HttpRequestHeader } from '@opencollection/types/requests/http';
 import type { OpenCollection as OpenCollectionCollection } from '@opencollection/types';
 import type { Item } from '@opencollection/types/collection/item';
+import type { Auth } from '@opencollection/types/common/auth';
 import { getAncestorsByUuid } from '@/utils/fileUtils';
 import { ItemVariableResolverProvider } from '@/hooks';
 import TitleLabel from '@/components/TitleLabel/TitleLabel';
@@ -9,9 +10,14 @@ import QueryBar from './QueryBar/QueryBar';
 import RequestPane from './RequestPane/RequestPane';
 import ResponsePane from './ResponsePane/ResponsePane';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { updatePlaygroundItem, setPlaygroundResponse, selectPlaygroundResponse, applyScriptVariableChanges } from '@/store/slices/playground';
-import { getItemName, isPlaygroundUnsupported } from '@/utils/schemaHelpers';
-import { getInheritedAuthSummary } from '@/utils/request';
+import {
+  updatePlaygroundItem,
+  setPlaygroundResponse,
+  selectPlaygroundResponse,
+  applyScriptVariableChanges
+} from '@/store/slices/playground';
+import { getItemName, isPlaygroundUnsupported, getRequestAuth, getRequestHeaders } from '@/utils/schemaHelpers';
+import { getInheritedAuthSummary, resolveInheritedAuth, getInheritedHeaders } from '@/utils/request';
 import UnsupportedRequest from '@/components/UnsupportedRequest/UnsupportedRequest';
 import { FileNotFoundIcon } from '@/assets/icons';
 import { useSplitPane } from '@/hooks/useSplitPane';
@@ -42,6 +48,27 @@ const HttpRequestPlaygroundView: React.FC<PlaygroundViewProps> = ({ item, collec
     () => getInheritedAuthSummary(collection, ancestry, editableItem),
     [collection, ancestry, editableItem]
   );
+  // Resolve the auth so that the runner and the code snippet show the same effective auth.
+  const effectiveAuth = useMemo<Auth | undefined>(() => {
+    const ownAuth = getRequestAuth(editableItem) as Auth | undefined;
+    return ownAuth === 'inherit' ? resolveInheritedAuth(collection, ancestry, editableItem).auth : ownAuth;
+  }, [collection, ancestry, editableItem]);
+
+  // Applies same rules as runner so that the code snippet shows the same effective headers as the runner.
+  const effectiveHeaders = useMemo<HttpRequestHeader[]>(() => {
+    const auth = effectiveAuth && effectiveAuth !== 'inherit' ? effectiveAuth : undefined;
+    const authWritesAuthorization = Boolean(
+      (auth?.type === 'bearer' && auth.token) || (auth?.type === 'basic' && auth.username && auth.password)
+    );
+    const keep = (header: { name?: string }) =>
+      !authWritesAuthorization || (header.name || '').toLowerCase() !== 'authorization';
+    const ownRows = getRequestHeaders(editableItem).filter(keep);
+    const inheritedRows = getInheritedHeaders(collection, ancestry, editableItem)
+      .filter(keep)
+      .map((header) => ({ name: header.name, value: header.value ?? '', disabled: header.disabled }));
+    return [...ownRows, ...inheritedRows];
+  }, [collection, ancestry, editableItem, effectiveAuth]);
+
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveRef = useRef<{ uuid: string; item: HttpRequest } | null>(null);
 
@@ -128,6 +155,8 @@ const HttpRequestPlaygroundView: React.FC<PlaygroundViewProps> = ({ item, collec
           onSendRequest={handleSendRequest}
           isLoading={isLoading}
           onItemChange={handleItemChange}
+          effectiveAuth={effectiveAuth}
+          effectiveHeaders={effectiveHeaders}
         />
 
         <div

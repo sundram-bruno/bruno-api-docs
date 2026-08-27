@@ -133,4 +133,28 @@ export const StyledWrapper = styled.div`
   .snippet-trigger:focus-visible {
     outline: none;
   }
+
+  .snippet-icon-trigger {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem;
+    color: var(--text-tertiary);
+    background-color: var(--oc-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--oc-radius);
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .snippet-icon-trigger:hover {
+    color: var(--text-secondary);
+    background-color: var(--badge-bg);
+  }
+  .snippet-icon-trigger:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
+  }
 `;

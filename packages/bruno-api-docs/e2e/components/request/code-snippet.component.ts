@@ -5,6 +5,7 @@ export class CodeSnippetComponent extends BaseComponent {
   readonly code: Locator;
   readonly copyButton: Locator;
   readonly expandButton: Locator;
+  readonly iconTrigger: Locator;
   readonly modal: Locator;
   readonly modalCode: Locator;
 
@@ -16,6 +17,7 @@ export class CodeSnippetComponent extends BaseComponent {
     this.code = this.root.getByTestId(`${base}-code`);
     this.copyButton = this.root.getByTestId(`${base}-code-copy`);
     this.expandButton = this.root.getByTestId(`${base}-expand`);
+    this.iconTrigger = this.root.getByTestId(`${base}-trigger`);
     this.modal = page.getByTestId(`${base}-modal`);
     this.modalCode = this.modal.getByTestId(`${base}-code`);
   }
@@ -43,6 +45,11 @@ export class CodeSnippetComponent extends BaseComponent {
   /** Open the enlarged code-snippet view via the expand control. */
   async openExpandedView(): Promise<void> {
     await this.expandButton.click();
+    await this.modal.waitFor({ state: 'visible' });
+  }
+
+  async openFromIcon(): Promise<void> {
+    await this.iconTrigger.click();
     await this.modal.waitFor({ state: 'visible' });
   }
 

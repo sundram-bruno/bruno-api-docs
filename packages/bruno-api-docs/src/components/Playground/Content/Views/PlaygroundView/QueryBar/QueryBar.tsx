@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import type { HttpRequest } from '@opencollection/types/requests/http';
+import type { HttpRequest, HttpRequestParam, HttpRequestHeader } from '@opencollection/types/requests/http';
+import type { Auth } from '@opencollection/types/common/auth';
 import { StyledWrapper } from './StyledWrapper';
 import HighlightedInput from '@/components/HighlightedInput/HighlightedInput';
 import { useResolvedVariables } from '@/hooks/useVariableResolver';
-import { getHttpMethod, getRequestUrl, getHttpParams } from '@/utils/schemaHelpers';
-import { syncPathParams, syncQueryParams } from '@/utils/pathParams';
+import { getHttpMethod, getRequestUrl, getHttpParams, getRequestHeaders, getHttpBody } from '@/utils/schemaHelpers';
+import { buildRequestUrl, syncPathParams, syncQueryParams } from '@/utils/pathParams';
 import { HttpMethodSelector } from '@/components/HttpMethodSelector/HttpMethodSelector';
 import { CopyButton } from '@/ui/CopyButton/CopyButton';
 import { SendIcon } from '@/assets/icons';
+import { CodeSnippetTabs } from '@/components/CodeSnippetTabs/CodeSnippetTabs';
 
 interface QueryBarProps {
   item: HttpRequest;
   onSendRequest: () => void;
   isLoading: boolean;
   onItemChange: (item: HttpRequest) => void;
+  effectiveAuth?: Auth;
+  effectiveHeaders?: HttpRequestHeader[];
 }
 
-const QueryBar: React.FC<QueryBarProps> = ({ item, onSendRequest, isLoading, onItemChange }) => {
+const QueryBar: React.FC<QueryBarProps> = ({
+  item,
+  onSendRequest,
+  isLoading,
+  onItemChange,
+  effectiveAuth,
+  effectiveHeaders
+}) => {
   const { isFound, names } = useResolvedVariables();
   const [url, setUrl] = useState(getRequestUrl(item));
   const [method, setMethod] = useState(getHttpMethod(item));
@@ -55,6 +66,11 @@ const QueryBar: React.FC<QueryBarProps> = ({ item, onSendRequest, isLoading, onI
     onItemChange(updatedItem);
   };
 
+  const snippetUrl = buildRequestUrl(
+    url,
+    getHttpParams(item).filter((param: HttpRequestParam) => param.type !== 'path' || (param.value ?? '').trim() !== '')
+  );
+
   return (
     <StyledWrapper>
       <HttpMethodSelector method={method} onMethodChange={handleMethodChange} testId="method-select" />
@@ -74,6 +90,15 @@ const QueryBar: React.FC<QueryBarProps> = ({ item, onSendRequest, isLoading, onI
       />
 
       <div className="actions">
+        <CodeSnippetTabs
+          method={method}
+          url={snippetUrl}
+          headers={effectiveHeaders ?? getRequestHeaders(item)}
+          body={getHttpBody(item)}
+          auth={effectiveAuth}
+          variant="icon"
+          testId="query-bar-code-snippet"
+        />
         <CopyButton text={url} label="Copy URL" copiedLabel="Copied" testId="query-bar-copy-url" />
         <button
           type="button"
