@@ -10,7 +10,6 @@ import addFormats from 'ajv-formats';
 import * as uuid from 'uuid';
 import * as nanoid from 'nanoid';
 import path from 'path-browserify';
-import jwt from './lib/jwt';
 
 (globalThis as any).expect = expect;
 (globalThis as any).assert = assert;
@@ -24,7 +23,6 @@ import jwt from './lib/jwt';
 (globalThis as any).uuid = uuid;
 (globalThis as any).nanoid = nanoid;
 (globalThis as any).path = path;
-(globalThis as any).jwt = jwt;
 
 (globalThis as any).requireObject = {
   ...((globalThis as any).requireObject || {}),
@@ -39,6 +37,5 @@ import jwt from './lib/jwt';
   'ajv-formats': addFormats,
   'uuid': uuid,
   'nanoid': nanoid,
-  'path': path,
-  'jsonwebtoken': jwt
+  'path': path
 };

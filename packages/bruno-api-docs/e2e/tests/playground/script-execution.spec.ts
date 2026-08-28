@@ -7,7 +7,7 @@ const moment = require('moment');
 const CryptoJS = require('crypto-js');
 const { v4, validate } = require('uuid');
 const { nanoid } = require('nanoid');
-const jwt = require('jsonwebtoken');
+const tv4 = require('tv4');
 
 test('moment formats a date', function () {
   expect(moment('2026-01-02').format('YYYY-MM-DD')).to.equal('2026-01-02');
@@ -19,9 +19,8 @@ test('crypto-js hashes and uuid validates', function () {
   expect(nanoid(10)).to.have.lengthOf(10);
 });
 
-test('jsonwebtoken round-trips a signed token', function () {
-  const token = jwt.sign({ userId: 7 }, 'secret', { expiresIn: '1h' });
-  expect(jwt.verify(token, 'secret').userId).to.equal(7);
+test('tv4 validates against a schema', function () {
+  expect(tv4.validate({ a: 1 }, { type: 'object' })).to.equal(true);
 });
 `;
 

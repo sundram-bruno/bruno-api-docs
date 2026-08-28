@@ -5,9 +5,9 @@ import addAxiosShimToContext from './shims/lib/axios';
 import { getRequireCode } from './shims/require';
 import { getBundledCode } from './bundled-libraries.iife.js';
 
-const DESKTOP_SAFE_MODE_MODULES = [
+const SUPPORTED_MODULES = [
   'ajv', 'ajv-formats', 'atob', 'axios', 'btoa', 'buffer', 'chai', 'crypto-js',
-  'jsonwebtoken', 'moment', 'nanoid', 'path', 'tv4', 'uuid'
+  'moment', 'nanoid', 'path', 'tv4', 'uuid'
 ];
 
 let vm: any;
@@ -41,12 +41,12 @@ describe('sandbox library parity with desktop safe mode', () => {
     addAxiosShimToContext(vm);
   });
 
-  it('exposes exactly the 14 desktop safe-mode modules', () => {
-    expect(inVm('Object.keys(globalThis.requireObject).sort()')).toEqual(DESKTOP_SAFE_MODE_MODULES);
+  it('exposes exactly the supported safe-mode modules', () => {
+    expect(inVm('Object.keys(globalThis.requireObject).sort()')).toEqual(SUPPORTED_MODULES);
   });
 
-  it('exposes the desktop safe-mode globals', () => {
-    const globals = ['expect', 'assert', 'moment', 'btoa', 'atob', 'Buffer', 'tv4', 'Ajv', 'addFormats', 'crypto', 'axios', 'jwt', 'path', 'require'];
+  it('exposes the supported safe-mode globals', () => {
+    const globals = ['expect', 'assert', 'moment', 'btoa', 'atob', 'Buffer', 'tv4', 'Ajv', 'addFormats', 'crypto', 'axios', 'path', 'require'];
     for (const name of globals) {
       expect(inVm(`typeof globalThis['${name}']`), name).not.toBe('undefined');
     }
@@ -65,7 +65,6 @@ describe('sandbox library parity with desktop safe mode', () => {
     expect(inVm(`(() => { const Ajv = require('ajv'); const ajv = new Ajv(); require('ajv-formats')(ajv); return ajv.compile({ type: 'string', format: 'email' })('a@b.co'); })()`)).toBe(true);
     expect(inVm(`require('path').resolve('/a/b', '../c')`)).toBe('/a/c');
     expect(inVm(`(() => { const { expect } = require('chai'); expect(1).to.eql(1); return 'ok'; })()`)).toBe('ok');
-    expect(inVm(`(() => { const jwtLib = require('jsonwebtoken'); return jwtLib.verify(jwtLib.sign({ u: 1 }, 's', { noTimestamp: true }), 's').u; })()`)).toBe(1);
     expect(inVm(`typeof require('axios').get`)).toBe('function');
   });
 
@@ -79,5 +78,6 @@ describe('sandbox library parity with desktop safe mode', () => {
     expect(inVm(`typeof require('node:path').resolve`)).toBe('function');
     expect(errorMessageOf(`require('node:chai')`)).toContain('Cannot find module node:chai');
     expect(errorMessageOf(`require('left-pad-9000')`)).toBe('Cannot find module left-pad-9000');
+    expect(errorMessageOf(`require('jsonwebtoken')`)).toBe('\'jsonwebtoken\' is not currently supported in the docs playground.');
   });
 });

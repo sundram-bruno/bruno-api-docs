@@ -10,6 +10,8 @@ const DEVELOPER_MODE_LIBRARIES = [
   'xml-formatter', 'chai-string', 'handlebars'
 ];
 
+const UNSUPPORTED_LIBRARIES = ['jsonwebtoken'];
+
 export const getRequireCode = () => `
   globalThis.require = (mod) => {
     const lib = globalThis.requireObject[mod];
@@ -41,6 +43,9 @@ export const getRequireCode = () => `
         "'" + mod + "' is only available in the Bruno desktop app's developer mode; " +
         "the docs playground supports the safe-mode library set (" + available + ")."
       );
+    }
+    if (${JSON.stringify(UNSUPPORTED_LIBRARIES)}.includes(bareName)) {
+      throw new Error("'" + mod + "' is not currently supported in the docs playground.");
     }
     throw new Error("Cannot find module " + mod);
   }
