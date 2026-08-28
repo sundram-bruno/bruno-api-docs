@@ -138,7 +138,7 @@ const HttpRequestPlaygroundView: React.FC<PlaygroundViewProps> = ({ item, collec
     } finally {
       setIsLoading(false);
     }
-  }, [collection, editableItem, selectedEnvironment, itemUuid]);
+  }, [collection, editableItem, selectedEnvironment, itemUuid, dispatch]);
 
   return (
     <ItemVariableResolverProvider

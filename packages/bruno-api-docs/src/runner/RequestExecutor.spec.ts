@@ -64,16 +64,16 @@ describe('RequestExecutor', () => {
   });
 
   describe('auth header precedence', () => {
-    const jsonResponse = () => ({
+    const jsonResponse = {
       status: 200,
       statusText: 'OK',
       url: 'https://api.example.com/data',
       headers: new Headers({ 'content-type': 'application/json' }),
       text: async () => JSON.stringify({ ok: true })
-    });
+    };
 
     it('keeps an existing Authorization header over the bearer auth config', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(jsonResponse());
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse);
       global.fetch = fetchMock as unknown as typeof fetch;
 
       await new RequestExecutor().executeRequest({
@@ -92,7 +92,7 @@ describe('RequestExecutor', () => {
     });
 
     it('applies the bearer auth config when no Authorization header exists', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(jsonResponse());
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse);
       global.fetch = fetchMock as unknown as typeof fetch;
 
       await new RequestExecutor().executeRequest({
@@ -109,7 +109,7 @@ describe('RequestExecutor', () => {
     });
 
     it('keeps an existing header over an apikey header placement', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(jsonResponse());
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse);
       global.fetch = fetchMock as unknown as typeof fetch;
 
       await new RequestExecutor().executeRequest({

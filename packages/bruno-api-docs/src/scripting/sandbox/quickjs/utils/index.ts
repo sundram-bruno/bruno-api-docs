@@ -31,6 +31,7 @@ const marshallToVm = (value: any, vm: any) => {
   } else if (typeof value === 'function') {
     return vm.newString('[Function (anonymous)]');
   }
+  throw new TypeError(`marshallToVm: unsupported value of type ${typeof value}`);
 };
 
 export { marshallToVm };

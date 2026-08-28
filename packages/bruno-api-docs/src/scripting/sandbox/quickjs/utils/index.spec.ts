@@ -33,4 +33,9 @@ describe('marshallToVm', () => {
     expect(dump(vm.evalCode('marshalled.polluted').value)).toBeUndefined();
     expect(dump(vm.evalCode('({}).polluted').value)).toBeUndefined();
   });
+
+  it('throws on unsupported value types instead of returning undefined', () => {
+    expect(() => marshallToVm(10n, vm)).toThrowError('marshallToVm: unsupported value of type bigint');
+    expect(() => marshallToVm(Symbol('x'), vm)).toThrowError('marshallToVm: unsupported value of type symbol');
+  });
 });

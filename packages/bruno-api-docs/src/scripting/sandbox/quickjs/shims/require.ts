@@ -14,9 +14,9 @@ const UNSUPPORTED_LIBRARIES = ['jsonwebtoken'];
 
 export const getRequireCode = () => `
   globalThis.require = (mod) => {
-    const lib = globalThis.requireObject[mod];
-    if (lib) {
-      return lib;
+    const hasOwn = (name) => Object.prototype.hasOwnProperty.call(globalThis.requireObject, name);
+    if (hasOwn(mod)) {
+      return globalThis.requireObject[mod];
     }
 
     if (mod?.startsWith?.('.') || mod?.startsWith?.('/')) {
@@ -29,8 +29,14 @@ export const getRequireCode = () => `
     const bareName = mod?.startsWith?.('node:') ? mod.slice(5) : mod;
     const nodeBuiltins = ${JSON.stringify(NODE_BUILTIN_MODULES)};
     if (nodeBuiltins.includes(bareName)) {
-      if (globalThis.requireObject[bareName]) {
+      if (hasOwn(bareName)) {
         return globalThis.requireObject[bareName];
+      }
+      if (bareName === 'crypto') {
+        throw new Error(
+          "'" + mod + "' cannot be required in the docs playground; " +
+          "use the crypto global instead (crypto.randomBytes, crypto.getRandomValues)."
+        );
       }
       throw new Error(
         "'" + mod + "' is a Node.js builtin and is not available in the docs playground; " +

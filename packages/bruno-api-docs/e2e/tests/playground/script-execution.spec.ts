@@ -14,7 +14,7 @@ test('moment formats a date', function () {
 });
 
 test('crypto-js hashes and uuid validates', function () {
-  expect(CryptoJS.SHA256('abc').toString()).to.have.lengthOf(64);
+  expect(CryptoJS.SHA256('abc').toString()).to.equal('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
   expect(validate(v4())).to.equal(true);
   expect(nanoid(10)).to.have.lengthOf(10);
 });

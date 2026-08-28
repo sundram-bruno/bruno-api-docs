@@ -1,4 +1,4 @@
-const ALLOWED_TYPED_ARRAYS = new Set([
+const SUPPORTED_TYPED_ARRAYS = [
   'Int8Array',
   'Uint8Array',
   'Uint8ClampedArray',
@@ -7,10 +7,8 @@ const ALLOWED_TYPED_ARRAYS = new Set([
   'Int32Array',
   'Uint32Array',
   'Float32Array',
-  'Float64Array',
-  'BigInt64Array',
-  'BigUint64Array'
-]);
+  'Float64Array'
+];
 
 function serializeTypedArray(typedArray: any) {
   return {
@@ -25,7 +23,7 @@ function deserializeTypedArray(obj: any) {
     throw new TypeError('getRandomValues: Invalid typed array object');
   }
 
-  if (typeof obj.type !== 'string' || !ALLOWED_TYPED_ARRAYS.has(obj.type)) {
+  if (typeof obj.type !== 'string' || !SUPPORTED_TYPED_ARRAYS.includes(obj.type)) {
     throw new TypeError(`getRandomValues: Invalid or unsupported typed array type: ${obj.type}`);
   }
 
@@ -41,4 +39,4 @@ function deserializeTypedArray(obj: any) {
   return new TypedArrayConstructor(obj.array, 0, obj.length);
 }
 
-export { serializeTypedArray, deserializeTypedArray };
+export { serializeTypedArray, deserializeTypedArray, SUPPORTED_TYPED_ARRAYS };

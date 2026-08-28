@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
-// Custom plugin to wrap the entire output
+// This output is stringified and re-evaluated inside the QuickJS sandbox, so it must
+// stay a fully self-contained iife: any hoisted helper, shared chunk, or module-scope
+// import would reference an identifier that does not exist in the sandbox and fail at boot.
 function wrapInFunction() {
   return {
     name: 'wrap-in-function',
@@ -24,8 +26,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@slices': resolve(__dirname, 'src/store/slices'),
-      '@': resolve(__dirname, 'src'),
-      'atob': 'atob/node-atob.js'
+      '@': resolve(__dirname, 'src')
     }
   },
   build: {

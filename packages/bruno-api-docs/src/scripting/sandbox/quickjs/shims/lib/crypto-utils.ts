@@ -1,5 +1,5 @@
 import { marshallToVm } from '../../utils';
-import { serializeTypedArray, deserializeTypedArray } from './utils';
+import { serializeTypedArray, deserializeTypedArray, SUPPORTED_TYPED_ARRAYS } from './utils';
 
 const MAX_RANDOM_BYTES_PER_CALL = 65536;
 
@@ -66,6 +66,7 @@ const addCryptoUtilsShimToContext = (vm: any) => {
 
   const bootResult = vm.evalCode(`
     const serializeTypedArray = ${serializeTypedArray.toString()};
+    const SUPPORTED_TYPED_ARRAYS = ${JSON.stringify(SUPPORTED_TYPED_ARRAYS)};
 
     const cryptoModule = {
       randomBytes: function(size) {
@@ -73,6 +74,10 @@ const addCryptoUtilsShimToContext = (vm: any) => {
         return Buffer.from(Array.from(byteArray));
       },
       getRandomValues: function(typedArray) {
+        const type = typedArray && typedArray.constructor && typedArray.constructor.name;
+        if (!SUPPORTED_TYPED_ARRAYS.includes(type)) {
+          throw new Error('getRandomValues: unsupported typed array type: ' + type);
+        }
         const serializedTypedArray = serializeTypedArray(typedArray);
         typedArray.set(globalThis.__bruno__crypto__getRandomValues(serializedTypedArray));
         return typedArray;

@@ -79,5 +79,16 @@ describe('sandbox library parity with desktop safe mode', () => {
     expect(errorMessageOf(`require('node:chai')`)).toContain('Cannot find module node:chai');
     expect(errorMessageOf(`require('left-pad-9000')`)).toBe('Cannot find module left-pad-9000');
     expect(errorMessageOf(`require('jsonwebtoken')`)).toBe('\'jsonwebtoken\' is not currently supported in the docs playground.');
+    expect(errorMessageOf(`require('crypto')`)).toContain('use the crypto global instead');
+    expect(errorMessageOf(`require('constructor')`)).toBe('Cannot find module constructor');
+    expect(errorMessageOf(`require('__proto__')`)).toBe('Cannot find module __proto__');
+    expect(errorMessageOf(`require('toString')`)).toBe('Cannot find module toString');
+  });
+
+  it('generates randomness for supported typed arrays and rejects unsupported ones', () => {
+    expect(inVm(`crypto.getRandomValues(new Uint8Array(4)).length`)).toBe(4);
+    expect(inVm(`crypto.getRandomValues(new Uint32Array(2)).length`)).toBe(2);
+    expect(inVm(`crypto.randomBytes(8).length`)).toBe(8);
+    expect(errorMessageOf(`crypto.getRandomValues(new BigInt64Array(2))`)).toBe('getRandomValues: unsupported typed array type: BigInt64Array');
   });
 });
