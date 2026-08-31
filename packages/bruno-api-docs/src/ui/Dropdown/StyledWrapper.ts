@@ -87,6 +87,7 @@ export const StyledWrapper = styled.div`
     color: var(--oc-text);
     background: transparent;
     border: 0;
+    margin-top: 2px;
     border-radius: var(--oc-radius);
   }
   .dropdown-option:hover,
