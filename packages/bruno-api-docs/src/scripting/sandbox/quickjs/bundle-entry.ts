@@ -2,7 +2,7 @@ import { expect, assert } from 'chai';
 import { Buffer } from 'buffer';
 import moment from 'moment';
 import btoa from 'btoa';
-import atob from 'atob/node-atob.js';
+import atob from 'atob/node-atob';
 import CryptoJS from 'crypto-js';
 import tv4 from 'tv4';
 import Ajv from 'ajv';

@@ -34,25 +34,22 @@ export const getRequireCode = () => `
       }
       if (bareName === 'crypto') {
         throw new Error(
-          "'" + mod + "' cannot be required in the docs playground; " +
-          "use the crypto global instead (crypto.randomBytes, crypto.getRandomValues)."
+          \`'\${mod}' cannot be required in the docs playground; use the crypto global instead (crypto.randomBytes, crypto.getRandomValues).\`
         );
       }
       throw new Error(
-        "'" + mod + "' is a Node.js builtin and is not available in the docs playground; " +
-        "it requires the Bruno desktop app's developer mode."
+        \`'\${mod}' is a Node.js builtin and is not available in the docs playground; it requires the Bruno desktop app's developer mode.\`
       );
     }
     if (${JSON.stringify(DEVELOPER_MODE_LIBRARIES)}.includes(bareName)) {
       const available = Object.keys(globalThis.requireObject).sort().join(', ');
       throw new Error(
-        "'" + mod + "' is only available in the Bruno desktop app's developer mode; " +
-        "the docs playground supports the safe-mode library set (" + available + ")."
+        \`'\${mod}' is only available in the Bruno desktop app's developer mode; the docs playground supports the safe-mode library set (\${available}).\`
       );
     }
     if (${JSON.stringify(UNSUPPORTED_LIBRARIES)}.includes(bareName)) {
-      throw new Error("'" + mod + "' is not currently supported in the docs playground.");
+      throw new Error(\`'\${mod}' is not currently supported in the docs playground.\`);
     }
-    throw new Error("Cannot find module " + mod);
+    throw new Error(\`Cannot find module \${mod}\`);
   }
 `;

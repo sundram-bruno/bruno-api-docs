@@ -76,7 +76,7 @@ const addCryptoUtilsShimToContext = (vm: any) => {
       getRandomValues: function(typedArray) {
         const type = typedArray && typedArray.constructor && typedArray.constructor.name;
         if (!SUPPORTED_TYPED_ARRAYS.includes(type)) {
-          throw new Error('getRandomValues: unsupported typed array type: ' + type);
+          throw new Error(\`getRandomValues: unsupported typed array type: \${type}\`);
         }
         const serializedTypedArray = serializeTypedArray(typedArray);
         typedArray.set(globalThis.__bruno__crypto__getRandomValues(serializedTypedArray));

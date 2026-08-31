@@ -1,9 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
-// This output is stringified and re-evaluated inside the QuickJS sandbox, so it must
-// stay a fully self-contained iife: any hoisted helper, shared chunk, or module-scope
-// import would reference an identifier that does not exist in the sandbox and fail at boot.
+// Custom plugin to wrap the entire output
 function wrapInFunction() {
   return {
     name: 'wrap-in-function',
