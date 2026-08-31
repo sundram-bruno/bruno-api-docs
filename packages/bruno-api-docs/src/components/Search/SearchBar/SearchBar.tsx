@@ -243,7 +243,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
             <div className="search-results" data-testid="search-scroll">
               {showInitial ? (
                 <div className="search-empty">
-                  <span className="search-empty-icon" data-tone="brand" aria-hidden="true">
+                  <span className="search-empty-icon" aria-hidden="true">
                     <SearchIcon />
                   </span>
                   <p className="search-empty-title">Search the collection</p>
@@ -251,7 +251,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
                 </div>
               ) : results.length === 0 ? (
                 <div className="search-empty">
-                  <span className="search-empty-icon" data-tone="muted" aria-hidden="true">
+                  <span className="search-empty-icon" aria-hidden="true">
                     <SearchIcon />
                   </span>
                   <p className="search-empty-title">No matches</p>
@@ -259,11 +259,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({ open, onOpenChange, focusN
                     Nothing matches {hasQuery ? <>“<b>{query}</b>”</> : 'these filters'}. Try a different
                     term or clear the filters.
                   </p>
-                  {hasFilter && (
-                    <button type="button" className="search-empty-clear" onClick={clearFilters}>
-                      Clear filters
-                    </button>
-                  )}
                 </div>
               ) : (
                 <ul

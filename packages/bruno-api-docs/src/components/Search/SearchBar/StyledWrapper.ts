@@ -120,7 +120,10 @@ export const StyledWrapper = styled.div`
     flex-shrink: 0;
     border-bottom: 0.0625rem solid var(--oc-border-border0);
   }
-  [data-testid='search-folder-filter'],
+  [data-testid='search-tag-filter'] {
+    flex: 0 10000 auto;
+    min-width: 3.5rem;
+  }
   .search-clear {
     flex: 0 0 auto;
   }
@@ -177,14 +180,8 @@ export const StyledWrapper = styled.div`
     height: 3rem;
     margin-bottom: 0.625rem;
     border-radius: var(--oc-radius);
-  }
-  .search-empty-icon[data-tone='brand'] {
     background: color-mix(in srgb, var(--oc-accents-primary) 8%, transparent);
     color: var(--oc-accents-primary);
-  }
-  .search-empty-icon[data-tone='muted'] {
-    background: var(--oc-background-surface0);
-    color: var(--oc-colors-text-subtext1);
   }
   .search-empty-icon svg {
     width: 1.375rem;
@@ -204,17 +201,6 @@ export const StyledWrapper = styled.div`
   .search-empty-text b {
     color: var(--oc-text);
     font-weight: 500;
-  }
-  .search-empty-clear {
-    margin-top: 0.625rem;
-    padding: 0.375rem 0.875rem;
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--oc-accents-primary);
-    background: color-mix(in srgb, var(--oc-accents-primary) 8%, transparent);
-    border: 0;
-    border-radius: var(--oc-radius);
   }
 
   /* Collapsed = the below-desktop layout (icon + reveal row), driven by the

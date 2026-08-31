@@ -137,7 +137,7 @@ items:
       - name: "Live Updates"
         description: "Streams live order updates over a WebSocket connection."
         type: "websocket"
-        tags: ["realtime"]
+        tags: ["realtime", "extremely-long-tag-name-used-to-verify-the-search-filter-trigger-truncates-instead-of-wrapping"]
         url: "{{host}}/ws/updates"
         docs: |
           # Websockets

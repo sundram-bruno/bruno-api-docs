@@ -62,7 +62,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((p) => !p)}
       >
-        {label}
+        <span className="dropdown-trigger-label">{label}</span>
         <span className="dropdown-chevron">
           <ChevronDownIcon />
         </span>

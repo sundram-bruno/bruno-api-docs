@@ -3,12 +3,16 @@ import styled from '@emotion/styled';
 export const StyledWrapper = styled.div`
   position: relative;
   display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
 
   .dropdown-button {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     height: 23px;
+    min-width: 0;
+    max-width: 100%;
     padding: 0 8px;
     box-sizing: border-box;
     font-family: 'Fira Code', var(--font-mono);
@@ -34,8 +38,16 @@ export const StyledWrapper = styled.div`
     outline-offset: 1px;
   }
 
+  .dropdown-trigger-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .dropdown-chevron {
     display: inline-flex;
+    flex-shrink: 0;
     transition: transform 0.12s ease;
   }
   .dropdown-button[aria-expanded='true'] .dropdown-chevron {
