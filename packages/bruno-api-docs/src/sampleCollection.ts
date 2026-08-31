@@ -137,7 +137,7 @@ items:
       - name: "Live Updates"
         description: "Streams live order updates over a WebSocket connection."
         type: "websocket"
-        tags: ["realtime", "extremely-long-tag-name-used-to-verify-the-search-filter-trigger-truncates-instead-of-wrapping"]
+        tags: ["realtime"]
         url: "{{host}}/ws/updates"
         docs: |
           # Websockets
@@ -2235,7 +2235,7 @@ items:
   - name: "get users"
     type: "http"
     seq: 1
-    tags: ["users", "smoke"]
+    tags: ["users", "smoke", "extremely-long-tag-name-used-to-verify-the-search-filter-trigger-truncates-instead-of-wrapping"]
     method: "GET"
     url: "{{host}}/api/users?page=1&limit=10"
     headers:

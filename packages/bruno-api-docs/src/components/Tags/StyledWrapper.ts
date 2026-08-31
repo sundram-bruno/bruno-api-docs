@@ -7,10 +7,10 @@ export const StyledWrapper = styled.div`
 
   .tag-chip {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.25rem;
-    height: 1.75rem;
-    padding: 0 0.25rem;
+    max-width: 100%;
+    padding: 0.3125rem 0.375rem;
     box-sizing: border-box;
     border: 1px solid var(--oc-border-border0);
     border-radius: var(--oc-radius);
@@ -32,6 +32,8 @@ export const StyledWrapper = styled.div`
   }
 
   .tag-chip-label {
-    line-height: 1;
+    min-width: 0;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
   }
 `;

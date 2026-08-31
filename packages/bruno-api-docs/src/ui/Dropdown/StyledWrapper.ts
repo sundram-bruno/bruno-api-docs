@@ -87,8 +87,10 @@ export const StyledWrapper = styled.div`
     color: var(--oc-text);
     background: transparent;
     border: 0;
-    margin-top: 2px;
     border-radius: var(--oc-radius);
+  }
+  .dropdown-menu li + li {
+    margin-top: 2px;
   }
   .dropdown-option:hover,
   .dropdown-option:focus-visible {
