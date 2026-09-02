@@ -191,24 +191,21 @@ export class RequestExecutor {
   }
 
   private setAuthHeaders(headers: Record<string, string>, auth: any) {
-    const hasHeader = (name: string) =>
-      Object.keys(headers).some((key) => key.toLowerCase() === name.toLowerCase());
-
     switch (auth.type) {
       case 'basic':
-        if (auth.username && auth.password && !hasHeader('Authorization')) {
+        if (auth.username && auth.password) {
           const credentials = btoa(`${auth.username}:${auth.password}`);
           headers['Authorization'] = `Basic ${credentials}`;
         }
         break;
       case 'bearer':
-        if (auth.token && !hasHeader('Authorization')) {
+        if (auth.token) {
           headers['Authorization'] = `Bearer ${auth.token}`;
         }
         break;
       case 'apikey':
         if (auth.key && auth.value) {
-          if (auth.placement === 'header' && !hasHeader(auth.key)) {
+          if (auth.placement === 'header') {
             headers[auth.key] = auth.value;
           }
         }

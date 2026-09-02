@@ -48,7 +48,7 @@ export const getRequireCode = () => `
       );
     }
     if (${JSON.stringify(UNSUPPORTED_LIBRARIES)}.includes(bareName)) {
-      throw new Error(\`'\${mod}' is not currently supported in the docs playground.\`);
+      throw new Error(\`'\${mod}' is not currently supported in the docs playground. Please use the Bruno desktop app.\`);
     }
     throw new Error(\`Cannot find module \${mod}\`);
   }

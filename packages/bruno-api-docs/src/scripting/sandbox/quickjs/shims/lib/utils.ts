@@ -5,10 +5,10 @@ const SUPPORTED_TYPED_ARRAYS = [
   'Int16Array',
   'Uint16Array',
   'Int32Array',
-  'Uint32Array',
-  'Float32Array',
-  'Float64Array'
+  'Uint32Array'
 ];
+
+const MAX_TYPED_ARRAY_LENGTH = 65536;
 
 function serializeTypedArray(typedArray: any) {
   return {
@@ -27,8 +27,15 @@ function deserializeTypedArray(obj: any) {
     throw new TypeError(`getRandomValues: Invalid or unsupported typed array type: ${obj.type}`);
   }
 
-  if (!obj.array || typeof obj.length !== 'number') {
+  // Validate everything BEFORE constructing: a sandbox script can hand the raw host
+  // function a tiny object faking a huge length, which would make the host allocate
+  // that much memory here, ahead of any size cap.
+  if (!Array.isArray(obj.array) || !Number.isInteger(obj.length) || obj.length < 0 || obj.length > obj.array.length) {
     throw new TypeError('getRandomValues: Invalid typed array properties');
+  }
+
+  if (obj.array.length > MAX_TYPED_ARRAY_LENGTH) {
+    throw new Error('getRandomValues: ArrayBufferView byte length exceeds 65536');
   }
 
   const TypedArrayConstructor = (globalThis as any)[obj.type];

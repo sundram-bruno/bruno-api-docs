@@ -101,6 +101,7 @@ const executeQuickJsVmAsync = async ({
     const module = await loader();
     const vm = module.newContext();
 
+    // must run before the bundle eval: uuid and nanoid grab crypto.getRandomValues at load time
     addCryptoUtilsShimToContext(vm);
 
     if (typeof getBundledCode !== 'function') {

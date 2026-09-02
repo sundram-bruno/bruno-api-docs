@@ -46,7 +46,7 @@ describe('sandbox library parity with desktop safe mode', () => {
   });
 
   it('exposes the supported safe-mode globals', () => {
-    const globals = ['expect', 'assert', 'moment', 'btoa', 'atob', 'Buffer', 'tv4', 'Ajv', 'addFormats', 'crypto', 'axios', 'path', 'require'];
+    const globals = ['expect', 'assert', 'moment', 'btoa', 'atob', 'Buffer', 'tv4', 'Ajv', 'addFormats', 'crypto', 'axios', 'path', 'require', 'uuid', 'nanoid'];
     for (const name of globals) {
       expect(inVm(`typeof globalThis['${name}']`), name).not.toBe('undefined');
     }
@@ -78,7 +78,7 @@ describe('sandbox library parity with desktop safe mode', () => {
     expect(inVm(`typeof require('node:path').resolve`)).toBe('function');
     expect(errorMessageOf(`require('node:chai')`)).toContain('Cannot find module node:chai');
     expect(errorMessageOf(`require('left-pad-9000')`)).toBe('Cannot find module left-pad-9000');
-    expect(errorMessageOf(`require('jsonwebtoken')`)).toBe('\'jsonwebtoken\' is not currently supported in the docs playground.');
+    expect(errorMessageOf(`require('jsonwebtoken')`)).toBe('\'jsonwebtoken\' is not currently supported in the docs playground. Please use the Bruno desktop app.');
     expect(errorMessageOf(`require('crypto')`)).toContain('use the crypto global instead');
     expect(errorMessageOf(`require('constructor')`)).toBe('Cannot find module constructor');
     expect(errorMessageOf(`require('__proto__')`)).toBe('Cannot find module __proto__');
@@ -90,5 +90,6 @@ describe('sandbox library parity with desktop safe mode', () => {
     expect(inVm(`crypto.getRandomValues(new Uint32Array(2)).length`)).toBe(2);
     expect(inVm(`crypto.randomBytes(8).length`)).toBe(8);
     expect(errorMessageOf(`crypto.getRandomValues(new BigInt64Array(2))`)).toBe('getRandomValues: unsupported typed array type: BigInt64Array');
+    expect(errorMessageOf(`crypto.getRandomValues(new Float32Array(2))`)).toBe('getRandomValues: unsupported typed array type: Float32Array');
   });
 });

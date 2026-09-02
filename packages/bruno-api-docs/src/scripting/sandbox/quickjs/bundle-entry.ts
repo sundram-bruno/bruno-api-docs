@@ -2,6 +2,8 @@ import { expect, assert } from 'chai';
 import { Buffer } from 'buffer';
 import moment from 'moment';
 import btoa from 'btoa';
+// import atob's node file directly: the default 'atob' import is a browser build that
+// reads window, and window does not exist inside the QuickJS sandbox
 import atob from 'atob/node-atob';
 import CryptoJS from 'crypto-js';
 import tv4 from 'tv4';

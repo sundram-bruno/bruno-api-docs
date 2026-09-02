@@ -13,6 +13,7 @@ interface AxiosShimConfig {
   data?: any;
   timeout?: number;
   auth?: { username?: string; password?: string };
+  validateStatus?: ((status: number) => boolean) | null;
 }
 
 const normalizeArgs = (method: string | null, args: any[]): AxiosShimConfig => {
@@ -29,21 +30,99 @@ const normalizeArgs = (method: string | null, args: any[]): AxiosShimConfig => {
   return { ...(args[1] || {}), url: args[0], method };
 };
 
+const encodeAxiosComponent = (value: string): string =>
+  encodeURIComponent(value)
+    .replace(/%3A/gi, ':')
+    .replace(/%24/g, '$')
+    .replace(/%2C/gi, ',')
+    .replace(/%20/g, '+');
+
+const isPlainObject = (value: any): boolean =>
+  Object.prototype.toString.call(value) === '[object Object]';
+
+const isVisitable = (value: any): boolean => isPlainObject(value) || Array.isArray(value);
+
+const isFlatArray = (value: any): boolean => Array.isArray(value) && !value.some(isVisitable);
+
+const removeBrackets = (key: string): string => (key.endsWith('[]') ? key.slice(0, -2) : key);
+
+const renderParamKey = (path: (string | number)[], key: string | number): string => {
+  if (path.length === 0) {
+    return `${key}`;
+  }
+  return [...path, key]
+    .map((token, index) => {
+      const cleaned = typeof token === 'string' ? removeBrackets(token) : token;
+      return index ? `[${cleaned}]` : `${cleaned}`;
+    })
+    .join('');
+};
+
+const convertParamValue = (value: any): string => {
+  if (value === null) return '';
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'boolean') return value.toString();
+  return String(value);
+};
+
+const serializeAxiosParams = (params: Record<string, any>): string => {
+  const pairs: [string, string][] = [];
+
+  const build = (value: any, path: (string | number)[]) => {
+    const entries: [string | number, any][] = Array.isArray(value)
+      ? value.map((element, index): [number, any] => [index, element])
+      : Object.keys(value).map((objectKey): [string, any] => [objectKey, value[objectKey]]);
+
+    entries.forEach(([key, element]) => {
+      if (element === undefined || element === null) {
+        return;
+      }
+      visit(element, typeof key === 'string' ? key.trim() : key, path);
+    });
+  };
+
+  const visit = (value: any, key: string | number, path: (string | number)[]) => {
+    if (path.length === 0 && Array.isArray(value)) {
+      const keyIsBracketed = typeof key === 'string' && key.endsWith('[]');
+      if (isFlatArray(value) || keyIsBracketed) {
+        const baseKey = typeof key === 'string' ? removeBrackets(key) : key;
+        value.forEach((element: any) => {
+          if (element === undefined || element === null) {
+            return;
+          }
+          pairs.push([`${baseKey}[]`, convertParamValue(element)]);
+        });
+        return;
+      }
+    }
+    if (isVisitable(value)) {
+      build(value, path.length ? [...path, key] : [key]);
+      return;
+    }
+    pairs.push([renderParamKey(path, key), convertParamValue(value)]);
+  };
+
+  build(params, []);
+
+  return pairs
+    .map(([key, value]) => `${encodeAxiosComponent(key)}=${encodeAxiosComponent(value)}`)
+    .join('&');
+};
+
 const buildRequestUrl = (config: AxiosShimConfig): string => {
-  const url = config.url || '';
+  let url = config.url || '';
   if (!config.params || typeof config.params !== 'object') {
     return url;
   }
-
-  const query = new URLSearchParams();
-  Object.entries(config.params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      query.append(key, String(value));
-    }
-  });
-  const queryString = query.toString();
+  const queryString = serializeAxiosParams(config.params);
   if (!queryString) {
     return url;
+  }
+  // axios drops any #fragment before appending params; without this the browser treats
+  // everything after # as fragment and silently sends the request with no query at all.
+  const hashIndex = url.indexOf('#');
+  if (hashIndex !== -1) {
+    url = url.slice(0, hashIndex);
   }
   return url + (url.includes('?') ? '&' : '?') + queryString;
 };
@@ -62,9 +141,8 @@ const buildAxiosError = (partial: Record<string, any>, config: AxiosShimConfig) 
 };
 
 const parseResponseData = async (response: Response) => {
-  const contentType = response.headers.get('content-type') || '';
   const text = await response.text();
-  if (contentType.includes('json') && text.length) {
+  if (text.length) {
     try {
       return JSON.parse(text);
     } catch {
@@ -88,8 +166,11 @@ const performAxiosRequest = async (config: AxiosShimConfig) => {
     headers['Authorization'] = 'Basic ' + btoa(`${config.auth.username || ''}:${config.auth.password || ''}`);
   }
 
+  const method = (config.method || 'get').toUpperCase();
+  const methodAllowsBody = method !== 'GET' && method !== 'HEAD';
+
   let body: string | undefined;
-  if (config.data !== undefined && config.data !== null) {
+  if (methodAllowsBody && config.data !== undefined && config.data !== null) {
     if (typeof config.data === 'object') {
       body = JSON.stringify(config.data);
       const hasContentType = Object.keys(headers).some((key) => key.toLowerCase() === 'content-type');
@@ -102,10 +183,9 @@ const performAxiosRequest = async (config: AxiosShimConfig) => {
   }
 
   const fetchOptions: RequestInit = {
-    method: (config.method || 'get').toUpperCase(),
+    method,
     headers,
-    // Never send the docs site's own cookies, so a published script cannot make
-    // authenticated calls to the host origin on the reader's behalf.
+    // 'omit' so a published script can never use the reader's cookies to call the docs site itself
     credentials: 'omit',
     ...(body !== undefined && { body }),
     ...(config.timeout && { signal: AbortSignal.timeout(config.timeout) })
@@ -135,11 +215,21 @@ const performAxiosRequest = async (config: AxiosShimConfig) => {
   });
   const data = await parseResponseData(response);
 
-  if (response.status < 200 || response.status >= 300) {
+  const acceptStatus = (status: number): boolean => {
+    if (typeof config.validateStatus === 'function') {
+      return config.validateStatus(status);
+    }
+    if (config.validateStatus === null) {
+      return true;
+    }
+    return status >= 200 && status < 300;
+  };
+
+  if (!acceptStatus(response.status)) {
     throw buildAxiosError(
       {
         message: `Request failed with status code ${response.status}`,
-        code: response.status >= 500 ? 'ERR_BAD_RESPONSE' : 'ERR_BAD_REQUEST',
+        code: response.status >= 400 && response.status < 500 ? 'ERR_BAD_REQUEST' : 'ERR_BAD_RESPONSE',
         response: {
           status: response.status,
           statusText: response.statusText,
@@ -160,11 +250,45 @@ const performAxiosRequest = async (config: AxiosShimConfig) => {
   };
 };
 
+const configArgIndex = (method: string | null, nativeArgs: any[]): number => {
+  if (method === null) {
+    return typeof nativeArgs[0] === 'string' ? 1 : 0;
+  }
+  return METHODS_WITH_BODY.has(method) ? 2 : 1;
+};
+
 const addAxiosShimToContext = (vm: any) => {
+  const bridgeValidateStatus = (config: AxiosShimConfig, configHandle: any, nativeConfig: any): any => {
+    if (!configHandle || !nativeConfig || typeof nativeConfig !== 'object') {
+      return null;
+    }
+    const propHandle = vm.getProp(configHandle, 'validateStatus');
+    if (vm.typeof(propHandle) !== 'function') {
+      propHandle.dispose();
+      return null;
+    }
+    config.validateStatus = (status: number): boolean => {
+      const statusHandle = vm.newNumber(status);
+      const callResult = vm.callFunction(propHandle, vm.undefined, statusHandle);
+      statusHandle.dispose();
+      if (callResult.error) {
+        const error = vm.dump(callResult.error);
+        callResult.error.dispose();
+        throw error;
+      }
+      const accepted = vm.dump(callResult.value);
+      callResult.value.dispose();
+      return Boolean(accepted);
+    };
+    return propHandle;
+  };
+
   const registerAxiosFunction = (name: string, method: string | null) => {
     const fnHandle = vm.newFunction(name, (...args: any[]) => {
       const nativeArgs = args.map(vm.dump);
       const config = normalizeArgs(method, nativeArgs);
+      const configIndex = configArgIndex(method, nativeArgs);
+      const validateStatusHandle = bridgeValidateStatus(config, args[configIndex], nativeArgs[configIndex]);
       const promise = vm.newPromise();
       performAxiosRequest(config)
         .then((response) => {
@@ -172,6 +296,11 @@ const addAxiosShimToContext = (vm: any) => {
         })
         .catch((err) => {
           promise.reject(marshallToVm(cleanJson(err), vm));
+        })
+        .finally(() => {
+          if (validateStatusHandle) {
+            validateStatusHandle.dispose();
+          }
         });
       promise.settled.then(vm.runtime.executePendingJobs);
       return promise.handle;
@@ -202,3 +331,4 @@ const addAxiosShimToContext = (vm: any) => {
 };
 
 export default addAxiosShimToContext;
+export { serializeAxiosParams, performAxiosRequest };
