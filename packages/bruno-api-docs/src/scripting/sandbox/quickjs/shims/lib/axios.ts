@@ -118,8 +118,6 @@ const buildRequestUrl = (config: AxiosShimConfig): string => {
   if (!queryString) {
     return url;
   }
-  // axios drops any #fragment before appending params; without this the browser treats
-  // everything after # as fragment and silently sends the request with no query at all.
   const hashIndex = url.indexOf('#');
   if (hashIndex !== -1) {
     url = url.slice(0, hashIndex);
