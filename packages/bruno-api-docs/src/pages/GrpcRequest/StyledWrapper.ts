@@ -7,6 +7,18 @@ export const StyledWrapper = styled.div`
   padding-top: 0.1rem;
   padding-bottom: 0.1rem;
 
+  .grpc-request-title {
+    margin-top: 0.25rem;
+  }
+
+  .grpc-request-url-bar {
+    margin-top: 0.75rem;
+  }
+
+  .grpc-request-description {
+    margin-top: 1.5rem;
+  }
+
   .grpc-request-empty {
     margin-top: 1.5rem;
   }
