@@ -184,11 +184,11 @@ export const GrpcRequest: React.FC<GrpcRequestProps> = ({
           testId="grpc-request-breadcrumb"
         />
 
-        <Heading size="md" className="mt-1" testId="grpc-request-title">{name}</Heading>
+        <Heading size="md" className="grpc-request-title" testId="grpc-request-title">{name}</Heading>
 
-        <RequestUrlBar method="gRPC" capitalizeMethod={false} url={url} className="mt-3" />
+        <RequestUrlBar method="gRPC" capitalizeMethod={false} url={url} className="grpc-request-url-bar" />
         {descHtml && (
-          <ViewMore className="mt-6" collapsedHeight="4.5rem" testId="grpc-request-description">
+          <ViewMore className="grpc-request-description" collapsedHeight="4.5rem" testId="grpc-request-description">
             <div
               className="markdown-documentation"
               data-nav-headings
