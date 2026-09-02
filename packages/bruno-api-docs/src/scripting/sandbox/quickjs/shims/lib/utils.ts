@@ -27,9 +27,6 @@ function deserializeTypedArray(obj: any) {
     throw new TypeError(`getRandomValues: Invalid or unsupported typed array type: ${obj.type}`);
   }
 
-  // Validate everything BEFORE constructing: a sandbox script can hand the raw host
-  // function a tiny object faking a huge length, which would make the host allocate
-  // that much memory here, ahead of any size cap.
   if (!Array.isArray(obj.array) || !Number.isInteger(obj.length) || obj.length < 0 || obj.length > obj.array.length) {
     throw new TypeError('getRandomValues: Invalid typed array properties');
   }
