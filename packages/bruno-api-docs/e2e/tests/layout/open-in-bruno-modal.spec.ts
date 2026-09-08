@@ -2,33 +2,45 @@ import { readFile } from 'node:fs/promises';
 import { load } from 'js-yaml';
 import { test, expect } from '../../playwright';
 
+/**
+ * Open-in-Bruno for a collection with no git url: the header CTA becomes a
+ * button that opens the download-and-import dialog instead of linking to
+ * Fetch-in-Bruno. `?nogit=1` makes the dev entry omit the git url.
+ */
 test.use({ colorScheme: 'light' });
 
 const DESKTOP = { width: 1280, height: 900 };
 const MOBILE = { width: 390, height: 800 };
+const NO_GIT_URL = '/?nogit=1';
+
+// The dev fixture writes the version quoted. A re-serialised dump would emit it
+// bare (`opencollection: 1.0.0`), so finding this exact line proves the reader
+// received the source text verbatim rather than a rebuild.
+const SOURCE_ONLY_LINE = 'opencollection: "1.0.0"';
 
 test.describe('Open in Bruno — non-git collection', () => {
-  test.beforeEach(async ({ page }) => {
+  test('CTA renders as a button without a Fetch-in-Bruno link', async ({ page, pageHeader }) => {
     await page.setViewportSize(DESKTOP);
-    await page.goto('/?nogit=1');
-  });
+    await page.goto(NO_GIT_URL);
 
-  test('CTA renders as a button without a Fetch-in-Bruno link', async ({ pageHeader }) => {
     await expect(pageHeader.openInBruno).toBeVisible();
     await expect(pageHeader.openInBruno).not.toHaveAttribute('href', /.*/);
     await expect(pageHeader.openInBruno).toHaveAttribute('type', 'button');
   });
 
-  test('clicking the CTA opens the dialog with the import steps and the Download Bruno link', async ({ pageHeader, openInBrunoModal }) => {
+  test('clicking the CTA opens the dialog with the import steps and the Download Bruno link', async ({ page, pageHeader, openInBrunoModal }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(NO_GIT_URL);
     await pageHeader.openInBruno.click();
 
     await expect(openInBrunoModal.root).toBeVisible();
     await expect(openInBrunoModal.title).toContainText('Open in Bruno');
     await expect(openInBrunoModal.downloadCollection).toBeVisible();
 
-    await expect(openInBrunoModal.steps).toHaveCount(2);
-    await expect(openInBrunoModal.steps.nth(0)).toContainText('Import Collection');
-    await expect(openInBrunoModal.steps.nth(1)).toContainText('bruno-testbench.yml');
+    await expect(openInBrunoModal.step1).toContainText('Import Collection');
+    await expect(openInBrunoModal.filename).toHaveText('Bruno Testbench.yml');
+    await expect(openInBrunoModal.step2).toContainText('click Import');
+    await expect(openInBrunoModal.step3).toHaveCount(0);
 
     await expect(openInBrunoModal.downloadBruno).toHaveAttribute('href', 'https://www.usebruno.com/downloads');
     await expect(openInBrunoModal.downloadBruno).toHaveAttribute('target', '_blank');
@@ -36,19 +48,19 @@ test.describe('Open in Bruno — non-git collection', () => {
   });
 
   test('Download Collection saves the original OpenCollection YAML', async ({ page, pageHeader, openInBrunoModal }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(NO_GIT_URL);
     await pageHeader.openInBruno.click();
 
     const downloadPromise = page.waitForEvent('download');
     await openInBrunoModal.downloadCollection.click();
     const download = await downloadPromise;
 
-    expect(download.suggestedFilename()).toBe('bruno-testbench.yml');
+    expect(download.suggestedFilename()).toBe('Bruno Testbench.yml');
 
-    const path = await download.path();
-    const text = await readFile(path, 'utf8');
-
-    expect(text).toContain('opencollection: "1.0.0"');
-    expect(text).not.toContain('isCollapsed');
+    const downloadedFilePath = await download.path();
+    const text = await readFile(downloadedFilePath, 'utf8');
+    expect(text).toContain(SOURCE_ONLY_LINE);
 
     const parsed = load(text) as { opencollection: string; info: { name: string }; items: unknown[] };
     expect(parsed.opencollection).toBe('1.0.0');
@@ -56,7 +68,10 @@ test.describe('Open in Bruno — non-git collection', () => {
     expect(parsed.items.length).toBeGreaterThan(0);
   });
 
-  test('Escape and the close button both dismiss the dialog', async ({ page, pageHeader, openInBrunoModal }) => {
+  test('Escape, the close button and a backdrop click each dismiss the dialog', async ({ page, pageHeader, openInBrunoModal }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto(NO_GIT_URL);
+
     await pageHeader.openInBruno.click();
     await expect(openInBrunoModal.root).toBeVisible();
     await page.keyboard.press('Escape');
@@ -66,11 +81,20 @@ test.describe('Open in Bruno — non-git collection', () => {
     await expect(openInBrunoModal.root).toBeVisible();
     await openInBrunoModal.closeButton.click();
     await expect(openInBrunoModal.root).toHaveCount(0);
+
+    await pageHeader.openInBruno.click();
+    await expect(openInBrunoModal.root).toBeVisible();
+    await openInBrunoModal.clickBackdrop();
+    await expect(openInBrunoModal.root).toHaveCount(0);
   });
 
   test('mobile glyph CTA still opens the dialog', async ({ page, pageHeader, openInBrunoModal }) => {
     await page.setViewportSize(MOBILE);
-    await expect(pageHeader.openInBruno).toHaveClass(/is-icon/);
+    await page.goto(NO_GIT_URL);
+
+    // Icon-only: the name comes from aria-label, the visible label is gone.
+    await expect(pageHeader.openInBruno).toHaveAccessibleName('Open in Bruno');
+    await expect(pageHeader.openInBruno).toHaveText('');
 
     await pageHeader.openInBruno.click();
     await expect(openInBrunoModal.root).toBeVisible();

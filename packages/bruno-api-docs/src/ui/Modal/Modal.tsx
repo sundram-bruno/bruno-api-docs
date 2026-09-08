@@ -14,9 +14,10 @@ export interface ModalProps {
   size?: ModalSize;
   ariaLabel?: string;
   className?: string;
+  testId?: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({ open, onClose, title, children, footer, size = 'lg', ariaLabel, className }) => {
+export const Modal: React.FC<ModalProps> = ({ open, onClose, title, children, footer, size = 'lg', ariaLabel, className, testId }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,14 +41,29 @@ export const Modal: React.FC<ModalProps> = ({ open, onClose, title, children, fo
     <Portal>
       <StyledWrapper
         className={['modal-backdrop', className].filter(Boolean).join(' ')}
+        data-testid={testId ? `${testId}-backdrop` : undefined}
         onMouseDown={(event) => {
           if (event.target === event.currentTarget) onClose();
         }}
       >
-        <div ref={dialogRef} className={`modal-dialog is-${size}`} role="dialog" aria-modal="true" aria-label={ariaLabel} tabIndex={-1}>
+        <div
+          ref={dialogRef}
+          className={`modal-dialog is-${size}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={ariaLabel}
+          tabIndex={-1}
+          data-testid={testId}
+        >
           <div className="modal-head">
             {title !== undefined && <div className="modal-title">{title}</div>}
-            <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
+            <button
+              type="button"
+              className="modal-close"
+              aria-label="Close"
+              onClick={onClose}
+              data-testid={testId ? `${testId}-close` : undefined}
+            >
               <CloseIcon />
             </button>
           </div>

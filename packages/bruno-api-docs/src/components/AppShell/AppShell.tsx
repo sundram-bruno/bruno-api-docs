@@ -33,9 +33,11 @@ const AppShell: React.FC<AppShellProps> = ({ logo, testId = 'app-shell' }) => {
   const collectionSourceText = useAppSelector(selectCollectionSourceText);
   const openInBrunoHref = buildFetchInBrunoUrl(gitCollectionUrl);
   const [openInBrunoOpen, setOpenInBrunoOpen] = useState(false);
+  const closeOpenInBruno = useCallback(() => setOpenInBrunoOpen(false), []);
+  const collectionFile = collectionFilename(collection);
   const downloadCollection = () => {
     if (!collection) return;
-    downloadTextFile(collectionFilename(collection), resolveDownloadYaml(collectionSourceText, collection));
+    downloadTextFile(collectionFile, resolveDownloadYaml(collectionSourceText, collection));
   };
   const resolution = useActiveResolution();
 
@@ -67,7 +69,6 @@ const AppShell: React.FC<AppShellProps> = ({ logo, testId = 'app-shell' }) => {
   const { pathname } = useLocation();
 
   const { open: playgroundOpen, dock: playgroundDock, openPlayground } = usePlaygroundUrlState();
-
   const [playgroundOpenNonce, setPlaygroundOpenNonce] = useState(0);
 
   useEffect(() => {
@@ -135,8 +136,8 @@ const AppShell: React.FC<AppShellProps> = ({ logo, testId = 'app-shell' }) => {
         />
         <OpenInBrunoModal
           open={openInBrunoOpen}
-          onClose={() => setOpenInBrunoOpen(false)}
-          filename={collectionFilename(collection)}
+          onClose={closeOpenInBruno}
+          filename={collectionFile}
           onDownload={downloadCollection}
         />
 

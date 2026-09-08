@@ -94,7 +94,7 @@ const OpenCollectionContent: React.FC<OpenCollectionProps> = ({
   const collectionError = useAppSelector(selectCollectionError);
 
   useEffect(() => {
-    gitCollectionUrl && dispatch(setGitCollectionUrl(gitCollectionUrl));
+    dispatch(setGitCollectionUrl(gitCollectionUrl ?? null));
   }, [gitCollectionUrl, dispatch]);
 
   useEffect(() => {

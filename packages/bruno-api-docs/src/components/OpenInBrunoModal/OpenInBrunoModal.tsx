@@ -25,9 +25,10 @@ export const OpenInBrunoModal: React.FC<OpenInBrunoModalProps> = ({
     onClose={onClose}
     size="md"
     ariaLabel="Open in Bruno"
+    testId={testId}
     title={(
       <span className="oib-title" data-testid={`${testId}-title`}>
-        <BrunoGlyph />
+        <span className="oib-title-glyph" data-testid={`${testId}-glyph`}><BrunoGlyph /></span>
         Open in Bruno
       </span>
     )}
@@ -47,7 +48,7 @@ export const OpenInBrunoModal: React.FC<OpenInBrunoModalProps> = ({
       </>
     )}
   >
-    <div className="oib-body" data-testid={testId}>
+    <div className="oib-body" data-testid={`${testId}-body`}>
       <div className="oib-banner">
         <p className="oib-banner-text">Download the collection and import it into Bruno Desktop App to work with it locally.</p>
         <button type="button" className="oib-download" onClick={onDownload} data-testid={`${testId}-download`}>
@@ -61,16 +62,16 @@ export const OpenInBrunoModal: React.FC<OpenInBrunoModalProps> = ({
           Steps to import
         </SectionLabel>
         <ol className="oib-steps" data-testid={`${testId}-steps`}>
-          <li>
+          <li data-testid={`${testId}-step-1`}>
             <span className="oib-step-index">1</span>
             <span>
               Open Bruno and click <strong>+</strong> next to <strong>Collections</strong>.
               Select <strong>Import Collection</strong>.
             </span>
           </li>
-          <li>
+          <li data-testid={`${testId}-step-2`}>
             <span className="oib-step-index">2</span>
-            <span>Select <code>{filename}</code> and click <strong>Import</strong>.</span>
+            <span>Select <code data-testid={`${testId}-filename`}>{filename}</code> and click <strong>Import</strong>.</span>
           </li>
         </ol>
       </div>

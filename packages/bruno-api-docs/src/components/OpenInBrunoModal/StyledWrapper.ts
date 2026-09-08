@@ -13,10 +13,14 @@ export const StyledWrapper = styled(Modal)`
     color: var(--text-primary);
   }
 
+  .oib-title-glyph {
+    display: inline-flex;
+    flex: none;
+  }
+
   .oib-title svg {
     width: 1.25rem;
     height: 1.25rem;
-    flex: none;
   }
 
   .oib-body {

@@ -53,11 +53,14 @@ describe('Modal', () => {
 
   it('applies the requested size and renders the footer slot', () => {
     const html = renderToStaticMarkup(
-      <Modal open onClose={() => {}} size="md" footer={<span>footer content</span>}>
+      <Modal open onClose={() => {}} size="md" footer={<span>footer content</span>} testId="example-modal">
         <p>body</p>
       </Modal>
     );
     expect(html).toContain('class="modal-dialog is-md"');
+    expect(html).toContain('data-testid="example-modal"');
+    expect(html).toContain('data-testid="example-modal-backdrop"');
+    expect(html).toContain('data-testid="example-modal-close"');
     expect(html).toContain('class="modal-foot"');
     expect(html).toContain('footer content');
   });
