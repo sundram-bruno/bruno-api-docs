@@ -40,4 +40,25 @@ describe('Modal', () => {
     expect(html).toContain('aria-label="Plain dialog"');
     expect(html).toContain('aria-label="Close"');
   });
+
+  it('defaults to the large size and renders no footer slot', () => {
+    const html = renderToStaticMarkup(
+      <Modal open onClose={() => {}}>
+        <p>body</p>
+      </Modal>
+    );
+    expect(html).toContain('class="modal-dialog is-lg"');
+    expect(html).not.toContain('class="modal-foot"');
+  });
+
+  it('applies the requested size and renders the footer slot', () => {
+    const html = renderToStaticMarkup(
+      <Modal open onClose={() => {}} size="md" footer={<span>footer content</span>}>
+        <p>body</p>
+      </Modal>
+    );
+    expect(html).toContain('class="modal-dialog is-md"');
+    expect(html).toContain('class="modal-foot"');
+    expect(html).toContain('footer content');
+  });
 });

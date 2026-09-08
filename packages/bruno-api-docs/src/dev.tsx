@@ -14,8 +14,11 @@ import { descriptionsFixtureCollection } from './e2eFixtures/descriptionsCollect
 import { qaFixtureCollection } from './e2eFixtures/qaCollection';
 
 // `?fixture=folders` mounts a nested-folder collection for routing e2e tests;
-// `?fixture=qa` mounts the deep, deliberately awkward collection for manual QA.
-const fixture = new URLSearchParams(window.location.search).get('fixture');
+// `?fixture=qa` mounts the deep, deliberately awkward collection for manual QA;
+// `?nogit=1` drops the git url so the Open-in-Bruno download modal can be exercised.
+const params = new URLSearchParams(window.location.search);
+const fixture = params.get('fixture');
+const noGit = params.get('nogit') === '1';
 const devCollection
   = fixture === 'folders'
     ? foldersFixtureCollection
@@ -41,7 +44,7 @@ const DevApp: React.FC = () => {
       <div style={{ height: '100vh', width: '100vw' }}>
         <OpenCollection
           collection={devCollection}
-          gitCollectionUrl="https://github.com/usebruno/bruno-testbench.git"
+          gitCollectionUrl={noGit ? undefined : 'https://github.com/usebruno/bruno-testbench.git'}
         />
       </div>
     </Provider>
