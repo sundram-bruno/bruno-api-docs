@@ -18,8 +18,6 @@ export const stripHydration = (collection: OpenCollection): OpenCollection =>
 export const serializeCollectionYaml = (collection: OpenCollection): string =>
   dump(collection, { indent: 2, lineWidth: -1, noRefs: true, sortKeys: false });
 
-// Same rules the Bruno desktop app applies when it exports a collection file:
-// only filesystem-illegal characters are replaced, everything else is kept.
 const invalidFilenameCharacters = /[<>:"/\\|?*\p{Cc}]/gu;
 
 export const collectionFilename = (collection: OpenCollection | null | undefined): string => {

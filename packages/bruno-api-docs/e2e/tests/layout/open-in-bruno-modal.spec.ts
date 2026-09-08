@@ -2,20 +2,12 @@ import { readFile } from 'node:fs/promises';
 import { load } from 'js-yaml';
 import { test, expect } from '../../playwright';
 
-/**
- * Open-in-Bruno for a collection with no git url: the header CTA becomes a
- * button that opens the download-and-import dialog instead of linking to
- * Fetch-in-Bruno. `?nogit=1` makes the dev entry omit the git url.
- */
 test.use({ colorScheme: 'light' });
 
 const DESKTOP = { width: 1280, height: 900 };
 const MOBILE = { width: 390, height: 800 };
 const NO_GIT_URL = '/?nogit=1';
 
-// The dev fixture writes the version quoted. A re-serialised dump would emit it
-// bare (`opencollection: 1.0.0`), so finding this exact line proves the reader
-// received the source text verbatim rather than a rebuild.
 const SOURCE_ONLY_LINE = 'opencollection: "1.0.0"';
 
 test.describe('Open in Bruno — non-git collection', () => {
@@ -92,7 +84,6 @@ test.describe('Open in Bruno — non-git collection', () => {
     await page.setViewportSize(MOBILE);
     await page.goto(NO_GIT_URL);
 
-    // Icon-only: the name comes from aria-label, the visible label is gone.
     await expect(pageHeader.openInBruno).toHaveAccessibleName('Open in Bruno');
     await expect(pageHeader.openInBruno).toHaveText('');
 
