@@ -471,55 +471,122 @@ describe('RequestExecutor auth header precedence', () => {
     arrayBuffer: async () => new TextEncoder().encode('{}').buffer
   });
 
-  const sentHeaders = async (auth: Record<string, unknown> | undefined, headers: unknown[] = []) => {
+  const sentHeaders = async (
+    auth: Record<string, unknown> | undefined,
+    headers: unknown[] = [],
+    headersSetByScript: string[] = []
+  ) => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse());
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await new RequestExecutor().executeRequest({
       name: 'auth precedence',
       type: 'http',
-      http: { method: 'GET', url: 'https://api.example.com/data', auth, headers }
+      http: { method: 'GET', url: 'https://api.example.com/data', auth, headers },
+      __brunoHeadersSetByScript: headersSetByScript
     } as unknown as HttpRequest);
 
     return new Headers(fetchMock.mock.calls[0][1].headers as Record<string, string>);
   };
 
-  it('keeps a request Authorization header over configured bearer auth', async () => {
-    const headers = await sentHeaders(
-      { type: 'bearer', token: 'config-token' },
-      [{ name: 'Authorization', value: 'Bearer script-token', disabled: false }]
-    );
+  const headerCount = (headers: Headers, name: string) => [...headers.keys()].filter((key) => key === name).length;
 
-    expect(headers.get('authorization')).toBe('Bearer script-token');
+  describe('a header from the Headers tab', () => {
+    it('is overwritten by configured bearer auth', async () => {
+      const headers = await sentHeaders(
+        { type: 'bearer', token: 'config-token' },
+        [{ name: 'Authorization', value: 'Bearer tab-token', disabled: false }]
+      );
+
+      expect(headers.get('authorization')).toBe('Bearer config-token');
+    });
+
+    it('is overwritten by configured basic auth', async () => {
+      const headers = await sentHeaders(
+        { type: 'basic', username: 'user', password: 'pass' },
+        [{ name: 'Authorization', value: 'Bearer tab-token', disabled: false }]
+      );
+
+      expect(headers.get('authorization')).toBe(`Basic ${btoa('user:pass')}`);
+    });
+
+    it('in another casing is replaced by the configured auth, not duplicated', async () => {
+      const headers = await sentHeaders(
+        { type: 'bearer', token: 'config-token' },
+        [{ name: 'authorization', value: 'Bearer tab-token', disabled: false }]
+      );
+
+      expect(headers.get('authorization')).toBe('Bearer config-token');
+      expect(headerCount(headers, 'authorization')).toBe(1);
+    });
+
+    it('named like the api key in another casing is replaced by the configured api key, not duplicated', async () => {
+      const headers = await sentHeaders(
+        { type: 'apikey', key: 'X-API-Key', value: 'config-key', placement: 'header' },
+        [{ name: 'x-api-key', value: 'tab-key', disabled: false }]
+      );
+
+      expect(headers.get('x-api-key')).toBe('config-key');
+      expect(headerCount(headers, 'x-api-key')).toBe(1);
+    });
   });
 
-  it('keeps a request Authorization header over configured basic auth', async () => {
-    const headers = await sentHeaders(
-      { type: 'basic', username: 'user', password: 'pass' },
-      [{ name: 'Authorization', value: 'Bearer script-token', disabled: false }]
-    );
+  describe('a header written by the pre-request script', () => {
+    it('wins over configured bearer auth', async () => {
+      const headers = await sentHeaders(
+        { type: 'bearer', token: 'config-token' },
+        [{ name: 'Authorization', value: 'Bearer script-token', disabled: false }],
+        ['authorization']
+      );
 
-    expect(headers.get('authorization')).toBe('Bearer script-token');
-  });
+      expect(headers.get('authorization')).toBe('Bearer script-token');
+    });
 
-  it('matches the Authorization header case-insensitively', async () => {
-    const headers = await sentHeaders(
-      { type: 'bearer', token: 'config-token' },
-      [{ name: 'authorization', value: 'Bearer script-token', disabled: false }]
-    );
+    it('is still overwritten by configured basic auth, as on desktop where basic auth is applied after the script', async () => {
+      const headers = await sentHeaders(
+        { type: 'basic', username: 'user', password: 'pass' },
+        [{ name: 'Authorization', value: 'Bearer script-token', disabled: false }],
+        ['authorization']
+      );
 
-    expect(headers.get('authorization')).toBe('Bearer script-token');
-    expect([...headers.keys()].filter((key) => key === 'authorization')).toHaveLength(1);
-  });
+      expect(headers.get('authorization')).toBe(`Basic ${btoa('user:pass')}`);
+    });
 
-  it('keeps a request header over configured api key auth in header placement, matching the key case-insensitively', async () => {
-    const headers = await sentHeaders(
-      { type: 'apikey', key: 'X-API-Key', value: 'config-key', placement: 'header' },
-      [{ name: 'x-api-key', value: 'script-key', disabled: false }]
-    );
+    it('in another casing wins over configured bearer auth without duplication', async () => {
+      const headers = await sentHeaders(
+        { type: 'bearer', token: 'config-token' },
+        [{ name: 'authorization', value: 'Bearer script-token', disabled: false }],
+        ['authorization']
+      );
 
-    expect(headers.get('x-api-key')).toBe('script-key');
-    expect([...headers.keys()].filter((key) => key === 'x-api-key')).toHaveLength(1);
+      expect(headers.get('authorization')).toBe('Bearer script-token');
+      expect(headerCount(headers, 'authorization')).toBe(1);
+    });
+
+    it('wins over configured api key auth in header placement, matching the key case-insensitively', async () => {
+      const headers = await sentHeaders(
+        { type: 'apikey', key: 'X-API-Key', value: 'config-key', placement: 'header' },
+        [{ name: 'x-api-key', value: 'script-key', disabled: false }],
+        ['x-api-key']
+      );
+
+      expect(headers.get('x-api-key')).toBe('script-key');
+      expect(headerCount(headers, 'x-api-key')).toBe(1);
+    });
+
+    it('does not shield a different header from the configured auth', async () => {
+      const headers = await sentHeaders(
+        { type: 'bearer', token: 'config-token' },
+        [
+          { name: 'X-Trace', value: 'from-script', disabled: false },
+          { name: 'Authorization', value: 'Bearer tab-token', disabled: false }
+        ],
+        ['x-trace']
+      );
+
+      expect(headers.get('authorization')).toBe('Bearer config-token');
+      expect(headers.get('x-trace')).toBe('from-script');
+    });
   });
 
   it('still sends the configured bearer auth when no competing header exists', async () => {

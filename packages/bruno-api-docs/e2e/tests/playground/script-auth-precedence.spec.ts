@@ -1,9 +1,12 @@
 import { test, expect } from '../../playwright';
 import type { Page } from '@playwright/test';
 import type { CodeEditorComponent } from '../../components/code-editor/code-editor.component';
+import type { PlaygroundComponent } from '../../components/playground.component';
 
 const SCRIPT_AUTHORIZATION = 'Bearer script-token';
 const CONFIG_TOKEN = 'config-token';
+
+const TAB_AUTHORIZATION = 'Bearer tab-token';
 
 const SET_AUTHORIZATION_SCRIPT = `req.setHeader('authorization', '${SCRIPT_AUTHORIZATION}');`;
 
@@ -13,7 +16,15 @@ const setEditorScript = async (page: Page, editor: CodeEditorComponent, script: 
   await page.keyboard.insertText(script);
 };
 
-test.describe('auth header precedence between the Auth tab and a pre-request script', () => {
+const addAuthorizationHeaderRow = async (playground: PlaygroundComponent): Promise<void> => {
+  await playground.selectTab('headers');
+  const { keyValueTable } = playground;
+  const rowIndex = (await keyValueTable.nameInputs.count()) - 1;
+  await keyValueTable.nameInputs.nth(rowIndex).fill('Authorization');
+  await keyValueTable.valueInputs.nth(rowIndex).fill(TAB_AUTHORIZATION);
+};
+
+test.describe('auth header precedence between the Headers tab, the Auth tab and a pre-request script', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test.beforeEach(async ({ playground, responsePane }) => {
@@ -35,6 +46,53 @@ test.describe('auth header precedence between the Auth tab and a pre-request scr
 
     expect(request.headers()['authorization']).toBe(SCRIPT_AUTHORIZATION);
     await expect(responsePane.status).toContainText('200');
+  });
+
+  test('an Authorization row in the Headers tab is overwritten by the configured bearer token, as on desktop', async ({ page, playground, responsePane }) => {
+    await addAuthorizationHeaderRow(playground);
+
+    const sent = page.waitForRequest('**/api/users**');
+    await responsePane.send();
+    const request = await sent;
+
+    expect(request.headers()['authorization']).toBe(`Bearer ${CONFIG_TOKEN}`);
+  });
+
+  test('a pre-request script overwriting the Headers tab Authorization row wins over both tabs', async ({ page, playground, responsePane }) => {
+    await addAuthorizationHeaderRow(playground);
+    await playground.selectTab('scripts');
+    await setEditorScript(page, playground.preRequestScriptEditor, SET_AUTHORIZATION_SCRIPT);
+
+    const sent = page.waitForRequest('**/api/users**');
+    await responsePane.send();
+    const request = await sent;
+
+    expect(request.headers()['authorization']).toBe(SCRIPT_AUTHORIZATION);
+  });
+
+  test('with Basic auth configured, a pre-request script Authorization header is overwritten, as on desktop', async ({ page, playground, responsePane }) => {
+    await playground.auth.selectMode('basic');
+    await playground.auth.field('username').fill('user');
+    await playground.auth.field('password').fill('pass');
+    await playground.selectTab('scripts');
+    await setEditorScript(page, playground.preRequestScriptEditor, SET_AUTHORIZATION_SCRIPT);
+
+    const sent = page.waitForRequest('**/api/users**');
+    await responsePane.send();
+    const request = await sent;
+
+    expect(request.headers()['authorization']).toBe(`Basic ${Buffer.from('user:pass').toString('base64')}`);
+  });
+
+  test('with No Auth selected, the Headers tab Authorization row is sent as typed', async ({ page, playground, responsePane }) => {
+    await playground.auth.selectMode('none');
+    await addAuthorizationHeaderRow(playground);
+
+    const sent = page.waitForRequest('**/api/users**');
+    await responsePane.send();
+    const request = await sent;
+
+    expect(request.headers()['authorization']).toBe(TAB_AUTHORIZATION);
   });
 
   test('without a competing header the configured bearer token is sent', async ({ page, responsePane }) => {

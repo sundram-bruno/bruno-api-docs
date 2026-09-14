@@ -36,6 +36,23 @@ const hasHeader = (headers: Record<string, string>, name: string): boolean => {
   return Object.keys(headers).some((key) => key.toLowerCase() === lowerCaseName);
 };
 
+interface HeaderAuthConfig {
+  type?: string;
+  username?: string;
+  password?: string;
+  token?: string;
+  key?: string;
+  value?: string;
+  placement?: string;
+}
+
+const removeHeader = (headers: Record<string, string>, name: string): void => {
+  const lowerCaseName = name.toLowerCase();
+  Object.keys(headers).forEach((key) => {
+    if (key.toLowerCase() === lowerCaseName) delete headers[key];
+  });
+};
+
 export class RequestExecutor {
   async executeRequest(request: InternalHttpRequest, options: { timeout?: number } = {}): Promise<RunRequestResponse> {
     const startTime = Date.now();
@@ -155,7 +172,7 @@ export class RequestExecutor {
     return fetch(targetUrl, { ...fetchOptions, credentials: 'omit', headers: { ...headers, Authorization: result.header } });
   }
 
-  private buildHeaders(request: HttpRequest): HeadersInit {
+  private buildHeaders(request: InternalHttpRequest): HeadersInit {
     const headers: Record<string, string> = {};
     const requestHeaders = getHttpHeaders(request);
     const body = getHttpBody(request);
@@ -181,36 +198,43 @@ export class RequestExecutor {
 
     // Let the browser set multipart/form-data with its boundary — drop any manual one.
     if (body && 'type' in body && body.type === 'multipart-form') {
-      Object.keys(headers).forEach((key) => {
-        if (key.toLowerCase() === 'content-type') delete headers[key];
-      });
+      removeHeader(headers, 'Content-Type');
     }
 
     if (auth) {
-      this.setAuthHeaders(headers, auth);
+      this.setAuthHeaders(headers, auth, request.__brunoHeadersSetByScript ?? []);
     }
 
     return headers;
   }
 
-  // A header the request already carries (from the Headers tab or a pre-request script) wins over
-  // the Auth tab, as on desktop where the script runs after auth is applied and overwrites it.
-  private setAuthHeaders(headers: Record<string, string>, auth: any) {
+  // The Auth tab overwrites a header from the Headers tab. Bearer and api key yield to a header the
+  // pre-request script wrote, basic does not: desktop applies bearer and api key before the script
+  // runs but encodes basic auth after it, so on desktop only basic overwrites a script header.
+  private setAuthHeaders(headers: Record<string, string>, auth: HeaderAuthConfig, headersSetByScript: string[]) {
+    const overwriteHeader = (name: string, value: string) => {
+      removeHeader(headers, name);
+      headers[name] = value;
+    };
+    const writeUnlessScriptSet = (name: string, value: string) => {
+      if (!headersSetByScript.includes(name.toLowerCase())) overwriteHeader(name, value);
+    };
+
     switch (auth.type) {
       case 'basic':
-        if (auth.username && auth.password && !hasHeader(headers, 'Authorization')) {
+        if (auth.username && auth.password) {
           const credentials = btoa(`${auth.username}:${auth.password}`);
-          headers['Authorization'] = `Basic ${credentials}`;
+          overwriteHeader('Authorization', `Basic ${credentials}`);
         }
         break;
       case 'bearer':
-        if (auth.token && !hasHeader(headers, 'Authorization')) {
-          headers['Authorization'] = `Bearer ${auth.token}`;
+        if (auth.token) {
+          writeUnlessScriptSet('Authorization', `Bearer ${auth.token}`);
         }
         break;
       case 'apikey':
-        if (auth.key && auth.value && auth.placement === 'header' && !hasHeader(headers, auth.key)) {
-          headers[auth.key] = auth.value;
+        if (auth.key && auth.value && auth.placement === 'header') {
+          writeUnlessScriptSet(auth.key, auth.value);
         }
         break;
     }

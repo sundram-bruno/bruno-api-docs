@@ -312,7 +312,7 @@ items:
     expect(sent.fetchCalls).toBe(1);
   });
 
-  it('a pre-request script that sets Authorization wins over folder-level inherited basic auth', async () => {
+  it('folder-level inherited basic auth overwrites a pre-request script Authorization header, as on desktop', async () => {
     const yaml = `
 opencollection: "1.0.0"
 info:
@@ -339,7 +339,7 @@ items:
                 req.setHeader('AUTHORIZATION', 'Bearer script-token');
 `;
     const sent = await sendWith(yaml, [0, 0]);
-    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
+    expect(sent.headers?.get('authorization')).toBe(`Basic ${btoa('user:pass')}`);
   });
 
   it('a pre-request script that deletes the Authorization header lets the configured auth apply', async () => {
@@ -369,11 +369,11 @@ items:
     expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
   });
 
-  it('a pre-request script that sets Authorization to an empty string lets the configured auth apply', async () => {
+  it('a pre-request script that clears Authorization to an empty string sends no Authorization header', async () => {
     const yaml = `
 opencollection: "1.0.0"
 info:
-  name: "Empty Header Falls Back To Auth"
+  name: "Cleared Header Suppresses Auth"
 items:
   - name: "r"
     type: "http"
@@ -390,7 +390,7 @@ items:
             req.setHeader('Authorization', '');
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
+    expect(sent.headers?.has('authorization')).toBe(false);
   });
 
   it('a pre-request script header value is interpolated before it is compared with the configured auth', async () => {
@@ -421,11 +421,11 @@ items:
     expect(sent.headers?.get('authorization')).toBe('Bearer resolved-token');
   });
 
-  it('a collection-level Authorization header wins over the request bearer auth', async () => {
+  it('a collection-level Authorization header is overwritten by the request bearer auth, as on desktop', async () => {
     const yaml = `
 opencollection: "1.0.0"
 info:
-  name: "Inherited Header Beats Request Auth"
+  name: "Request Auth Beats Inherited Header"
 request:
   headers:
     - name: "Authorization"
@@ -441,7 +441,62 @@ items:
         token: "config-token"
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('authorization')).toBe('Bearer collection-header-token');
+    expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
+  });
+
+  it('a Headers tab Authorization entry is overwritten by the request bearer auth when no script touches it', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Auth Tab Beats Headers Tab"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      headers:
+        - name: "Authorization"
+          value: "Bearer tab-token"
+      auth:
+        type: "bearer"
+        token: "config-token"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('X-Other', 'set-by-script');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
+    expect(sent.headers?.get('x-other')).toBe('set-by-script');
+  });
+
+  it('a pre-request script that overwrites the Headers tab Authorization entry wins over the request bearer auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Script Beats Both Tabs"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      headers:
+        - name: "Authorization"
+          value: "Bearer tab-token"
+      auth:
+        type: "bearer"
+        token: "config-token"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('Authorization', 'Bearer script-token');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
   });
 
   it('a script header named like the api key still leaves the query-placement api key on the url', async () => {
