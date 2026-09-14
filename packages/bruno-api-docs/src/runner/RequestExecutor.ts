@@ -31,11 +31,6 @@ export const applyApiKeyToUrl = (url: string, auth: Record<string, unknown> | un
   }
 };
 
-const hasHeader = (headers: Record<string, string>, name: string): boolean => {
-  const lowerCaseName = name.toLowerCase();
-  return Object.keys(headers).some((key) => key.toLowerCase() === lowerCaseName);
-};
-
 interface HeaderAuthConfig {
   type?: string;
   username?: string;
@@ -45,6 +40,11 @@ interface HeaderAuthConfig {
   value?: string;
   placement?: string;
 }
+
+const hasHeader = (headers: Record<string, string>, name: string): boolean => {
+  const lowerCaseName = name.toLowerCase();
+  return Object.keys(headers).some((key) => key.toLowerCase() === lowerCaseName);
+};
 
 const removeHeader = (headers: Record<string, string>, name: string): void => {
   const lowerCaseName = name.toLowerCase();

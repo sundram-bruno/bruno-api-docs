@@ -8,7 +8,7 @@ import type { RunRequestCallback } from '@/scripting/utils/bru';
 import AssertRuntime, { type AssertionResult } from '@/scripting/runtime/assert-runtime';
 import { getTreePathFromCollectionToItem, mergeHeaders, mergeScripts, mergeAuth, interpolateVars, findItemByPath } from './utils';
 import { getCollectionFolderRequestVariables, getCollectionVariables } from './utils/variable-merger';
-import { enabledHeaderSnapshot, headerNamesWrittenSince } from './utils/script-headers';
+import { snapshotEnabledHeaders, getHeaderNamesWrittenSince } from './utils/script-headers';
 import { coerceVariableValue, parseValueByDataType, type CoercedVariableValue } from '@/utils/variableDataType';
 import { externalSecretValues, type ExternalSecretEntry } from '@/utils/variableResolution';
 import type { Variables, JsonValue } from './utils/variable-interpolator';
@@ -242,6 +242,7 @@ export class RequestRunner {
     try {
       const processedRequest: InternalHttpRequest = await this.preprocessRequest(item, collection);
       processedRequest.__bruno__executionMode = 'standalone';
+      processedRequest.__brunoHeadersSetByScript = [];
 
       const { folderVariables, requestVariables } = getCollectionFolderRequestVariables(collection, processedRequest);
 
@@ -264,7 +265,7 @@ export class RequestRunner {
 
       // Pre-request script
       if (scriptsObj.preRequest) {
-        const headersBeforeScript = enabledHeaderSnapshot(processedRequest);
+        const headersBeforeScript = snapshotEnabledHeaders(processedRequest);
         try {
           await this.scriptRuntime.runScript({
             script: scriptsObj.preRequest,
@@ -283,7 +284,7 @@ export class RequestRunner {
             warnings: warnings.length ? warnings : null
           };
         }
-        processedRequest.__brunoHeadersSetByScript = headerNamesWrittenSince(headersBeforeScript, processedRequest);
+        processedRequest.__brunoHeadersSetByScript = getHeaderNamesWrittenSince(headersBeforeScript, processedRequest);
       }
 
       const interpolatedRequest = interpolateVars(processedRequest, allVariables);

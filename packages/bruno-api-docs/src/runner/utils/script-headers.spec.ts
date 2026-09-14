@@ -1,58 +1,82 @@
 import { describe, it, expect } from 'vitest';
 import type { HttpRequest } from '@opencollection/types/requests/http';
-import { enabledHeaderSnapshot, headerNamesWrittenSince } from './script-headers';
+import { snapshotEnabledHeaders, getHeaderNamesWrittenSince } from './script-headers';
 
-const requestWith = (headers: { name: string; value: string; disabled?: boolean }[]) => ({
+interface HeaderRow {
+  name: string;
+  value: string;
+  disabled?: boolean;
+}
+
+const requestWith = (headers: HeaderRow[]) => ({
   name: 'r',
   type: 'http',
   http: { method: 'GET', url: 'https://api.example.com', headers }
 } as unknown as HttpRequest);
 
-describe('enabledHeaderSnapshot', () => {
-  it('records enabled headers by lower-cased name', () => {
-    const snapshot = enabledHeaderSnapshot(requestWith([
+describe('snapshotEnabledHeaders', () => {
+  it('records each enabled header as a lower-cased name and value pair', () => {
+    const snapshot = snapshotEnabledHeaders(requestWith([
       { name: 'Authorization', value: 'Bearer a' },
       { name: 'X-Off', value: 'no', disabled: true }
     ]));
 
-    expect([...snapshot.entries()]).toEqual([['authorization', 'Bearer a']]);
+    expect([...snapshot]).toEqual(['authorization\nBearer a']);
+  });
+
+  it('ignores rows without a name', () => {
+    expect(snapshotEnabledHeaders(requestWith([{ name: '', value: 'x' }])).size).toBe(0);
   });
 
   it('is empty for a request without headers', () => {
-    expect(enabledHeaderSnapshot(requestWith([])).size).toBe(0);
+    expect(snapshotEnabledHeaders(requestWith([])).size).toBe(0);
   });
 });
 
-describe('headerNamesWrittenSince', () => {
+describe('getHeaderNamesWrittenSince', () => {
   it('returns headers the script added', () => {
-    const before = enabledHeaderSnapshot(requestWith([{ name: 'Accept', value: 'json' }]));
+    const before = snapshotEnabledHeaders(requestWith([{ name: 'Accept', value: 'json' }]));
     const after = requestWith([{ name: 'Accept', value: 'json' }, { name: 'Authorization', value: 'Bearer s' }]);
 
-    expect(headerNamesWrittenSince(before, after)).toEqual(['authorization']);
+    expect(getHeaderNamesWrittenSince(before, after)).toEqual(['authorization']);
   });
 
   it('returns headers whose value the script changed', () => {
-    const before = enabledHeaderSnapshot(requestWith([{ name: 'Authorization', value: 'Bearer tab' }]));
+    const before = snapshotEnabledHeaders(requestWith([{ name: 'Authorization', value: 'Bearer tab' }]));
     const after = requestWith([{ name: 'Authorization', value: 'Bearer script' }]);
 
-    expect(headerNamesWrittenSince(before, after)).toEqual(['authorization']);
+    expect(getHeaderNamesWrittenSince(before, after)).toEqual(['authorization']);
   });
 
   it('matches a re-cased header against the snapshot without reporting it', () => {
-    const before = enabledHeaderSnapshot(requestWith([{ name: 'Authorization', value: 'Bearer tab' }]));
+    const before = snapshotEnabledHeaders(requestWith([{ name: 'Authorization', value: 'Bearer tab' }]));
     const after = requestWith([{ name: 'authorization', value: 'Bearer tab' }]);
 
-    expect(headerNamesWrittenSince(before, after)).toEqual([]);
+    expect(getHeaderNamesWrittenSince(before, after)).toEqual([]);
   });
 
-  it('ignores headers the script left untouched, removed, or disabled', () => {
-    const before = enabledHeaderSnapshot(requestWith([
+  it('does not report duplicate same-name rows that were all present before the script', () => {
+    const rows: HeaderRow[] = [
+      { name: 'Authorization', value: 'Bearer row-one' },
+      { name: 'Authorization', value: 'Bearer row-two' }
+    ];
+    const before = snapshotEnabledHeaders(requestWith(rows));
+
+    expect(getHeaderNamesWrittenSince(before, requestWith(rows))).toEqual([]);
+  });
+
+  it('ignores headers the script left untouched, removed, disabled, or left unnamed', () => {
+    const before = snapshotEnabledHeaders(requestWith([
       { name: 'Accept', value: 'json' },
       { name: 'X-Gone', value: '1' },
       { name: 'X-Off', value: '2' }
     ]));
-    const after = requestWith([{ name: 'Accept', value: 'json' }, { name: 'X-Off', value: '2', disabled: true }]);
+    const after = requestWith([
+      { name: 'Accept', value: 'json' },
+      { name: 'X-Off', value: '2', disabled: true },
+      { name: '', value: 'unnamed' }
+    ]);
 
-    expect(headerNamesWrittenSince(before, after)).toEqual([]);
+    expect(getHeaderNamesWrittenSince(before, after)).toEqual([]);
   });
 });

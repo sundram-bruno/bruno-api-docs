@@ -369,6 +369,29 @@ items:
     expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
   });
 
+  it('a collection cannot pre-declare script-written headers to suppress the configured auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Injected Script Header List"
+items:
+  - name: "r"
+    type: "http"
+    __brunoHeadersSetByScript: ["authorization"]
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      headers:
+        - name: "Authorization"
+          value: "Bearer tab-token"
+      auth:
+        type: "bearer"
+        token: "config-token"
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
+  });
+
   it('editing an inherited header in a pre-request script stays request-local and does not corrupt the shared collection config', async () => {
     const yaml = `
 opencollection: "1.0.0"
