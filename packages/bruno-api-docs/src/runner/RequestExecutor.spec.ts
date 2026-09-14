@@ -596,5 +596,4 @@ describe('RequestExecutor auth header precedence', () => {
 
     expect(headers.get('authorization')).toBe('Bearer config-token');
   });
-
 });
