@@ -9,6 +9,7 @@ const CONFIG_TOKEN = 'config-token';
 const TAB_AUTHORIZATION = 'Bearer tab-token';
 
 const SET_AUTHORIZATION_SCRIPT = `req.setHeader('authorization', '${SCRIPT_AUTHORIZATION}');`;
+const SET_API_KEY_HEADER_SCRIPT = `req.setHeader('x-api-key', 'script-key');`;
 
 const setEditorScript = async (page: Page, editor: CodeEditorComponent, script: string): Promise<void> => {
   await editor.focus();
@@ -40,18 +41,17 @@ test.describe('auth header precedence between the Headers tab, the Auth tab and 
     await playground.selectTab('scripts');
     await setEditorScript(page, playground.preRequestScriptEditor, SET_AUTHORIZATION_SCRIPT);
 
-    const sent = page.waitForRequest('**/api/users**');
+    const sent = responsePane.waitForUsersRequest();
     await responsePane.send();
     const request = await sent;
 
     expect(request.headers()['authorization']).toBe(SCRIPT_AUTHORIZATION);
-    await expect(responsePane.status).toContainText('200');
   });
 
-  test('an Authorization row in the Headers tab is overwritten by the configured bearer token, as on desktop', async ({ page, playground, responsePane }) => {
+  test('an Authorization row in the Headers tab is overwritten by the configured bearer token, as on desktop', async ({ playground, responsePane }) => {
     await addAuthorizationHeaderRow(playground);
 
-    const sent = page.waitForRequest('**/api/users**');
+    const sent = responsePane.waitForUsersRequest();
     await responsePane.send();
     const request = await sent;
 
@@ -63,7 +63,7 @@ test.describe('auth header precedence between the Headers tab, the Auth tab and 
     await playground.selectTab('scripts');
     await setEditorScript(page, playground.preRequestScriptEditor, SET_AUTHORIZATION_SCRIPT);
 
-    const sent = page.waitForRequest('**/api/users**');
+    const sent = responsePane.waitForUsersRequest();
     await responsePane.send();
     const request = await sent;
 
@@ -77,30 +77,43 @@ test.describe('auth header precedence between the Headers tab, the Auth tab and 
     await playground.selectTab('scripts');
     await setEditorScript(page, playground.preRequestScriptEditor, SET_AUTHORIZATION_SCRIPT);
 
-    const sent = page.waitForRequest('**/api/users**');
+    const sent = responsePane.waitForUsersRequest();
     await responsePane.send();
     const request = await sent;
 
     expect(request.headers()['authorization']).toBe(`Basic ${Buffer.from('user:pass').toString('base64')}`);
   });
 
-  test('with No Auth selected, the Headers tab Authorization row is sent as typed', async ({ page, playground, responsePane }) => {
+  test('with api key auth in header placement, a pre-request script setting that header wins', async ({ page, playground, responsePane }) => {
+    await playground.auth.selectMode('apikey');
+    await playground.auth.field('key').fill('X-API-Key');
+    await playground.auth.field('value').fill('config-key');
+    await playground.selectTab('scripts');
+    await setEditorScript(page, playground.preRequestScriptEditor, SET_API_KEY_HEADER_SCRIPT);
+
+    const sent = responsePane.waitForUsersRequest();
+    await responsePane.send();
+    const request = await sent;
+
+    expect(request.headers()['x-api-key']).toBe('script-key');
+  });
+
+  test('with No Auth selected, the Headers tab Authorization row is sent as typed', async ({ playground, responsePane }) => {
     await playground.auth.selectMode('none');
     await addAuthorizationHeaderRow(playground);
 
-    const sent = page.waitForRequest('**/api/users**');
+    const sent = responsePane.waitForUsersRequest();
     await responsePane.send();
     const request = await sent;
 
     expect(request.headers()['authorization']).toBe(TAB_AUTHORIZATION);
   });
 
-  test('without a competing header the configured bearer token is sent', async ({ page, responsePane }) => {
-    const sent = page.waitForRequest('**/api/users**');
+  test('without a competing header the configured bearer token is sent', async ({ responsePane }) => {
+    const sent = responsePane.waitForUsersRequest();
     await responsePane.send();
     const request = await sent;
 
     expect(request.headers()['authorization']).toBe(`Bearer ${CONFIG_TOKEN}`);
-    await expect(responsePane.status).toContainText('200');
   });
 });

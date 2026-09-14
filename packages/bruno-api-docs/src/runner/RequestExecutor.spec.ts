@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { HttpRequest } from '@opencollection/types/requests/http';
 import { RequestExecutor, applyApiKeyToUrl } from './RequestExecutor';
+import type { InternalHttpRequest } from '@/utils/schemaHelpers';
 import { md5 } from 'js-md5';
 
 describe('applyApiKeyToUrl', () => {
@@ -454,6 +455,12 @@ describe('RequestExecutor digest auth', () => {
   });
 });
 
+interface HeaderRow {
+  name: string;
+  value: string;
+  disabled?: boolean;
+}
+
 describe('RequestExecutor auth header precedence', () => {
   const originalFetch = global.fetch;
 
@@ -473,7 +480,7 @@ describe('RequestExecutor auth header precedence', () => {
 
   const sentHeaders = async (
     auth: Record<string, unknown> | undefined,
-    headers: unknown[] = [],
+    headers: HeaderRow[] = [],
     headersSetByScript: string[] = []
   ) => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse());
@@ -484,7 +491,7 @@ describe('RequestExecutor auth header precedence', () => {
       type: 'http',
       http: { method: 'GET', url: 'https://api.example.com/data', auth, headers },
       __brunoHeadersSetByScript: headersSetByScript
-    } as unknown as HttpRequest);
+    } as unknown as InternalHttpRequest);
 
     return new Headers(fetchMock.mock.calls[0][1].headers as Record<string, string>);
   };
@@ -499,6 +506,15 @@ describe('RequestExecutor auth header precedence', () => {
       );
 
       expect(headers.get('authorization')).toBe('Bearer config-token');
+    });
+
+    it('is overwritten by configured basic auth', async () => {
+      const headers = await sentHeaders(
+        { type: 'basic', username: 'user', password: 'pass' },
+        [{ name: 'Authorization', value: 'Bearer tab-token', disabled: false }]
+      );
+
+      expect(headers.get('authorization')).toBe(`Basic ${btoa('user:pass')}`);
     });
 
     it('in another casing is replaced by the configured auth, not duplicated', async () => {
@@ -531,6 +547,7 @@ describe('RequestExecutor auth header precedence', () => {
       );
 
       expect(headers.get('authorization')).toBe('Bearer script-token');
+      expect(headerCount(headers, 'authorization')).toBe(1);
     });
 
     it('is still overwritten by configured basic auth, as on desktop where basic auth is applied after the script', async () => {
@@ -541,17 +558,6 @@ describe('RequestExecutor auth header precedence', () => {
       );
 
       expect(headers.get('authorization')).toBe(`Basic ${btoa('user:pass')}`);
-    });
-
-    it('in another casing wins over configured bearer auth without duplication', async () => {
-      const headers = await sentHeaders(
-        { type: 'bearer', token: 'config-token' },
-        [{ name: 'authorization', value: 'Bearer script-token', disabled: false }],
-        ['authorization']
-      );
-
-      expect(headers.get('authorization')).toBe('Bearer script-token');
-      expect(headerCount(headers, 'authorization')).toBe(1);
     });
 
     it('wins over configured api key auth in header placement, matching the key case-insensitively', async () => {
