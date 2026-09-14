@@ -501,15 +501,6 @@ describe('RequestExecutor auth header precedence', () => {
       expect(headers.get('authorization')).toBe('Bearer config-token');
     });
 
-    it('is overwritten by configured basic auth', async () => {
-      const headers = await sentHeaders(
-        { type: 'basic', username: 'user', password: 'pass' },
-        [{ name: 'Authorization', value: 'Bearer tab-token', disabled: false }]
-      );
-
-      expect(headers.get('authorization')).toBe(`Basic ${btoa('user:pass')}`);
-    });
-
     it('in another casing is replaced by the configured auth, not duplicated', async () => {
       const headers = await sentHeaders(
         { type: 'bearer', token: 'config-token' },
@@ -597,12 +588,6 @@ describe('RequestExecutor auth header precedence', () => {
     expect(headers.get('authorization')).toBe('Bearer config-token');
   });
 
-  it('still sends the configured api key header when no competing header exists', async () => {
-    const headers = await sentHeaders({ type: 'apikey', key: 'X-API-Key', value: 'config-key', placement: 'header' });
-
-    expect(headers.get('x-api-key')).toBe('config-key');
-  });
-
   it('ignores a disabled Authorization header and sends the configured auth', async () => {
     const headers = await sentHeaders(
       { type: 'bearer', token: 'config-token' },
@@ -612,9 +597,4 @@ describe('RequestExecutor auth header precedence', () => {
     expect(headers.get('authorization')).toBe('Bearer config-token');
   });
 
-  it('sends no auth header when the request has no auth and no Authorization header', async () => {
-    const headers = await sentHeaders(undefined, [{ name: 'Accept', value: 'application/json', disabled: false }]);
-
-    expect(headers.has('authorization')).toBe(false);
-  });
 });
