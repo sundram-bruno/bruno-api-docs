@@ -31,6 +31,11 @@ export const applyApiKeyToUrl = (url: string, auth: Record<string, unknown> | un
   }
 };
 
+const hasHeader = (headers: Record<string, string>, name: string): boolean => {
+  const lowerCaseName = name.toLowerCase();
+  return Object.keys(headers).some((key) => key.toLowerCase() === lowerCaseName);
+};
+
 export class RequestExecutor {
   async executeRequest(request: InternalHttpRequest, options: { timeout?: number } = {}): Promise<RunRequestResponse> {
     const startTime = Date.now();
@@ -101,10 +106,8 @@ export class RequestExecutor {
   private async performFetch(url: string, fetchOptions: RequestInit, request: HttpRequest): Promise<Response> {
     const credentials = getDigestCredentials(getRequestAuth(request));
     const headers = fetchOptions.headers as Record<string, string>;
-    const hasManualAuthorization = Object.keys(headers).some((key) =>
-      key.toLowerCase() === 'authorization');
 
-    if (credentials === null || hasManualAuthorization) {
+    if (credentials === null || hasHeader(headers, 'Authorization')) {
       return fetch(url, fetchOptions);
     }
 
@@ -190,24 +193,24 @@ export class RequestExecutor {
     return headers;
   }
 
+  // A header the request already carries (from the Headers tab or a pre-request script) wins over
+  // the Auth tab, as on desktop where the script runs after auth is applied and overwrites it.
   private setAuthHeaders(headers: Record<string, string>, auth: any) {
     switch (auth.type) {
       case 'basic':
-        if (auth.username && auth.password) {
+        if (auth.username && auth.password && !hasHeader(headers, 'Authorization')) {
           const credentials = btoa(`${auth.username}:${auth.password}`);
           headers['Authorization'] = `Basic ${credentials}`;
         }
         break;
       case 'bearer':
-        if (auth.token) {
+        if (auth.token && !hasHeader(headers, 'Authorization')) {
           headers['Authorization'] = `Bearer ${auth.token}`;
         }
         break;
       case 'apikey':
-        if (auth.key && auth.value) {
-          if (auth.placement === 'header') {
-            headers[auth.key] = auth.value;
-          }
+        if (auth.key && auth.value && auth.placement === 'header' && !hasHeader(headers, auth.key)) {
+          headers[auth.key] = auth.value;
         }
         break;
     }

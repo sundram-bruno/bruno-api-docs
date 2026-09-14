@@ -453,3 +453,101 @@ describe('RequestExecutor digest auth', () => {
     expect(fetchMock.mock.calls[0][1].credentials).toBeUndefined();
   });
 });
+
+describe('RequestExecutor auth header precedence', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  const okResponse = () => ({
+    status: 200,
+    statusText: 'OK',
+    url: 'https://api.example.com/data',
+    headers: new Headers({ 'content-type': 'application/json' }),
+    text: async () => '{}',
+    arrayBuffer: async () => new TextEncoder().encode('{}').buffer
+  });
+
+  const sentHeaders = async (auth: Record<string, unknown> | undefined, headers: unknown[] = []) => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse());
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await new RequestExecutor().executeRequest({
+      name: 'auth precedence',
+      type: 'http',
+      http: { method: 'GET', url: 'https://api.example.com/data', auth, headers }
+    } as unknown as HttpRequest);
+
+    return new Headers(fetchMock.mock.calls[0][1].headers as Record<string, string>);
+  };
+
+  it('keeps a request Authorization header over configured bearer auth', async () => {
+    const headers = await sentHeaders(
+      { type: 'bearer', token: 'config-token' },
+      [{ name: 'Authorization', value: 'Bearer script-token', disabled: false }]
+    );
+
+    expect(headers.get('authorization')).toBe('Bearer script-token');
+  });
+
+  it('keeps a request Authorization header over configured basic auth', async () => {
+    const headers = await sentHeaders(
+      { type: 'basic', username: 'user', password: 'pass' },
+      [{ name: 'Authorization', value: 'Bearer script-token', disabled: false }]
+    );
+
+    expect(headers.get('authorization')).toBe('Bearer script-token');
+  });
+
+  it('matches the Authorization header case-insensitively', async () => {
+    const headers = await sentHeaders(
+      { type: 'bearer', token: 'config-token' },
+      [{ name: 'authorization', value: 'Bearer script-token', disabled: false }]
+    );
+
+    expect(headers.get('authorization')).toBe('Bearer script-token');
+    expect([...headers.keys()].filter((key) => key === 'authorization')).toHaveLength(1);
+  });
+
+  it('keeps a request header over configured api key auth in header placement, matching the key case-insensitively', async () => {
+    const headers = await sentHeaders(
+      { type: 'apikey', key: 'X-API-Key', value: 'config-key', placement: 'header' },
+      [{ name: 'x-api-key', value: 'script-key', disabled: false }]
+    );
+
+    expect(headers.get('x-api-key')).toBe('script-key');
+    expect([...headers.keys()].filter((key) => key === 'x-api-key')).toHaveLength(1);
+  });
+
+  it('still sends the configured bearer auth when no competing header exists', async () => {
+    const headers = await sentHeaders({ type: 'bearer', token: 'config-token' }, [
+      { name: 'Accept', value: 'application/json', disabled: false }
+    ]);
+
+    expect(headers.get('authorization')).toBe('Bearer config-token');
+  });
+
+  it('still sends the configured api key header when no competing header exists', async () => {
+    const headers = await sentHeaders({ type: 'apikey', key: 'X-API-Key', value: 'config-key', placement: 'header' });
+
+    expect(headers.get('x-api-key')).toBe('config-key');
+  });
+
+  it('ignores a disabled Authorization header and sends the configured auth', async () => {
+    const headers = await sentHeaders(
+      { type: 'bearer', token: 'config-token' },
+      [{ name: 'Authorization', value: 'Bearer stale-token', disabled: true }]
+    );
+
+    expect(headers.get('authorization')).toBe('Bearer config-token');
+  });
+
+  it('sends no auth header when the request has no auth and no Authorization header', async () => {
+    const headers = await sentHeaders(undefined, [{ name: 'Accept', value: 'application/json', disabled: false }]);
+
+    expect(headers.has('authorization')).toBe(false);
+  });
+});

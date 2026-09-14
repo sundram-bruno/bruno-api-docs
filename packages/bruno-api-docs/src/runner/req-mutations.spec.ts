@@ -8,6 +8,7 @@ interface SentRequest {
   headers?: Headers;
   body?: unknown;
   timeoutArg?: number;
+  fetchCalls?: number;
 }
 
 const sendWith = async (yaml: string, itemPath: number[] = [0]): Promise<SentRequest> => {
@@ -38,6 +39,7 @@ const sendWith = async (yaml: string, itemPath: number[] = [0]): Promise<SentReq
   const calls = timeoutSpy.mock.calls;
   const call = calls.length > 0 ? calls[calls.length - 1] : null;
   if (call) sent.timeoutArg = call[0];
+  sent.fetchCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
   timeoutSpy.mockRestore();
   global.fetch = originalFetch;
   return sent;
@@ -230,6 +232,291 @@ items:
 `;
     const sent = await sendWith(yaml, [0, 0]);
     expect(sent.headers?.get('X-From-Folder')).toBe('yes');
+  });
+
+  it('a pre-request script that sets Authorization wins over inherited collection bearer auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Script Auth Precedence"
+request:
+  auth:
+    type: "bearer"
+    token: "collection-token"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth: inherit
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('authorization', 'Bearer script-token');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
+  });
+
+  it('a pre-request script that sets the api key header wins over the request api key auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Script ApiKey Precedence"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth:
+        type: "apikey"
+        key: "X-API-Key"
+        value: "config-key"
+        placement: "header"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('X-API-Key', 'script-key');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('x-api-key')).toBe('script-key');
+  });
+
+  it('a pre-request script that sets Authorization on a digest request is sent as-is with no challenge round trip', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Script Digest Precedence"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth:
+        type: "digest"
+        username: "user"
+        password: "pass"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('Authorization', 'Bearer script-token');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
+    expect(sent.fetchCalls).toBe(1);
+  });
+
+  it('a pre-request script that sets Authorization wins over folder-level inherited basic auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Folder Auth Precedence"
+items:
+  - name: "folder"
+    type: "folder"
+    request:
+      auth:
+        type: "basic"
+        username: "user"
+        password: "pass"
+    items:
+      - name: "r"
+        type: "http"
+        http:
+          method: "GET"
+          url: "https://api.example.com/base"
+          auth: inherit
+        runtime:
+          scripts:
+            - type: before-request
+              code: |
+                req.setHeader('AUTHORIZATION', 'Bearer script-token');
+`;
+    const sent = await sendWith(yaml, [0, 0]);
+    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
+  });
+
+  it('a pre-request script that deletes the Authorization header lets the configured auth apply', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Delete Header Restores Auth"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      headers:
+        - name: "Authorization"
+          value: "Bearer tab-token"
+      auth:
+        type: "bearer"
+        token: "config-token"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.deleteHeader('authorization');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
+  });
+
+  it('a pre-request script that sets Authorization to an empty string lets the configured auth apply', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Empty Header Falls Back To Auth"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth:
+        type: "bearer"
+        token: "config-token"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('Authorization', '');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
+  });
+
+  it('a pre-request script header value is interpolated before it is compared with the configured auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Interpolated Script Header"
+request:
+  variables:
+    - name: "scriptToken"
+      value: "resolved-token"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth:
+        type: "bearer"
+        token: "config-token"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('Authorization', 'Bearer {{scriptToken}}');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer resolved-token');
+  });
+
+  it('a collection-level Authorization header wins over the request bearer auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Inherited Header Beats Request Auth"
+request:
+  headers:
+    - name: "Authorization"
+      value: "Bearer collection-header-token"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth:
+        type: "bearer"
+        token: "config-token"
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer collection-header-token');
+  });
+
+  it('a script header named like the api key still leaves the query-placement api key on the url', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Query ApiKey Untouched"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth:
+        type: "apikey"
+        key: "api_key"
+        value: "config-key"
+        placement: "query"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('api_key', 'script-key');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.url).toBe('https://api.example.com/base?api_key=config-key');
+    expect(sent.headers?.get('api_key')).toBe('script-key');
+  });
+
+  it('req.setHeaders replacing all headers with an Authorization entry wins over the configured auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Bulk Headers Precedence"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth:
+        type: "bearer"
+        token: "config-token"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeaders({ Authorization: 'Bearer bulk-token' });
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer bulk-token');
+  });
+
+  it('an incomplete bearer config writes nothing and leaves a script header untouched', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Incomplete Auth"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      auth:
+        type: "bearer"
+        token: ""
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('Authorization', 'Bearer script-token');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
   });
 
   it('editing an inherited header in a pre-request script stays request-local and does not corrupt the shared collection config', async () => {
