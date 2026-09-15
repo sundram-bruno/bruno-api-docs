@@ -140,19 +140,8 @@ class BrunoRequest {
     return header ? header.value : undefined;
   }
 
-  // One enabled row per name after a script write, like the header object on desktop: the first
-  // matching row takes the value and any other enabled duplicates are dropped.
   setHeader(name: string, value: string) {
-    const list = this.headersArray();
-    const existing = list.find((h) => !h.disabled && sameName(h.name, name));
-    if (existing) {
-      existing.value = String(value ?? '');
-      for (let i = list.length - 1; i >= 0; i--) {
-        if (list[i] !== existing && !list[i].disabled && sameName(list[i].name, name)) list.splice(i, 1);
-      }
-    } else {
-      list.push({ name, value: String(value ?? '') });
-    }
+    this.headerList.upsert(name, value);
   }
 
   deleteHeader(name: string) {

@@ -149,6 +149,9 @@ export const createRequestHeaderList = (getHeaders: () => RequestHeaderEntry[]):
     getHeaders().map((h) => ({ key: h.name, value: h.value, disabled: h.disabled }));
   const hasKey = (name: string): boolean => getHeaders().some((h) => eqKey(h.name, name));
 
+  // The Headers tab can hold several enabled rows with the same name, and the executor sends the
+  // last one. A script write replaces the header, so besides updating the first matching row this
+  // drops the other enabled rows with that name, or the script's value would never reach the wire.
   const upsert = (itemOrName: HeaderInput, value?: string): boolean | null => {
     const item = typeof itemOrName === 'string' ? { key: itemOrName, value } : itemOrName;
     if (!item || typeof item !== 'object' || !item.key) return null;
