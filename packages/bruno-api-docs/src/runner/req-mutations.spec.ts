@@ -392,6 +392,61 @@ items:
     expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
   });
 
+  it('a pre-request script overwriting a header that has duplicate rows sends the script value once, with no auth configured', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Duplicate Rows Collapse"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      headers:
+        - name: "X-Dup"
+          value: "row-one"
+        - name: "X-Dup"
+          value: "row-two"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('X-Dup', 'script');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('x-dup')).toBe('script');
+  });
+
+  it('a pre-request script overwriting duplicate Authorization rows wins over the configured bearer auth', async () => {
+    const yaml = `
+opencollection: "1.0.0"
+info:
+  name: "Duplicate Rows Then Script"
+items:
+  - name: "r"
+    type: "http"
+    http:
+      method: "GET"
+      url: "https://api.example.com/base"
+      headers:
+        - name: "Authorization"
+          value: "Bearer row-one"
+        - name: "Authorization"
+          value: "Bearer row-two"
+      auth:
+        type: "bearer"
+        token: "config-token"
+    runtime:
+      scripts:
+        - type: before-request
+          code: |
+            req.setHeader('Authorization', 'Bearer script-token');
+`;
+    const sent = await sendWith(yaml);
+    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
+  });
+
   it('editing an inherited header in a pre-request script stays request-local and does not corrupt the shared collection config', async () => {
     const yaml = `
 opencollection: "1.0.0"

@@ -157,6 +157,9 @@ export const createRequestHeaderList = (getHeaders: () => RequestHeaderEntry[]):
     if (existing) {
       existing.name = item.key;
       existing.value = String(item.value ?? '');
+      for (let i = list.length - 1; i >= 0; i--) {
+        if (list[i] !== existing && !list[i].disabled && eqKey(list[i].name, item.key)) list.splice(i, 1);
+      }
       return false;
     }
     list.push({ name: item.key, value: String(item.value ?? '') });
