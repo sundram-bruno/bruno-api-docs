@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { HttpRequest } from '@opencollection/types/requests/http';
-import { snapshotEnabledHeaders, getHeaderNamesWrittenSince } from './script-headers';
+import { snapshotEnabledHeaders, getHeaderNamesChangedByScript } from './script-headers';
 
 interface HeaderRow {
   name: string;
@@ -33,26 +33,26 @@ describe('snapshotEnabledHeaders', () => {
   });
 });
 
-describe('getHeaderNamesWrittenSince', () => {
+describe('getHeaderNamesChangedByScript', () => {
   it('returns headers the script added', () => {
     const before = snapshotEnabledHeaders(requestWith([{ name: 'Accept', value: 'json' }]));
     const after = requestWith([{ name: 'Accept', value: 'json' }, { name: 'Authorization', value: 'Bearer s' }]);
 
-    expect(getHeaderNamesWrittenSince(before, after)).toEqual(['authorization']);
+    expect(getHeaderNamesChangedByScript(before, after)).toEqual(['authorization']);
   });
 
   it('returns headers whose value the script changed', () => {
     const before = snapshotEnabledHeaders(requestWith([{ name: 'Authorization', value: 'Bearer tab' }]));
     const after = requestWith([{ name: 'Authorization', value: 'Bearer script' }]);
 
-    expect(getHeaderNamesWrittenSince(before, after)).toEqual(['authorization']);
+    expect(getHeaderNamesChangedByScript(before, after)).toEqual(['authorization']);
   });
 
   it('matches a re-cased header against the snapshot without reporting it', () => {
     const before = snapshotEnabledHeaders(requestWith([{ name: 'Authorization', value: 'Bearer tab' }]));
     const after = requestWith([{ name: 'authorization', value: 'Bearer tab' }]);
 
-    expect(getHeaderNamesWrittenSince(before, after)).toEqual([]);
+    expect(getHeaderNamesChangedByScript(before, after)).toEqual([]);
   });
 
   it('does not report duplicate same-name rows that were all present before the script', () => {
@@ -62,7 +62,7 @@ describe('getHeaderNamesWrittenSince', () => {
     ];
     const before = snapshotEnabledHeaders(requestWith(rows));
 
-    expect(getHeaderNamesWrittenSince(before, requestWith(rows))).toEqual([]);
+    expect(getHeaderNamesChangedByScript(before, requestWith(rows))).toEqual([]);
   });
 
   it('ignores headers the script left untouched, removed, disabled, or left unnamed', () => {
@@ -77,6 +77,6 @@ describe('getHeaderNamesWrittenSince', () => {
       { name: '', value: 'unnamed' }
     ]);
 
-    expect(getHeaderNamesWrittenSince(before, after)).toEqual([]);
+    expect(getHeaderNamesChangedByScript(before, after)).toEqual([]);
   });
 });

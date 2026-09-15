@@ -13,14 +13,14 @@ export const snapshotEnabledHeaders = (request: HttpRequest): HeaderSnapshot => 
   return snapshot;
 };
 
-// Lower-cased names of the enabled headers whose name and value pair is not in the snapshot: the
-// ones a script added or gave a new value. Pairs, not names, so duplicate rows that all existed
-// before the script do not count as written.
-export const getHeaderNamesWrittenSince = (before: HeaderSnapshot, request: HttpRequest): string[] => {
-  const written = new Set<string>();
+// Names of the headers the pre-request script added or changed, compared against the snapshot
+// taken before it ran. A header counts as untouched only when the same name and value pair was
+// already there, so two rows sharing a name are not mistaken for a script edit.
+export const getHeaderNamesChangedByScript = (before: HeaderSnapshot, request: HttpRequest): string[] => {
+  const changed = new Set<string>();
   getHttpHeaders(request).forEach((header) => {
     if (header.disabled || !header.name) return;
-    if (!before.has(headerPairKey(header.name, header.value))) written.add(header.name.toLowerCase());
+    if (!before.has(headerPairKey(header.name, header.value))) changed.add(header.name.toLowerCase());
   });
-  return [...written];
+  return [...changed];
 };
