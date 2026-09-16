@@ -22,7 +22,6 @@ interface HighlightedInputProps {
   names: string[];
   anywordHints?: string[];
   variablesAutocomplete?: boolean;
-  title?: string;
   testId?: string;
   multiline?: boolean;
   /** Key handler forwarded only when the autocomplete dropdown is closed (e.g. Enter-to-send). */
@@ -81,7 +80,6 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
   names,
   anywordHints,
   variablesAutocomplete = true,
-  title,
   testId,
   multiline = false,
   onKeyDown,
@@ -186,17 +184,34 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
     }
   }, [value]);
 
-  useLayoutEffect(() => {
+  const fitFieldHeight = useCallback(() => {
     const el = inputRef.current;
     if (!multiline || !el) return;
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
+    // scrollHeight excludes the border, which border-box sizing would otherwise take from the content.
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
     const mirror = mirrorRef.current;
     if (mirror) {
       mirror.scrollTop = el.scrollTop;
       mirror.scrollLeft = el.scrollLeft;
     }
-  }, [value, multiline]);
+  }, [multiline]);
+
+  useLayoutEffect(fitFieldHeight, [value, fitFieldHeight]);
+
+  // A narrower column re-wraps the text onto more lines, so the height must follow width changes too.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!multiline || !el || typeof ResizeObserver === 'undefined') return;
+    let width = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth === width) return;
+      width = el.clientWidth;
+      fitFieldHeight();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [multiline, fitFieldHeight]);
 
   useLayoutEffect(() => {
     if (!hovered || !cardEl) {
@@ -358,7 +373,6 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
     'className': 'text-input',
     'data-testid': testId,
     value,
-    title,
     placeholder,
     'onChange': handleChange,
     'onKeyDown': handleKeyDown,

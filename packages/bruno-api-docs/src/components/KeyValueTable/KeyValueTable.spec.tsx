@@ -1,16 +1,13 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { useRenderToDom } from '@/hooks/useRenderToDom';
-import { query } from '@/test-utils/dom';
+import { getByTestId, headerTexts, query } from '@/test-utils/dom';
 import KeyValueTable, { type KeyValueRow } from './KeyValueTable';
 
 const noop = () => {};
 const rows: KeyValueRow[] = [
   { id: 'r1', name: 'X-Trace', value: 'abc', enabled: true, description: 'Correlation id' }
 ];
-
-const headerTexts = (root: ReturnType<typeof useRenderToDom>) =>
-  root.querySelectorAll('thead th').map((th) => th.text.trim());
 
 describe('KeyValueTable — description column', () => {
   it('renders a Description column and the authored description when showDescription is set', () => {
@@ -75,5 +72,24 @@ describe('KeyValueTable — a row that has a value but no name', () => {
     expect(root.querySelectorAll('tbody tr').length).toBe(1);
     expect(root.querySelectorAll('tbody tr.empty-row').length).toBe(1);
     expect(root.querySelectorAll('tbody input[type="checkbox"]').length).toBe(0);
+  });
+});
+
+describe('KeyValueTable: cell tooltips', () => {
+  it('does not expose the row name as a native title tooltip', () => {
+    const root = useRenderToDom(<KeyValueTable data={rows} onChange={noop} />);
+    expect(getByTestId(root, 'key-value-table-name-input').hasAttribute('title')).toBe(false);
+  });
+});
+
+describe('KeyValueTable: first column header alignment', () => {
+  it('flags the table when rows carry an enable checkbox, so the header indents past it', () => {
+    const root = useRenderToDom(<KeyValueTable data={rows} onChange={noop} />);
+    expect(getByTestId(root, 'key-value-table-table').classList.contains('key-value-table--with-toggle')).toBe(true);
+  });
+
+  it('does not flag the table when the checkbox column is hidden', () => {
+    const root = useRenderToDom(<KeyValueTable data={rows} onChange={noop} showEnabled={false} />);
+    expect(getByTestId(root, 'key-value-table-table').classList.contains('key-value-table--with-toggle')).toBe(false);
   });
 });
