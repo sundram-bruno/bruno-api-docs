@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Tabs from '@/ui/Tabs/Tabs';
+import { useSessionStorage } from '@/hooks';
 import ResponseBodyTab from '../../Common/ResponseBodyTab';
 import ResponseHeadersTab from '../../Common/ResponseHeadersTab';
 import TestResultsTab from '../../Common/TestResultsTab';
@@ -26,7 +27,7 @@ interface ResponsePaneProps {
 }
 
 const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading, orientation, itemUuid }) => {
-  const [activeTab, setActiveTab] = useState('response');
+  const [activeTab, setActiveTab] = useSessionStorage('playground-response-tab', 'response');
   const [dismissedScriptErrorKeys, setDismissedScriptErrorKeys] = useState<string[]>([]);
   const { actionsExpandedWidth, measureActions } = useResponseActions();
 
