@@ -5,7 +5,7 @@ import { parseYaml } from '@/utils/yamlUtils';
 interface SentRequest {
   url?: string;
   method?: string;
-  headers?: Headers;
+  headers: Headers;
   body?: unknown;
   timeoutArg?: number;
 }
@@ -13,7 +13,7 @@ interface SentRequest {
 const sendWith = async (yaml: string, itemPath: number[] = [0]): Promise<SentRequest> => {
   const originalFetch = global.fetch;
   const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
-  let sent: SentRequest = {};
+  let sent: SentRequest = { headers: new Headers() };
   global.fetch = vi.fn().mockImplementation((url: string, init: RequestInit) => {
     sent = { url, method: init.method, headers: new Headers(init.headers), body: init.body };
     return Promise.resolve({
@@ -87,55 +87,55 @@ describe('req.* mutations in a pre-request script reach the sent request', () =>
 
   it('setHeader adds a new header and updates an existing one', async () => {
     const sent = await sendWith(preReq(`req.setHeader('X-A', 'updated');\nreq.setHeader('X-New', 'added');`));
-    expect(sent.headers?.get('X-A')).toBe('updated');
-    expect(sent.headers?.get('X-New')).toBe('added');
+    expect(sent.headers.get('X-A')).toBe('updated');
+    expect(sent.headers.get('X-New')).toBe('added');
   });
 
   it('setHeader updates case-insensitively without duplicating the header', async () => {
     const sent = await sendWith(preReq(`req.setHeader('content-type', 'application/xml');`));
     const contentTypes = entries(sent.headers).filter(([k]) => k === 'content-type');
-    expect(sent.headers?.get('content-type')).toBe('application/xml');
+    expect(sent.headers.get('content-type')).toBe('application/xml');
     expect(contentTypes).toHaveLength(1);
   });
 
   it('setHeader coerces a non-string value to a string', async () => {
     const sent = await sendWith(preReq(`req.setHeader('X-Num', 42);`));
-    expect(sent.headers?.get('X-Num')).toBe('42');
+    expect(sent.headers.get('X-Num')).toBe('42');
   });
 
   it('deleteHeader and deleteHeaders remove headers', async () => {
     const sent = await sendWith(preReq(`req.deleteHeader('X-A');\nreq.deleteHeaders(['X-B']);`));
-    expect(sent.headers?.has('X-A')).toBe(false);
-    expect(sent.headers?.has('X-B')).toBe(false);
+    expect(sent.headers.has('X-A')).toBe(false);
+    expect(sent.headers.has('X-B')).toBe(false);
   });
 
   it('setHeaders replaces the enabled headers', async () => {
     const sent = await sendWith(preReq(`req.setHeaders({ 'X-Only': 'yes' });`));
-    expect(sent.headers?.get('X-Only')).toBe('yes');
-    expect(sent.headers?.has('X-A')).toBe(false);
-    expect(sent.headers?.has('X-B')).toBe(false);
+    expect(sent.headers.get('X-Only')).toBe('yes');
+    expect(sent.headers.has('X-A')).toBe(false);
+    expect(sent.headers.has('X-B')).toBe(false);
   });
 
   it('headerList add / upsert / remove / repopulate / clear reach the sent request', async () => {
     const added = await sendWith(preReq(`req.headerList.add('X-List', 'v');`));
-    expect(added.headers?.get('X-List')).toBe('v');
+    expect(added.headers.get('X-List')).toBe('v');
 
     const upserted = await sendWith(preReq(`req.headerList.upsert('X-A', 'up');`));
-    expect(upserted.headers?.get('X-A')).toBe('up');
+    expect(upserted.headers.get('X-A')).toBe('up');
 
     const removedByName = await sendWith(preReq(`req.headerList.remove('X-A');`));
-    expect(removedByName.headers?.has('X-A')).toBe(false);
+    expect(removedByName.headers.has('X-A')).toBe(false);
 
     const removedByPredicate = await sendWith(preReq(`req.headerList.remove((h) => h.key === 'X-B');`));
-    expect(removedByPredicate.headers?.has('X-B')).toBe(false);
+    expect(removedByPredicate.headers.has('X-B')).toBe(false);
 
     const repopulated = await sendWith(preReq(`req.headerList.repopulate([{ key: 'X-Fresh', value: 'f' }]);`));
-    expect(repopulated.headers?.get('X-Fresh')).toBe('f');
-    expect(repopulated.headers?.has('X-A')).toBe(false);
+    expect(repopulated.headers.get('X-Fresh')).toBe('f');
+    expect(repopulated.headers.has('X-A')).toBe(false);
 
     const cleared = await sendWith(preReq(`req.headerList.clear();\nreq.headerList.add('X-Sole', '1');`));
-    expect(cleared.headers?.get('X-Sole')).toBe('1');
-    expect(cleared.headers?.has('X-A')).toBe(false);
+    expect(cleared.headers.get('X-Sole')).toBe('1');
+    expect(cleared.headers.has('X-A')).toBe(false);
   });
 
   it('setBody serialises an object and the request is sent as that JSON', async () => {
@@ -151,7 +151,7 @@ describe('req.* mutations in a pre-request script reach the sent request', () =>
   it('setBody with an object sets a JSON content-type even when the request had none', async () => {
     const sent = await sendWith(preReq(`req.setBody({ a: 1 });`, { method: 'POST', headers: '\n        []' }));
     expect(String(sent.body)).toContain('"a":1');
-    expect(sent.headers?.get('content-type')).toContain('application/json');
+    expect(sent.headers.get('content-type')).toContain('application/json');
   });
 
   it('setBody with { raw: true } sends the string verbatim', async () => {
@@ -182,7 +182,7 @@ describe('req.* mutations in a pre-request script reach the sent request', () =>
     const sent = await sendWith(
       preReq(`req.setHeader('X-RW', '1');\nif (req.getHeader('X-RW') === '1' && req.getHeaders()['X-RW'] === '1') { req.setHeader('X-RW-OK', 'yes'); }`)
     );
-    expect(sent.headers?.get('X-RW-OK')).toBe('yes');
+    expect(sent.headers.get('X-RW-OK')).toBe('yes');
   });
 
   it('a collection-level pre-request script mutates the sent request', async () => {
@@ -204,7 +204,7 @@ items:
       url: "https://api.example.com/base"
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('X-From-Collection')).toBe('yes');
+    expect(sent.headers.get('X-From-Collection')).toBe('yes');
     expect(sent.method).toBe('PATCH');
   });
 
@@ -229,7 +229,7 @@ items:
           url: "https://api.example.com/base"
 `;
     const sent = await sendWith(yaml, [0, 0]);
-    expect(sent.headers?.get('X-From-Folder')).toBe('yes');
+    expect(sent.headers.get('X-From-Folder')).toBe('yes');
   });
 
   it('a pre-request script that sets Authorization wins over inherited collection bearer auth', async () => {
@@ -255,7 +255,7 @@ items:
             req.setHeader('authorization', 'Bearer script-token');
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
+    expect(sent.headers.get('authorization')).toBe('Bearer script-token');
   });
 
   it('a pre-request script that sets the api key header wins over the request api key auth', async () => {
@@ -281,7 +281,7 @@ items:
             req.setHeader('X-API-Key', 'script-key');
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('x-api-key')).toBe('script-key');
+    expect(sent.headers.get('x-api-key')).toBe('script-key');
   });
 
   it('folder-level inherited basic auth overwrites a pre-request script Authorization header, as on desktop', async () => {
@@ -311,7 +311,7 @@ items:
                 req.setHeader('AUTHORIZATION', 'Bearer script-token');
 `;
     const sent = await sendWith(yaml, [0, 0]);
-    expect(sent.headers?.get('authorization')).toBe(`Basic ${btoa('user:pass')}`);
+    expect(sent.headers.get('authorization')).toBe(`Basic ${btoa('user:pass')}`);
   });
 
   it('a Headers tab Authorization entry is overwritten by the request bearer auth when no script touches it', async () => {
@@ -338,8 +338,8 @@ items:
             req.setHeader('X-Other', 'set-by-script');
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
-    expect(sent.headers?.get('x-other')).toBe('set-by-script');
+    expect(sent.headers.get('authorization')).toBe('Bearer config-token');
+    expect(sent.headers.get('x-other')).toBe('set-by-script');
   });
 
   it('a pre-request script that overwrites the Headers tab Authorization entry wins over the request bearer auth', async () => {
@@ -366,7 +366,7 @@ items:
             req.setHeader('Authorization', 'Bearer script-token');
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
+    expect(sent.headers.get('authorization')).toBe('Bearer script-token');
   });
 
   it('a collection cannot pre-declare script-written headers to suppress the configured auth', async () => {
@@ -389,7 +389,7 @@ items:
         token: "config-token"
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('authorization')).toBe('Bearer config-token');
+    expect(sent.headers.get('authorization')).toBe('Bearer config-token');
   });
 
   it('a pre-request script overwriting a header that has duplicate rows sends the script value once, with no auth configured', async () => {
@@ -415,7 +415,7 @@ items:
             req.setHeader('X-Dup', 'script');
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('x-dup')).toBe('script');
+    expect(sent.headers.get('x-dup')).toBe('script');
   });
 
   it('a pre-request script overwriting duplicate Authorization rows wins over the configured bearer auth', async () => {
@@ -444,7 +444,7 @@ items:
             req.setHeader('Authorization', 'Bearer script-token');
 `;
     const sent = await sendWith(yaml);
-    expect(sent.headers?.get('authorization')).toBe('Bearer script-token');
+    expect(sent.headers.get('authorization')).toBe('Bearer script-token');
   });
 
   it('editing an inherited header in a pre-request script stays request-local and does not corrupt the shared collection config', async () => {
@@ -469,7 +469,7 @@ items:
             req.setHeader('X-Inherited', 'mutated');
 `;
     const originalFetch = global.fetch;
-    let sent: SentRequest = {};
+    let sent: SentRequest = { headers: new Headers() };
     global.fetch = vi.fn().mockImplementation((url: string, init: RequestInit) => {
       sent = { url, method: init.method, headers: new Headers(init.headers), body: init.body };
       return Promise.resolve({
@@ -490,10 +490,8 @@ items:
     });
     global.fetch = originalFetch;
 
-    const inheritedHeaders
-      = (collection as { request?: { headers?: Array<{ name: string; value: string }> } }).request?.headers ?? [];
-    const inherited = inheritedHeaders.find((h) => h.name === 'X-Inherited');
-    expect(sent.headers?.get('X-Inherited')).toBe('mutated');
-    expect(inherited?.value).toBe('original');
+    const parsedCollection = collection as { request: { headers: Array<{ name: string; value: string }> } };
+    expect(sent.headers.get('X-Inherited')).toBe('mutated');
+    expect(parsedCollection.request.headers).toEqual([{ name: 'X-Inherited', value: 'original' }]);
   });
 });
