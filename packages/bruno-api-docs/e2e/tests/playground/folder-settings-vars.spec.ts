@@ -1,6 +1,5 @@
 import { test, expect } from '../../playwright';
 
-// The desktop app's folder Vars tab has both tables, and the export carries both.
 test.describe('Playground folder settings, Vars tab', () => {
   test.beforeEach(async ({ playground }) => {
     await playground.open('bottom');

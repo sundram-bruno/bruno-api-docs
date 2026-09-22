@@ -23,7 +23,6 @@ interface CollectionConfigurationProps {
   preVars?: PreRequestVarRow[];
   postVars?: PostResponseVarRow[];
   authModeLabels?: Record<string, string>;
-  /** Which half to render. Unset renders both. */
   groups?: 'request' | 'execution';
   testId?: string;
 }
