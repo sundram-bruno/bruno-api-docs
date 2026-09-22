@@ -10,7 +10,6 @@ export const StyledWrapper = styled.div`
 
   .key-value-table-container {
     overflow: auto;
-    max-height: 24rem;
     border-radius: 0.375rem;
     border: 0.0625rem solid var(--oc-table-border);
     scrollbar-width: thin;
@@ -208,6 +207,11 @@ export const StyledWrapper = styled.div`
 
   .key-value-table .value-cell-field {
     flex: 1;
+    min-width: 0;
+  }
+
+  .key-value-table .value-input-tip {
+    display: block;
     min-width: 0;
   }
 

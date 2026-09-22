@@ -5,7 +5,7 @@ const textStart = (el: HTMLElement) =>
   + parseFloat(getComputedStyle(el).borderLeftWidth)
   + parseFloat(getComputedStyle(el).paddingLeft);
 
-test.describe('KeyValueTable: cells, scrolling and layout', () => {
+test.describe('KeyValueTable: cells and layout', () => {
   test.beforeEach(async ({ page, playground }) => {
     await page.goto('/#/?pg=1&dock=bottom');
     await playground.openSidebarItem('get users');
@@ -13,30 +13,15 @@ test.describe('KeyValueTable: cells, scrolling and layout', () => {
     await expect(playground.keyValueTable.root).toBeVisible();
   });
 
-  test('a cell shows neither a native title nor a hover tooltip, even when its text is clipped', async ({ page, playground, tooltip }) => {
+  test('a typed cell carries a native title tooltip with its full value', async ({ page, playground }) => {
     const { keyValueTable } = playground;
-    const blankRowIndex = (await keyValueTable.nameInputs.count()) - 1;
-    const nameInput = keyValueTable.nameInputs.nth(blankRowIndex);
-    await nameInput.fill('X-A-Very-Long-Custom-Header-Name-That-Overflows-Its-Cell-Width');
-    await expect(nameInput).toHaveValue(/Overflows/);
-    await expect(nameInput).not.toHaveAttribute('title', /.+/);
-
-    const valueInput = keyValueTable.valueInputs.nth(blankRowIndex);
-    await valueInput.fill('a value long enough to overflow the value cell and be clipped by the column width in the table');
-    await valueInput.hover();
-    await page.waitForTimeout(400);
-    await expect(tooltip.popup).toHaveCount(0);
-  });
-
-  test('the table caps its height and scrolls its rows inside the container', async ({ playground }) => {
-    const { keyValueTable } = playground;
-    for (let i = 0; i < 14; i++) {
-      await keyValueTable.nameInputs.last().fill(`X-Row-${i}`);
-    }
-    await expect(keyValueTable.container).toHaveCSS('max-height', '384px');
-    await expect
-      .poll(() => keyValueTable.container.evaluate((el) => el.scrollHeight > el.clientHeight + 1))
-      .toBe(true);
+    const nameInput = keyValueTable.nameInputs.first();
+    await nameInput.click();
+    await page.keyboard.type('-A-Very-Long-Custom-Header-Name-That-Truncates');
+    // The full value is exposed as a native title tooltip so a truncated cell stays readable.
+    const value = await nameInput.inputValue();
+    expect(value.length).toBeGreaterThan(0);
+    await expect(nameInput).toHaveAttribute('title', value);
   });
 
   test('the first column header lines up with the name text in the rows below it', async ({ playground }) => {

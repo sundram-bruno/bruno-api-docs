@@ -75,13 +75,6 @@ describe('KeyValueTable — a row that has a value but no name', () => {
   });
 });
 
-describe('KeyValueTable: cell tooltips', () => {
-  it('does not expose the row name as a native title tooltip', () => {
-    const root = useRenderToDom(<KeyValueTable data={rows} onChange={noop} />);
-    expect(getByTestId(root, 'key-value-table-name-input').hasAttribute('title')).toBe(false);
-  });
-});
-
 describe('KeyValueTable: first column header alignment', () => {
   it('flags the table when rows carry an enable checkbox, so the header indents past it', () => {
     const root = useRenderToDom(<KeyValueTable data={rows} onChange={noop} />);

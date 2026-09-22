@@ -22,6 +22,7 @@ interface HighlightedInputProps {
   names: string[];
   anywordHints?: string[];
   variablesAutocomplete?: boolean;
+  title?: string;
   testId?: string;
   multiline?: boolean;
   /** Key handler forwarded only when the autocomplete dropdown is closed (e.g. Enter-to-send). */
@@ -80,6 +81,7 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
   names,
   anywordHints,
   variablesAutocomplete = true,
+  title,
   testId,
   multiline = false,
   onKeyDown,
@@ -371,6 +373,7 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
     'className': 'text-input',
     'data-testid': testId,
     value,
+    title,
     placeholder,
     'onChange': handleChange,
     'onKeyDown': handleKeyDown,

@@ -56,6 +56,11 @@ interface KeyValueTableProps {
   testId?: string;
 }
 
+const valueTruncated = (anchor: HTMLElement): boolean => {
+  const field = anchor.querySelector<HTMLElement>('input, textarea');
+  return !!field && (field.scrollWidth > field.clientWidth || field.scrollHeight > field.clientHeight);
+};
+
 const KeyValueTable: React.FC<KeyValueTableProps> = ({
   data,
   onChange,
@@ -299,16 +304,20 @@ const KeyValueTable: React.FC<KeyValueTableProps> = ({
                   onChange={(v) => updateField(index, 'value', v)}
                 />
               ) : (
-                <HighlightedInput
-                  value={row.value}
-                  placeholder={isLastEmptyRow ? valuePlaceholder : ''}
-                  onValueChange={(v) => updateField(index, 'value', v)}
-                  isFound={isFound}
-                  names={names}
-                  anywordHints={valueAutocomplete}
-                  multiline={multilineValues}
-                  testId={`${testId}-value-input`}
-                />
+                <Tooltip content={row.value} shouldOpen={valueTruncated}>
+                  <span className="value-input-tip">
+                    <HighlightedInput
+                      value={row.value}
+                      placeholder={isLastEmptyRow ? valuePlaceholder : ''}
+                      onValueChange={(v) => updateField(index, 'value', v)}
+                      isFound={isFound}
+                      names={names}
+                      anywordHints={valueAutocomplete}
+                      multiline={multilineValues}
+                      testId={`${testId}-value-input`}
+                    />
+                  </span>
+                </Tooltip>
               );
 
               return (
@@ -327,7 +336,7 @@ const KeyValueTable: React.FC<KeyValueTableProps> = ({
                         </span>
                       )}
                       {readOnlyKey ? (
-                        <span className="text-readonly" data-testid={`${testId}-name-text`}>
+                        <span className="text-readonly" title={row.name} data-testid={`${testId}-name-text`}>
                           {row.name}
                         </span>
                       ) : (
@@ -339,6 +348,7 @@ const KeyValueTable: React.FC<KeyValueTableProps> = ({
                           names={names}
                           anywordHints={keyAutocomplete}
                           variablesAutocomplete={false}
+                          title={row.name}
                           testId={`${testId}-name-input`}
                         />
                       )}
