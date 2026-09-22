@@ -116,15 +116,22 @@ export const getFolderConfig = (
   };
 };
 
-export const hasFolderConfig = (config: FolderConfig): boolean =>
+/** Headers and auth. */
+export const hasFolderRequestConfig = (config: FolderConfig): boolean =>
   config.headers.length > 0
-  || Boolean(config.auth)
-  || Boolean(config.preRequest || config.postResponse || config.tests)
+  || config.inheritedHeaders.length > 0
+  || Boolean(config.auth);
+
+/** Vars, scripts and tests: what runs around a request. */
+export const hasFolderExecutionContext = (config: FolderConfig): boolean =>
+  Boolean(config.preRequest || config.postResponse || config.tests)
   || config.variables.length > 0
   || config.postVariables.length > 0
-  || config.inheritedHeaders.length > 0
   || config.inheritedPreVariables.length > 0
   || config.inheritedPostVariables.length > 0;
+
+export const hasFolderConfig = (config: FolderConfig): boolean =>
+  hasFolderRequestConfig(config) || hasFolderExecutionContext(config);
 
 export const countFolderRequests = (folder: Folder): number => {
   let count = 0;

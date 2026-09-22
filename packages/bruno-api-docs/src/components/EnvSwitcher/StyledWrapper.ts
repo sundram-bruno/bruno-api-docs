@@ -39,13 +39,4 @@ export const StyledWrapper = styled.div`
     flex: none;
   }
 
-  .env-switcher-trigger-name {
-    max-width: 10rem;
-  }
-
-  @media (max-width: 640px) {
-    .env-switcher-trigger-name {
-      max-width: 4.5rem;
-    }
-  }
 `;

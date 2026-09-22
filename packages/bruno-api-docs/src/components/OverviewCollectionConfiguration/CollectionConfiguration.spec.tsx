@@ -70,3 +70,29 @@ describe('CollectionConfiguration', () => {
     expect(html).not.toContain('Tests');
   });
 });
+
+describe('CollectionConfiguration groups', () => {
+  const props = {
+    headers: [{ name: 'Accept', value: 'application/json' }] as HttpRequestHeader[],
+    auth: { type: 'bearer', token: 't' } as never,
+    scripts: { preRequest: 'console.log("pre")', tests: 'test("ok", () => {})' },
+    preVars: [{ name: 'v', value: '1' }] as never
+  };
+
+  it('renders only headers and auth for the request groups', () => {
+    const html = renderToStaticMarkup(<CollectionConfiguration {...props} groups="request" />);
+    expect(html).toContain('Headers');
+    expect(html).toContain('Auth');
+    expect(html).not.toContain('Variables');
+    expect(html).not.toContain('Script');
+    expect(html).not.toContain('Tests');
+  });
+
+  it('renders only variables, script and tests for the execution groups', () => {
+    const html = renderToStaticMarkup(<CollectionConfiguration {...props} groups="execution" />);
+    expect(html).toContain('Variables');
+    expect(html).toContain('Script');
+    expect(html).toContain('Tests');
+    expect(html).not.toContain('Headers');
+  });
+});

@@ -154,7 +154,7 @@ describe('FolderConfiguration', () => {
     expect(vars.text).toContain('res.body.token');
   });
 
-  it('shows only the Post-Response column when there are no pre-request vars', () => {
+  it('keeps both phase columns when one of them is empty, showing "None." for the empty side', () => {
     const config: FolderConfig = {
       ...baseConfig,
       postVariables: [{ name: 'sessionId', expression: 'res.body.id', scope: 'runtime' }]
@@ -163,6 +163,36 @@ describe('FolderConfiguration', () => {
 
     const vars = getByTestId(root, 'folder-config-vars');
     const phases = vars.querySelectorAll('.config-phase-label').map((el) => el.text.trim());
-    expect(phases).toEqual(['Post-Response']);
+    expect(phases).toEqual(['Pre-Request', 'Post-Response']);
+    expect(vars.text).toContain('None.');
+  });
+});
+
+describe('FolderConfiguration groups', () => {
+  const fullConfig: FolderConfig = {
+    ...baseConfig,
+    headers: [{ name: 'Accept', value: 'application/json' }],
+    auth: { type: 'basic', username: 'u' } as FolderConfig['auth'],
+    preRequest: 'console.log(1)',
+    tests: 'expect(1).to.equal(1)',
+    variables: [{ name: 'v', value: '1' }] as FolderConfig['variables']
+  };
+
+  it('renders only headers and auth for the request groups', () => {
+    const root = useRenderToDom(<FolderConfiguration config={fullConfig} groups="request" />);
+    expect(queryByTestId(root, 'folder-config-headers')).not.toBeNull();
+    expect(queryByTestId(root, 'folder-config-auth')).not.toBeNull();
+    expect(queryByTestId(root, 'folder-config-vars')).toBeNull();
+    expect(queryByTestId(root, 'folder-config-script')).toBeNull();
+    expect(queryByTestId(root, 'folder-config-tests')).toBeNull();
+  });
+
+  it('renders only vars, script and tests for the execution groups', () => {
+    const root = useRenderToDom(<FolderConfiguration config={fullConfig} groups="execution" />);
+    expect(queryByTestId(root, 'folder-config-vars')).not.toBeNull();
+    expect(queryByTestId(root, 'folder-config-script')).not.toBeNull();
+    expect(queryByTestId(root, 'folder-config-tests')).not.toBeNull();
+    expect(queryByTestId(root, 'folder-config-headers')).toBeNull();
+    expect(queryByTestId(root, 'folder-config-auth')).toBeNull();
   });
 });

@@ -96,3 +96,57 @@ describe('Folder', () => {
     expect(queryByTestId(root, 'folder-config-headers')).toBeNull();
   });
 });
+
+describe('Folder execution context section', () => {
+  const folderWithBoth: any = {
+    info: { name: 'Invoices' },
+    request: {
+      headers: [{ name: 'Accept', value: 'application/json' }],
+      scripts: [{ type: 'before-request', code: 'pre()' }]
+    },
+    items: [{ info: { type: 'http' } }]
+  };
+
+  it('puts headers and auth under Folder Configuration, and vars, script and tests under Execution Context', () => {
+    const root = useRenderToDom(<Folder item={folderWithBoth} collection={collection} />);
+
+    expect(query(root, '[data-testid="folder-section-configuration"] h2').text.trim()).toBe('Folder Configuration');
+    expect(query(root, '[data-testid="folder-section-execution-context"] h2').text.trim()).toBe('Execution Context');
+
+    const configSection = getByTestId(root, 'folder-section-configuration');
+    expect(configSection.querySelector('[data-testid="folder-config-headers"]')).not.toBeNull();
+    expect(configSection.querySelector('[data-testid="folder-config-script"]')).toBeNull();
+
+    const executionSection = getByTestId(root, 'folder-section-execution-context');
+    expect(executionSection.querySelector('[data-testid="folder-config-script"]')).not.toBeNull();
+    expect(executionSection.querySelector('[data-testid="folder-config-headers"]')).toBeNull();
+  });
+
+  it('omits the Execution Context section when the folder has no vars, scripts or tests', () => {
+    const headersOnly: any = {
+      info: { name: 'Invoices' },
+      request: { headers: [{ name: 'Accept', value: 'application/json' }] },
+      items: [{ info: { type: 'http' } }]
+    };
+    const root = useRenderToDom(<Folder item={headersOnly} collection={{ info: { name: 'c' } } as any} />);
+    expect(queryByTestId(root, 'folder-section-execution-context')).toBeNull();
+  });
+});
+
+describe('Folder execution context accordion', () => {
+  const folderWithScripts: any = {
+    info: { name: 'Invoices' },
+    request: {
+      headers: [{ name: 'Accept', value: 'application/json' }],
+      scripts: [{ type: 'before-request', code: 'pre()' }]
+    },
+    items: [{ info: { type: 'http' } }]
+  };
+
+  it('renders the Execution Context section as an expanded accordion', () => {
+    const root = useRenderToDom(<Folder item={folderWithScripts} collection={collection} />);
+    const toggle = query(root, '[data-testid="folder-section-execution-context"] button');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle.text).toContain('Execution Context');
+  });
+});

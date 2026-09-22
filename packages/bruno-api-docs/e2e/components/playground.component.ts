@@ -12,6 +12,7 @@ import type { DockMode } from '../../src/utils/playgroundDock';
 export class PlaygroundComponent extends BaseComponent {
   readonly keyValueTable = new KeyValueTableComponent(this.page);
   readonly preRequestVars = new KeyValueTableComponent(this.page, 'variables-pre-request');
+  readonly postResponseVars = new KeyValueTableComponent(this.page, 'variables-post-response');
   // The Auth tab lives inside the playground request pane; open it with selectTab('auth').
   readonly auth = new RequestAuthComponent(this.page);
   readonly methodSelector = new MethodSelectorComponent(this.page);

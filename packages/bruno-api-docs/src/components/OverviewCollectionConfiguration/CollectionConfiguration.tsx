@@ -23,6 +23,8 @@ interface CollectionConfigurationProps {
   preVars?: PreRequestVarRow[];
   postVars?: PostResponseVarRow[];
   authModeLabels?: Record<string, string>;
+  /** Which half to render. Unset renders both. */
+  groups?: 'request' | 'execution';
   testId?: string;
 }
 
@@ -33,8 +35,11 @@ export const CollectionConfiguration: React.FC<CollectionConfigurationProps> = (
   preVars = [],
   postVars = [],
   authModeLabels = {},
+  groups,
   testId = 'collection-config'
 }) => {
+  const showRequestGroups = groups !== 'execution';
+  const showExecutionGroups = groups !== 'request';
   const headerRows: PropertyRow[] = headers
     .filter((header) => header && header.name)
     .map((header) => ({
@@ -44,11 +49,11 @@ export const CollectionConfiguration: React.FC<CollectionConfigurationProps> = (
       description: getDescription(header)
     }));
 
-  const hasHeaders = headerRows.length > 0;
-  const hasAuth = hasConfiguredAuth(auth);
-  const hasVars = preVars.length > 0 || postVars.length > 0;
-  const hasScripts = Boolean(scripts.preRequest || scripts.postResponse);
-  const hasTests = Boolean(scripts.tests);
+  const hasHeaders = showRequestGroups && headerRows.length > 0;
+  const hasAuth = showRequestGroups && hasConfiguredAuth(auth);
+  const hasVars = showExecutionGroups && (preVars.length > 0 || postVars.length > 0);
+  const hasScripts = showExecutionGroups && Boolean(scripts.preRequest || scripts.postResponse);
+  const hasTests = showExecutionGroups && Boolean(scripts.tests);
   const hasConfig = hasHeaders || hasAuth || hasVars || hasScripts || hasTests;
 
   if (!hasConfig) {

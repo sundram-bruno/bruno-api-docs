@@ -36,7 +36,7 @@ test.describe('Collection Overview', () => {
   });
 
   test.describe('Collection Configuration', () => {
-    test('shows the Headers, Auth, Variables, Script and Tests groups with their values', async ({ overviewPage }) => {
+    test('shows the Headers and Auth groups with their values', async ({ overviewPage }) => {
       const { configuration } = overviewPage;
       await expect(overviewPage.sectionLabel('Collection Configuration')).toBeVisible();
 
@@ -49,17 +49,63 @@ test.describe('Collection Overview', () => {
         await expect(configuration.subHeading('Auth')).toBeVisible();
         await expect(configuration.root.getByText('Bearer Token')).toBeVisible();
       });
+    });
+
+    test('shows the Variables, Script and Tests groups under Execution Context', async ({ overviewPage }) => {
+      const { executionContext } = overviewPage;
+      await expect(overviewPage.sectionLabel('Execution Context')).toBeVisible();
 
       await test.step('the Variables group lists the collection-level pre-request variables', async () => {
-        await expect(configuration.subHeading('Variables')).toBeVisible();
-        await expect(configuration.root.getByText('collection_pre_var_value', { exact: true })).toBeVisible();
-        await expect(configuration.root.getByText('collection-var-value', { exact: true })).toBeVisible();
+        await expect(executionContext.subHeading('Variables')).toBeVisible();
+        await expect(executionContext.root.getByText('collection_pre_var_value', { exact: true })).toBeVisible();
+        await expect(executionContext.root.getByText('collection-var-value', { exact: true })).toBeVisible();
       });
 
       await test.step('the Script and Tests groups are present', async () => {
-        await expect(configuration.subHeading('Script')).toBeVisible();
-        await expect(configuration.subHeading('Tests')).toBeVisible();
+        await expect(executionContext.subHeading('Script')).toBeVisible();
+        await expect(executionContext.subHeading('Tests')).toBeVisible();
       });
+    });
+
+    test('separates the two sections with a gap, so the headings do not run together', async ({ overviewPage }) => {
+      const configBox = (await overviewPage.sectionLabel('Collection Configuration').boundingBox())!;
+      const executionBox = (await overviewPage.sectionLabel('Execution Context').boundingBox())!;
+      expect(executionBox.y).toBeGreaterThan(configBox.y + configBox.height + 12);
+    });
+
+    test('collapses the Execution Context section and remembers it across a reload', async ({
+      overviewPage,
+      page
+    }) => {
+      const toggle = () => overviewPage.sectionLabel('Execution Context').getByRole('button', { name: /Execution Context/i });
+      await expect(toggle()).toHaveAttribute('aria-expanded', 'true');
+      await expect(overviewPage.executionContext.root).toBeVisible();
+
+      await toggle().click();
+      await expect(toggle()).toHaveAttribute('aria-expanded', 'false');
+      await expect(overviewPage.executionContext.root).toBeHidden();
+
+      await page.reload();
+      await expect(toggle()).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    test('mutes the Execution Context heading like the other overview headings', async ({ overviewPage }) => {
+      const colorOf = (el: HTMLElement) => getComputedStyle(el).color;
+      const configuration = await overviewPage
+        .sectionLabel('Collection Configuration')
+        .getByTestId('section-label')
+        .evaluate(colorOf);
+      const execution = await overviewPage
+        .sectionLabel('Execution Context')
+        .getByTestId('section-label')
+        .evaluate(colorOf);
+      expect(execution).toBe(configuration);
+    });
+
+    test('keeps headers and auth out of the Execution Context section', async ({ overviewPage }) => {
+      await expect(overviewPage.executionContext.subHeading('Headers')).toHaveCount(0);
+      await expect(overviewPage.executionContext.subHeading('Auth')).toHaveCount(0);
+      await expect(overviewPage.configuration.subHeading('Script')).toHaveCount(0);
     });
 
     test('keeps the auth token masked until the reveal toggle is clicked', async ({ overviewPage }) => {
@@ -78,11 +124,11 @@ test.describe('Collection Overview', () => {
 
     test('copies a config code snippet and confirms with a "Copied" label', async ({ overviewPage, context }) => {
       await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-      const { configuration } = overviewPage;
+      const { executionContext } = overviewPage;
 
       await test.step('clicking the copy button switches its label to "Copied"', async () => {
-        await configuration.copyToClipboard();
-        await expect(configuration.copyButton).toHaveAttribute('aria-label', 'Copied');
+        await executionContext.copyToClipboard();
+        await expect(executionContext.copyButton).toHaveAttribute('aria-label', 'Copied');
       });
     });
   });
@@ -92,13 +138,13 @@ test.describe('Collection Overview', () => {
     page
   }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    const { configuration } = overviewPage;
+    const { executionContext } = overviewPage;
 
-    const rows = configuration.disabledRows;
+    const rows = executionContext.disabledRows;
     const count = await rows.count();
     expect(count).toBeGreaterThan(0);
 
-    const card = await boundingBoxOf(configuration.root);
+    const card = await boundingBoxOf(executionContext.root);
 
     for (let i = 0; i < count; i += 1) {
       const row = rows.nth(i);
@@ -116,7 +162,7 @@ test.describe('Collection Overview', () => {
     }
 
     await test.step('the table does not scroll on mobile — the value truncates instead', async () => {
-      const info = await configuration.root
+      const info = await executionContext.root
         .locator('.property-table')
         .first()
         .evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));

@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   getFolderConfig,
   hasFolderConfig,
+  hasFolderExecutionContext,
+  hasFolderRequestConfig,
   countFolderRequests,
   requestCountLabel,
   resolveFolderAuth
@@ -152,5 +154,61 @@ describe('requestCountLabel', () => {
     expect(requestCountLabel(1)).toBe('1 request');
     expect(requestCountLabel(2)).toBe('2 requests');
     expect(requestCountLabel(12)).toBe('12 requests');
+  });
+});
+
+describe('hasFolderRequestConfig', () => {
+  it('is true for own headers', () => {
+    const folder: any = { request: { headers: [{ name: 'Accept', value: 'json' }] } };
+    expect(hasFolderRequestConfig(getFolderConfig(null, [], folder))).toBe(true);
+  });
+
+  it('is true for headers inherited from the collection', () => {
+    const parent: any = { request: { headers: [{ name: 'X-Api', value: 'v2' }] } };
+    const folder: any = {};
+    expect(hasFolderRequestConfig(getFolderConfig(parent, [], folder))).toBe(true);
+  });
+
+  it('is true for concrete auth', () => {
+    const folder: any = { request: { auth: { type: 'basic', username: 'u' } } };
+    expect(hasFolderRequestConfig(getFolderConfig(null, [], folder))).toBe(true);
+  });
+
+  it('is false when the folder only has vars, scripts or tests', () => {
+    const folder: any = { request: { scripts: [{ type: 'before-request', code: 'x' }] } };
+    expect(hasFolderRequestConfig(getFolderConfig(null, [], folder))).toBe(false);
+  });
+});
+
+describe('hasFolderExecutionContext', () => {
+  it('is true for pre-request variables', () => {
+    const folder: any = { request: { variables: [{ name: 'v', value: '1' }] } };
+    expect(hasFolderExecutionContext(getFolderConfig(null, [], folder))).toBe(true);
+  });
+
+  it('is true for post-response variables', () => {
+    const folder: any = {
+      request: {
+        actions: [
+          { type: 'set-variable', phase: 'after-response', selector: { expression: 'x' }, variable: { name: 'v' } }
+        ]
+      }
+    };
+    expect(hasFolderExecutionContext(getFolderConfig(null, [], folder))).toBe(true);
+  });
+
+  it('is true for a script', () => {
+    const folder: any = { request: { scripts: [{ type: 'before-request', code: 'x' }] } };
+    expect(hasFolderExecutionContext(getFolderConfig(null, [], folder))).toBe(true);
+  });
+
+  it('is true for tests', () => {
+    const folder: any = { request: { scripts: [{ type: 'tests', code: 'expect(1).to.equal(1)' }] } };
+    expect(hasFolderExecutionContext(getFolderConfig(null, [], folder))).toBe(true);
+  });
+
+  it('is false when the folder only has headers and auth', () => {
+    const folder: any = { request: { headers: [{ name: 'Accept', value: 'json' }], auth: { type: 'basic' } } };
+    expect(hasFolderExecutionContext(getFolderConfig(null, [], folder))).toBe(false);
   });
 });

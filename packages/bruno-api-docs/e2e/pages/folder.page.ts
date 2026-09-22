@@ -11,6 +11,8 @@ export class FolderPage extends BasePage {
   readonly folderMarkdownDocs = this.page.getByTestId('folder-docs');
   readonly folderMarkdownDocsToggle = this.page.getByTestId('folder-docs-toggle');
   readonly emptyState = this.page.getByTestId('folder-config-empty');
+  readonly configurationSection = this.page.getByTestId('folder-section-configuration');
+  readonly executionContextSection = this.page.getByTestId('folder-section-execution-context');
 
   readonly sidebar = new SidebarComponent(this.page);
   readonly breadcrumb = new BreadcrumbComponent(this.page, 'folder-breadcrumb');

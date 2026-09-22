@@ -69,3 +69,61 @@ test.describe('Folder page', () => {
     });
   });
 });
+
+test.describe('Folder page sections', () => {
+  test('separates headers and auth from the execution context', async ({ folderPage }) => {
+    await folderPage.open(['Realtime']);
+
+    await expect(folderPage.configurationSection).toBeVisible();
+    await expect(folderPage.configurationSection).toContainText('Folder Configuration');
+    await expect(folderPage.executionContextSection).toBeVisible();
+    await expect(folderPage.executionContextSection).toContainText('Execution Context');
+
+    await test.step('headers stay under Folder Configuration', async () => {
+      await expect(folderPage.configurationSection.getByTestId('folder-config-headers')).toBeVisible();
+      await expect(folderPage.executionContextSection.getByTestId('folder-config-headers')).toHaveCount(0);
+    });
+
+    await test.step('variables move under Execution Context', async () => {
+      await expect(folderPage.executionContextSection.getByTestId('folder-config-vars')).toBeVisible();
+      await expect(folderPage.configurationSection.getByTestId('folder-config-vars')).toHaveCount(0);
+    });
+  });
+});
+
+test.describe('Folder variable phases', () => {
+  test('shows both Pre-Request and Post-Response, marking the empty one "None."', async ({ folderPage }) => {
+    await folderPage.open(['Realtime']);
+    await expect(folderPage.configuration.vars).toContainText('Pre-Request');
+    await expect(folderPage.configuration.vars).toContainText('Post-Response');
+    await expect(folderPage.configuration.vars).toContainText('None.');
+  });
+});
+
+test.describe('Folder empty variable phase', () => {
+  test('frames the empty Post-Response table like the populated one beside it', async ({ folderPage }) => {
+    await folderPage.open(['Realtime']);
+    const empty = folderPage.configuration.vars.getByTestId('property-table-empty');
+    await expect(empty).toBeVisible();
+    await expect(empty).toHaveText('None.');
+    const framing = await empty.evaluate((el) => getComputedStyle(el).boxShadow);
+    expect(framing).not.toBe('none');
+  });
+});
+
+test.describe('Folder execution context accordion', () => {
+  test('collapses the Execution Context section and remembers it across a reload', async ({ folderPage, page }) => {
+    await folderPage.open(['Realtime']);
+    const toggle = folderPage.executionContextSection.getByRole('button', { name: /Execution Context/i });
+
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(folderPage.configuration.vars).toBeVisible();
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(folderPage.configuration.vars).toBeHidden();
+
+    await page.reload();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+});

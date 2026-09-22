@@ -6,7 +6,9 @@ export const foldersFixtureCollection = {
   config: {
     environments: [
       { name: 'Dev', variables: [{ name: 'host', value: 'https://api.hotel.dev' }, { name: 'api_key', value: 'dev-key-123' }] },
-      { name: 'Prod', variables: [{ name: 'host', value: 'https://api.hotel.com' }, { name: 'api_key', value: 'prod-key-abc' }] }
+      { name: 'Prod', variables: [{ name: 'host', value: 'https://api.hotel.com' }, { name: 'api_key', value: 'prod-key-abc' }] },
+      // Deliberately long, to exercise the name clamp and its tooltip.
+      { name: 'staging-regression-automation-eu-west-1', variables: [{ name: 'host', value: 'https://api.hotel.staging' }] }
     ]
   },
   items: [
