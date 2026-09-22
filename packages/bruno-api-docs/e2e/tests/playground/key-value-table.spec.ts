@@ -1,6 +1,5 @@
 import { test, expect } from '../../playwright';
 
-/** Where an element's text begins: its left edge plus border and padding, as the browser lays it out. */
 const textStart = (el: HTMLElement) =>
   el.getBoundingClientRect().left
   + parseFloat(getComputedStyle(el).borderLeftWidth)
@@ -16,7 +15,6 @@ test.describe('KeyValueTable: cells, scrolling and layout', () => {
 
   test('a cell shows neither a native title nor a hover tooltip, even when its text is clipped', async ({ page, playground, tooltip }) => {
     const { keyValueTable } = playground;
-    // Pin the trailing blank row by index: naming it appends a new blank row, so `.last()` would move on.
     const blankRowIndex = (await keyValueTable.nameInputs.count()) - 1;
     const nameInput = keyValueTable.nameInputs.nth(blankRowIndex);
     await nameInput.fill('X-A-Very-Long-Custom-Header-Name-That-Overflows-Its-Cell-Width');
@@ -35,7 +33,7 @@ test.describe('KeyValueTable: cells, scrolling and layout', () => {
     for (let i = 0; i < 14; i++) {
       await keyValueTable.nameInputs.last().fill(`X-Row-${i}`);
     }
-    await expect(keyValueTable.container).toHaveCSS('max-height', '384px'); // 24rem @16px
+    await expect(keyValueTable.container).toHaveCSS('max-height', '384px');
     await expect
       .poll(() => keyValueTable.container.evaluate((el) => el.scrollHeight > el.clientHeight + 1))
       .toBe(true);
@@ -78,9 +76,8 @@ test.describe('KeyValueTable: cells, scrolling and layout', () => {
   test('the table has a min-width and a horizontally-scrollable container', async ({ page, playground }) => {
     const { keyValueTable } = playground;
     await expect(keyValueTable.container).toHaveCSS('overflow-x', 'auto');
-    await expect(keyValueTable.table).toHaveCSS('min-width', '448px'); // 28rem @16px
+    await expect(keyValueTable.table).toHaveCSS('min-width', '448px');
 
-    // Narrow the viewport below the min-width → the container actually overflows and scrolls.
     await page.setViewportSize({ width: 360, height: 800 });
     const overflows = await keyValueTable.container.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
     expect(overflows).toBe(true);
@@ -88,7 +85,6 @@ test.describe('KeyValueTable: cells, scrolling and layout', () => {
 
   test('offers {{variable}} autocomplete in the value cell but not the name cell', async ({ page, playground }) => {
     const { keyValueTable } = playground;
-    // Value cell: a `{{` reference surfaces the collection's variables.
     await keyValueTable.valueInputs.last().click();
     await page.keyboard.type('{{coll');
     await expect(keyValueTable.autocomplete).toBeVisible();
@@ -96,8 +92,6 @@ test.describe('KeyValueTable: cells, scrolling and layout', () => {
     await page.keyboard.press('Escape');
     await expect(keyValueTable.autocomplete).toHaveCount(0);
 
-    // Name cell: the same reference must not open the dropdown. The app only
-    // autocompletes variables in value cells, never in param/variable name cells.
     await keyValueTable.nameInputs.last().click();
     await page.keyboard.type('{{coll');
     await page.waitForTimeout(250);
@@ -123,7 +117,6 @@ test.describe('KeyValueTable: cells, scrolling and layout', () => {
 
   test('a named row can be enabled and disabled via its checkbox', async ({ playground }) => {
     const { keyValueTable } = playground;
-    // The trailing blank row has no checkbox; naming a row promotes it to a real row with one.
     await keyValueTable.nameInputs.last().fill('X-Custom');
 
     const toggle = keyValueTable.enableToggle('X-Custom');
@@ -141,8 +134,6 @@ test.describe('KeyValueTable: cells, scrolling and layout', () => {
     const valueHeader = keyValueTable.columnHeader('col-value');
     const before = (await valueHeader.boundingBox())!.width;
 
-    // Drag the Name/Value divider (the first handle) to the right: Name grows and Value shrinks by
-    // the same amount (zero-sum), so the Value column gets measurably narrower.
     const handle = keyValueTable.resizeHandles.first();
     const box = (await handle.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);

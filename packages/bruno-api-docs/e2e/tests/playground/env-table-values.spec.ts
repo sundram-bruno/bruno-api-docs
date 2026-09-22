@@ -1,6 +1,5 @@
 import { test, expect } from '../../playwright';
 
-// The bottom dock renders environments as a KeyValueTable (the inline dock uses cards instead).
 test.describe('Environment variables: value cells (table view)', () => {
   test.beforeEach(async ({ playground }) => {
     await playground.open('bottom');
@@ -26,7 +25,6 @@ test.describe('Environment variables: value cells (table view)', () => {
     await expect.poll(() => valueInput.evaluate((el) => el.scrollHeight > el.clientHeight + 1)).toBe(false);
     const widthBefore = await valueInput.evaluate((el) => el.clientWidth);
 
-    // Drag the Name/Value divider to the right so the value column shrinks and the text wraps onto more lines.
     const handle = keyValueTable.resizeHandles.first();
     await handle.scrollIntoViewIfNeeded();
     const box = (await handle.boundingBox())!;

@@ -2,8 +2,6 @@ import { test, expect } from '../../playwright';
 
 const USERS_BODY = '{"data":[{"id":1,"name":"Alice"}]}';
 
-// Changing the dock placement swaps the dock component, which remounts the request and response
-// panes; the selected tab in each pane must survive that remount, as it does in the app.
 test.describe('Playground tabs across a dock change', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 

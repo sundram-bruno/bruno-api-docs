@@ -188,7 +188,6 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
     const el = inputRef.current;
     if (!multiline || !el) return;
     el.style.height = 'auto';
-    // scrollHeight excludes the border, which border-box sizing would otherwise take from the content.
     el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
     const mirror = mirrorRef.current;
     if (mirror) {
@@ -199,7 +198,6 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
 
   useLayoutEffect(fitFieldHeight, [value, fitFieldHeight]);
 
-  // A narrower column re-wraps the text onto more lines, so the height must follow width changes too.
   useEffect(() => {
     const el = inputRef.current;
     if (!multiline || !el || typeof ResizeObserver === 'undefined') return;

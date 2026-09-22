@@ -9,7 +9,6 @@ export const query = (root: HTMLElement, selector: string): HTMLElement => {
 /** Find an element by its `data-testid`, throwing if it is absent. */
 export const getByTestId = (root: HTMLElement, testId: string): HTMLElement => query(root, `[data-testid="${testId}"]`);
 
-/** The trimmed text of every table header cell, in document order. */
 export const headerTexts = (root: HTMLElement): string[] =>
   root.querySelectorAll('thead th').map((th) => th.text.trim());
 

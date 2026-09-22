@@ -4,7 +4,6 @@ import { descriptionText, resolveDescription } from './description';
 
 export const DEFAULT_ASSERTION_OPERATOR = 'eq';
 
-/** Operators that test the expression alone, so the assertion carries no expected value. */
 export const UNARY_ASSERTION_OPERATORS = new Set([
   'isEmpty',
   'isNotEmpty',
