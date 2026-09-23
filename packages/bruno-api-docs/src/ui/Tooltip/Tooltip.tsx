@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { Portal } from '@/ui/Portal/Portal';
 import { GAP, VIEWPORT_MARGIN } from '@/constants/ui';
+import cx from '@/utils/cx';
 import { StyledWrapper } from './StyledWrapper';
 
 interface TooltipProps {
@@ -118,8 +119,6 @@ export const Tooltip: React.FC<TooltipProps> = ({
     [disabled, shouldOpen, cancelPendingOpen]
   );
 
-  // Leaving before the dwell elapses must also drop the pending open, or the
-  // bubble appears over whatever the pointer moved on to.
   const hide = useCallback(() => {
     cancelPendingOpen();
     setOpen(false);
@@ -198,7 +197,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
             ref={bubbleRef}
             aria-hidden="true"
             data-testid={testId}
-            className={['oc-tooltip', multiline && 'oc-tooltip--multiline', className].filter(Boolean).join(' ')}
+            className={cx('oc-tooltip', multiline && 'oc-tooltip--multiline', className)}
             style={{
               position: 'fixed',
               top: pos ? pos.top : -9999,

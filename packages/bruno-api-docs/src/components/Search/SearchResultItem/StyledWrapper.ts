@@ -25,7 +25,7 @@ export const StyledWrapper = styled.button`
   .search-result-method {
     flex-shrink: 0;
     display: inline-block;
-    min-width: 26px;
+    min-width: 1.625rem;
     margin-top: 1px;
     text-align: left;
     font-family: var(--font-mono);

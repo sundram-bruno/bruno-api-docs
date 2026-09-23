@@ -20,7 +20,6 @@ const ShowVarsToggle: React.FC<ShowVarsToggleProps> = ({ testId = 'show-vars-tog
   return (
     <Tooltip content="Show resolved variable values" touch={false} testId={`${testId}-tooltip`}>
       <StyledWrapper
-        type="button"
         role="switch"
         data-testid={testId}
         aria-checked={showVars}

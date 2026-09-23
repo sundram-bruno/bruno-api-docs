@@ -50,7 +50,7 @@ const ThemeToggle: React.FC<{ testId?: string }> = ({ testId = 'theme-toggle' })
 
   return (
     <Tooltip content={label} touch={false} testId={`${testId}-tooltip`}>
-      <Button type="button" data-testid={testId} aria-label={label} onClick={() => dispatch(toggleTheme())}>
+      <Button data-testid={testId} aria-label={label} onClick={() => dispatch(toggleTheme())}>
         {isDark ? <SunIcon /> : <MoonIcon />}
       </Button>
     </Tooltip>
