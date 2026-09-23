@@ -22,6 +22,7 @@ interface TooltipProps {
    * Hover dwell before opening, in ms; defaults to opening immediately.
    */
   openDelay?: number;
+  multiline?: boolean;
   className?: string;
   testId?: string;
 }
@@ -59,6 +60,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   shouldOpen,
   touch = true,
   openDelay = 0,
+  multiline = false,
   className,
   testId = 'tooltip'
 }) => {
@@ -196,7 +198,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
             ref={bubbleRef}
             aria-hidden="true"
             data-testid={testId}
-            className={['oc-tooltip', className].filter(Boolean).join(' ')}
+            className={['oc-tooltip', multiline && 'oc-tooltip--multiline', className].filter(Boolean).join(' ')}
             style={{
               position: 'fixed',
               top: pos ? pos.top : -9999,

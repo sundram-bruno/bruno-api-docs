@@ -18,6 +18,7 @@ export class GrpcRequestPage extends BasePage {
   readonly root: Locator = this.page.getByTestId('grpc-request-page');
   readonly title: Locator = this.page.getByTestId('grpc-request-title');
   readonly description: Locator = this.page.getByTestId('grpc-request-description');
+  readonly urlSticky: Locator = this.page.getByTestId('grpc-request-url-sticky');
 
   readonly protoFileSection: Locator = this.page.getByTestId('grpc-request-section-proto-file');
   readonly protoFile: Locator = this.page.getByTestId('grpc-request-proto-file');
