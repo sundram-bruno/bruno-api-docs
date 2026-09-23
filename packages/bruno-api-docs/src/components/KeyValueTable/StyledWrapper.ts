@@ -39,7 +39,7 @@ export const StyledWrapper = styled.div`
     min-width: 28rem;
     border-collapse: collapse;
     table-layout: fixed;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .key-value-table thead {
