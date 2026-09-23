@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
 import type { OpenCollection } from '@opencollection/types';
 import { useRenderToDom } from '@/hooks/useRenderToDom';
-import { query } from '@/test-utils/dom';
+import { query, getByTestId, queryByTestId } from '@/test-utils/dom';
 import { Overview } from './Overview';
 
 /** Every Overview section shares one test id, so find a section by its text. */
@@ -56,22 +56,38 @@ describe('Overview execution context section', () => {
       }
     } as unknown as OpenCollection;
 
-    const html = renderToStaticMarkup(<Overview collection={collection} />);
+    const root = useRenderToDom(<Overview collection={collection} />);
 
-    expect(html).toContain('Collection Configuration');
-    expect(html).toContain('Execution Context');
+    expect(getByTestId(sectionNamed(root, 'Collection Configuration'), 'collection-config-headers-subheading')).not.toBeNull();
+    expect(getByTestId(sectionNamed(root, 'Execution Context'), 'collection-execution-context-script-subheading')).not.toBeNull();
+    expect(queryByTestId(root, 'collection-execution-context-empty')).toBeNull();
   });
 
-  it('omits the Execution Context heading when the collection has no vars, scripts or tests', () => {
+  it('shows the Execution Context empty state, not an accordion, when the collection has no vars, scripts or tests', () => {
     const collection: OpenCollection = {
       info: { name: 'Hotel Booking API' },
       request: { headers: [{ name: 'Accept', value: 'application/json' }] }
     } as unknown as OpenCollection;
 
-    const html = renderToStaticMarkup(<Overview collection={collection} />);
+    const root = useRenderToDom(<Overview collection={collection} />);
+    const executionSection = sectionNamed(root, 'Execution Context');
 
-    expect(html).toContain('Collection Configuration');
-    expect(html).not.toContain('Execution Context');
+    expect(getByTestId(executionSection, 'collection-execution-context-empty-heading').text.trim()).toBe('No execution context');
+    expect(executionSection.querySelector('button')).toBeNull();
+    expect(queryByTestId(root, 'collection-execution-context')).toBeNull();
+  });
+
+  it('drops the Collection Configuration section when the collection only has an execution context', () => {
+    const collection: OpenCollection = {
+      info: { name: 'Hotel Booking API' },
+      request: { scripts: [{ type: 'before-request', code: 'pre()' }] }
+    } as unknown as OpenCollection;
+
+    const root = useRenderToDom(<Overview collection={collection} />);
+
+    expect(queryByTestId(root, 'collection-config')).toBeNull();
+    expect(root.text).not.toContain('Collection Configuration');
+    expect(getByTestId(root, 'collection-execution-context-script-subheading').text.trim()).toBe('Script');
   });
 });
 

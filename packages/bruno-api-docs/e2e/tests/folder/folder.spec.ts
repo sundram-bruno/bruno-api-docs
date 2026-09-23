@@ -71,23 +71,41 @@ test.describe('Folder page', () => {
 });
 
 test.describe('Folder page sections', () => {
-  test('separates headers and auth from the execution context', async ({ folderPage }) => {
-    await folderPage.open(['Realtime']);
+  test.beforeEach(async ({ folderPage }) => {
+    await folderPage.open(['billing', 'customers']);
+  });
 
-    await expect(folderPage.configurationSection).toBeVisible();
+  test('Folder Configuration holds the headers and auth', async ({ folderPage }) => {
     await expect(folderPage.configurationSection).toContainText('Folder Configuration');
-    await expect(folderPage.executionContextSection).toBeVisible();
+    await expect(folderPage.configurationGroup('headers')).toBeVisible();
+    await expect(folderPage.configurationGroup('auth')).toBeVisible();
+
+    await test.step('vars, script and tests are not under Folder Configuration', async () => {
+      await expect(folderPage.configurationGroup('vars')).toHaveCount(0);
+      await expect(folderPage.configurationGroup('script')).toHaveCount(0);
+      await expect(folderPage.configurationGroup('tests')).toHaveCount(0);
+    });
+  });
+
+  test('Execution Context holds the variables, script and tests', async ({ folderPage }) => {
     await expect(folderPage.executionContextSection).toContainText('Execution Context');
+    await expect(folderPage.executionContextGroup('vars')).toBeVisible();
+    await expect(folderPage.executionContextGroup('script')).toBeVisible();
+    await expect(folderPage.executionContextGroup('tests')).toBeVisible();
 
-    await test.step('headers stay under Folder Configuration', async () => {
-      await expect(folderPage.configurationSection.getByTestId('folder-config-headers')).toBeVisible();
-      await expect(folderPage.executionContextSection.getByTestId('folder-config-headers')).toHaveCount(0);
+    await test.step('headers and auth are not under Execution Context', async () => {
+      await expect(folderPage.executionContextGroup('headers')).toHaveCount(0);
+      await expect(folderPage.executionContextGroup('auth')).toHaveCount(0);
     });
+  });
+});
 
-    await test.step('variables move under Execution Context', async () => {
-      await expect(folderPage.executionContextSection.getByTestId('folder-config-vars')).toBeVisible();
-      await expect(folderPage.configurationSection.getByTestId('folder-config-vars')).toHaveCount(0);
-    });
+test.describe('Folder page empty sections', () => {
+  test('shows an empty state in both sections when the folder has nothing configured', async ({ folderPage }) => {
+    await folderPage.open(['Authentication'], '/?fixture=folders');
+    await expect(folderPage.emptyState).toBeVisible();
+    await expect(folderPage.executionContextEmptyState).toBeVisible();
+    await expect(folderPage.executionContextEmptyState).toContainText('No execution context');
   });
 });
 
@@ -97,17 +115,6 @@ test.describe('Folder variable phases', () => {
     await expect(folderPage.configuration.vars).toContainText('Pre-Request');
     await expect(folderPage.configuration.vars).toContainText('Post-Response');
     await expect(folderPage.configuration.vars).toContainText('None.');
-  });
-});
-
-test.describe('Folder empty variable phase', () => {
-  test('frames the empty Post-Response table like the populated one beside it', async ({ folderPage }) => {
-    await folderPage.open(['Realtime']);
-    const empty = folderPage.configuration.vars.getByTestId('property-table-empty');
-    await expect(empty).toBeVisible();
-    await expect(empty).toHaveText('None.');
-    const framing = await empty.evaluate((el) => getComputedStyle(el).boxShadow);
-    expect(framing).not.toBe('none');
   });
 });
 

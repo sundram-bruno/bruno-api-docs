@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import type { OpenCollection } from '@opencollection/types';
+import type { Folder as FolderItem } from '@opencollection/types/collection/item';
 import { useRenderToDom } from '@/hooks/useRenderToDom';
 import { query, getByTestId, queryByTestId } from '@/test-utils/dom';
 import { Folder } from './Folder';
@@ -94,18 +95,20 @@ describe('Folder', () => {
     const empty = getByTestId(root, 'folder-config-empty');
     expect(query(empty, '.empty-state-heading').text.trim()).toBe('No folder configuration');
     expect(queryByTestId(root, 'folder-config-headers')).toBeNull();
+    expect(getByTestId(root, 'folder-execution-context-empty-heading').text.trim()).toBe('No execution context');
   });
 });
 
 describe('Folder execution context section', () => {
-  const folderWithBoth: any = {
+  const bareCollection = { info: { name: 'c' } } as unknown as OpenCollection;
+  const folderWithBoth = {
     info: { name: 'Invoices' },
     request: {
       headers: [{ name: 'Accept', value: 'application/json' }],
       scripts: [{ type: 'before-request', code: 'pre()' }]
     },
     items: [{ info: { type: 'http' } }]
-  };
+  } as unknown as FolderItem;
 
   it('puts headers and auth under Folder Configuration, and vars, script and tests under Execution Context', () => {
     const root = useRenderToDom(<Folder item={folderWithBoth} collection={collection} />);
@@ -122,26 +125,40 @@ describe('Folder execution context section', () => {
     expect(executionSection.querySelector('[data-testid="folder-config-headers"]')).toBeNull();
   });
 
-  it('omits the Execution Context section when the folder has no vars, scripts or tests', () => {
-    const headersOnly: any = {
+  it('shows the Execution Context empty state, not an accordion, when the folder has no vars, scripts or tests', () => {
+    const headersOnly = {
       info: { name: 'Invoices' },
       request: { headers: [{ name: 'Accept', value: 'application/json' }] },
       items: [{ info: { type: 'http' } }]
-    };
-    const root = useRenderToDom(<Folder item={headersOnly} collection={{ info: { name: 'c' } } as any} />);
-    expect(queryByTestId(root, 'folder-section-execution-context')).toBeNull();
+    } as unknown as FolderItem;
+    const root = useRenderToDom(<Folder item={headersOnly} collection={bareCollection} />);
+    const executionSection = getByTestId(root, 'folder-section-execution-context');
+    expect(getByTestId(executionSection, 'folder-execution-context-empty-heading').text.trim()).toBe('No execution context');
+    expect(executionSection.querySelector('button')).toBeNull();
+  });
+
+  it('drops the Folder Configuration section when the folder only has an execution context', () => {
+    const scriptsOnly = {
+      info: { name: 'Invoices' },
+      request: { scripts: [{ type: 'before-request', code: 'pre()' }] },
+      items: [{ info: { type: 'http' } }]
+    } as unknown as FolderItem;
+    const root = useRenderToDom(<Folder item={scriptsOnly} collection={bareCollection} />);
+    expect(queryByTestId(root, 'folder-section-configuration')).toBeNull();
+    expect(queryByTestId(root, 'folder-config-empty')).toBeNull();
+    expect(getByTestId(root, 'folder-execution-context')).not.toBeNull();
   });
 });
 
 describe('Folder execution context accordion', () => {
-  const folderWithScripts: any = {
+  const folderWithScripts = {
     info: { name: 'Invoices' },
     request: {
       headers: [{ name: 'Accept', value: 'application/json' }],
       scripts: [{ type: 'before-request', code: 'pre()' }]
     },
     items: [{ info: { type: 'http' } }]
-  };
+  } as unknown as FolderItem;
 
   it('renders the Execution Context section as an expanded accordion', () => {
     const root = useRenderToDom(<Folder item={folderWithScripts} collection={collection} />);

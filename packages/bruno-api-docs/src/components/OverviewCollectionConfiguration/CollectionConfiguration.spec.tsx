@@ -3,7 +3,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
 import type { HttpRequestHeader } from '@opencollection/types/requests/http';
 import { CollectionConfiguration } from './CollectionConfiguration';
+import type { Auth } from '@opencollection/types/common/auth';
 import { AUTH_MODE_LABELS } from '@/constants';
+import { useRenderToDom } from '@/hooks/useRenderToDom';
+import { getByTestId, queryByTestId } from '@/test-utils/dom';
+import type { PreRequestVarRow } from '@/utils/request';
 
 describe('CollectionConfiguration', () => {
   it('renders nothing when there is no configuration', () => {
@@ -71,28 +75,29 @@ describe('CollectionConfiguration', () => {
   });
 });
 
-describe('CollectionConfiguration groups', () => {
+describe('CollectionConfiguration sectionType', () => {
   const props = {
     headers: [{ name: 'Accept', value: 'application/json' }] as HttpRequestHeader[],
-    auth: { type: 'bearer', token: 't' } as never,
+    auth: { type: 'bearer', token: 't' } as Auth,
     scripts: { preRequest: 'console.log("pre")', tests: 'test("ok", () => {})' },
-    preVars: [{ name: 'v', value: '1' }] as never
+    preVars: [{ name: 'v', value: '1' }] as PreRequestVarRow[]
   };
 
-  it('renders only headers and auth for the request groups', () => {
-    const html = renderToStaticMarkup(<CollectionConfiguration {...props} groups="request" />);
-    expect(html).toContain('Headers');
-    expect(html).toContain('Auth');
-    expect(html).not.toContain('Variables');
-    expect(html).not.toContain('Script');
-    expect(html).not.toContain('Tests');
+  it('renders only headers and auth for the request section', () => {
+    const root = useRenderToDom(<CollectionConfiguration {...props} sectionType="request" />);
+    expect(getByTestId(root, 'collection-config-headers-subheading').text.trim()).toBe('Headers');
+    expect(getByTestId(root, 'collection-config-auth-subheading').text.trim()).toBe('Auth');
+    expect(queryByTestId(root, 'collection-config-vars-subheading')).toBeNull();
+    expect(queryByTestId(root, 'collection-config-script-subheading')).toBeNull();
+    expect(queryByTestId(root, 'collection-config-tests-subheading')).toBeNull();
   });
 
-  it('renders only variables, script and tests for the execution groups', () => {
-    const html = renderToStaticMarkup(<CollectionConfiguration {...props} groups="execution" />);
-    expect(html).toContain('Variables');
-    expect(html).toContain('Script');
-    expect(html).toContain('Tests');
-    expect(html).not.toContain('Headers');
+  it('renders only variables, script and tests for the execution section', () => {
+    const root = useRenderToDom(<CollectionConfiguration {...props} sectionType="execution" />);
+    expect(getByTestId(root, 'collection-config-vars-subheading').text.trim()).toBe('Variables');
+    expect(getByTestId(root, 'collection-config-script-subheading').text.trim()).toBe('Script');
+    expect(getByTestId(root, 'collection-config-tests-subheading').text.trim()).toBe('Tests');
+    expect(queryByTestId(root, 'collection-config-headers-subheading')).toBeNull();
+    expect(queryByTestId(root, 'collection-config-auth-subheading')).toBeNull();
   });
 });

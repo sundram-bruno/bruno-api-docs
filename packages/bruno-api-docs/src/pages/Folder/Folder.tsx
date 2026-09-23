@@ -20,7 +20,7 @@ import { ViewMore } from '../../components/ViewMore/ViewMore';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { FolderConfiguration } from '../../components/FolderConfiguration/FolderConfiguration';
 import { Tags } from '@/components/Tags/Tags';
-import { FolderIcon } from '@/assets/icons';
+import { FolderIcon, RefreshIcon } from '@/assets/icons';
 import { StyledWrapper } from './StyledWrapper';
 
 interface FolderProps {
@@ -91,7 +91,7 @@ export const Folder: React.FC<FolderProps> = ({ item, ancestry = [], collection,
             {showRequestConfig ? (
               <FolderConfiguration
                 config={config}
-                groups="request"
+                sectionType="request"
                 authModeLabels={AUTH_MODE_LABELS}
                 onNavigate={onBreadcrumbClick}
                 testId="folder-config"
@@ -101,30 +101,37 @@ export const Folder: React.FC<FolderProps> = ({ item, ancestry = [], collection,
                 testId="folder-config-empty"
                 icon={<FolderIcon />}
                 heading="No folder configuration"
-                subheading="This folder has no headers, auth, scripts, vars, or tests set. Requests inside it inherit configuration from the collection."
+                subheading="This folder has no headers or auth set. Requests inside it inherit configuration from the collection."
               />
             )}
           </Section>
         )}
 
-        {showExecutionContext && (
-          <Section
-            label="Execution Context"
-            testId="folder-section-execution-context"
-            className="folder-fullwidth"
-            labelClassName="section-label-muted"
-            collapsible
-            storageKey="folder-execution-context"
-          >
+        <Section
+          label="Execution Context"
+          testId="folder-section-execution-context"
+          className="folder-fullwidth"
+          labelClassName="section-label-muted"
+          collapsible={showExecutionContext}
+          storageKey="folder-execution-context"
+        >
+          {showExecutionContext ? (
             <FolderConfiguration
               config={config}
-              groups="execution"
+              sectionType="execution"
               authModeLabels={AUTH_MODE_LABELS}
               onNavigate={onBreadcrumbClick}
               testId="folder-execution-context"
             />
-          </Section>
-        )}
+          ) : (
+            <EmptyState
+              testId="folder-execution-context-empty"
+              icon={<RefreshIcon />}
+              heading="No execution context"
+              subheading="This folder has no scripts, variables, or tests configured."
+            />
+          )}
+        </Section>
       </StyledWrapper>
     </PageWrapper>
   );

@@ -168,7 +168,7 @@ describe('FolderConfiguration', () => {
   });
 });
 
-describe('FolderConfiguration groups', () => {
+describe('FolderConfiguration sectionType', () => {
   const fullConfig: FolderConfig = {
     ...baseConfig,
     headers: [{ name: 'Accept', value: 'application/json' }],
@@ -179,7 +179,7 @@ describe('FolderConfiguration groups', () => {
   };
 
   it('renders only headers and auth for the request groups', () => {
-    const root = useRenderToDom(<FolderConfiguration config={fullConfig} groups="request" />);
+    const root = useRenderToDom(<FolderConfiguration config={fullConfig} sectionType="request" />);
     expect(queryByTestId(root, 'folder-config-headers')).not.toBeNull();
     expect(queryByTestId(root, 'folder-config-auth')).not.toBeNull();
     expect(queryByTestId(root, 'folder-config-vars')).toBeNull();
@@ -188,7 +188,7 @@ describe('FolderConfiguration groups', () => {
   });
 
   it('renders only vars, script and tests for the execution groups', () => {
-    const root = useRenderToDom(<FolderConfiguration config={fullConfig} groups="execution" />);
+    const root = useRenderToDom(<FolderConfiguration config={fullConfig} sectionType="execution" />);
     expect(queryByTestId(root, 'folder-config-vars')).not.toBeNull();
     expect(queryByTestId(root, 'folder-config-script')).not.toBeNull();
     expect(queryByTestId(root, 'folder-config-tests')).not.toBeNull();

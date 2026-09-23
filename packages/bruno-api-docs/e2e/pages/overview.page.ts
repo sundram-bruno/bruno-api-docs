@@ -15,6 +15,7 @@ export class OverviewPage extends BasePage {
   readonly environments = new EnvironmentsSection(this.page);
   readonly configuration = new ConfigurationSection(this.page);
   readonly executionContext = new ConfigurationSection(this.page, 'collection-execution-context');
+  readonly executionContextEmptyState = this.page.getByTestId('collection-execution-context-empty');
   readonly docMarkdown = new MarkdownComponent(this.page, this.page.getByTestId('overview-markdown-documentation'));
   readonly variableCard = new VariableCardComponent(this.page, this.root);
 

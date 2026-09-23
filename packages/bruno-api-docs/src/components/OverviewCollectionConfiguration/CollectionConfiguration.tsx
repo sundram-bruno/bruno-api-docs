@@ -23,7 +23,7 @@ interface CollectionConfigurationProps {
   preVars?: PreRequestVarRow[];
   postVars?: PostResponseVarRow[];
   authModeLabels?: Record<string, string>;
-  groups?: 'request' | 'execution';
+  sectionType?: 'request' | 'execution';
   testId?: string;
 }
 
@@ -34,11 +34,11 @@ export const CollectionConfiguration: React.FC<CollectionConfigurationProps> = (
   preVars = [],
   postVars = [],
   authModeLabels = {},
-  groups,
+  sectionType,
   testId = 'collection-config'
 }) => {
-  const showRequestGroups = groups !== 'execution';
-  const showExecutionGroups = groups !== 'request';
+  const showRequestGroups = sectionType !== 'execution';
+  const showExecutionGroups = sectionType !== 'request';
   const headerRows: PropertyRow[] = headers
     .filter((header) => header && header.name)
     .map((header) => ({
@@ -63,28 +63,28 @@ export const CollectionConfiguration: React.FC<CollectionConfigurationProps> = (
     <StyledWrapper className="collection-configuration" data-testid={testId}>
       {hasHeaders && (
         <div className="config-group" data-nav-section="Headers" data-nav-level={2}>
-          <SubHeading className="script-label" testId={`${testId}-subheading`}>Headers</SubHeading>
+          <SubHeading className="script-label" testId={`${testId}-headers-subheading`}>Headers</SubHeading>
           <PropertyTable rows={headerRows} testId={`${testId}-headers`} />
         </div>
       )}
 
       {hasAuth && (
         <div className="config-group" data-nav-section="Auth" data-nav-level={2}>
-          <SubHeading className="script-label" testId={`${testId}-subheading`}>Auth</SubHeading>
+          <SubHeading className="script-label" testId={`${testId}-auth-subheading`}>Auth</SubHeading>
           <AuthDetails auth={auth} authModeLabels={authModeLabels} testId={`${testId}-auth`} />
         </div>
       )}
 
       {hasVars && (
         <div className="config-group" data-nav-section="Variables" data-nav-level={2}>
-          <SubHeading className="script-label" testId={`${testId}-subheading`}>Variables</SubHeading>
+          <SubHeading className="script-label" testId={`${testId}-vars-subheading`}>Variables</SubHeading>
           <VariablesPanel preVars={preVars} postVars={postVars} variant="stacked" />
         </div>
       )}
 
       {hasScripts && (
         <div className="config-group" data-nav-section="Script" data-nav-level={2}>
-          <SubHeading className="script-label" testId={`${testId}-subheading`}>Script</SubHeading>
+          <SubHeading className="script-label" testId={`${testId}-script-subheading`}>Script</SubHeading>
           {scripts.preRequest && (
             <div className="script-block">
               <p className="script-phase-label">Pre-Request</p>
@@ -102,7 +102,7 @@ export const CollectionConfiguration: React.FC<CollectionConfigurationProps> = (
 
       {hasTests && (
         <div className="config-group" data-nav-section="Tests" data-nav-level={2}>
-          <SubHeading className="script-label" testId={`${testId}-subheading`}>Tests</SubHeading>
+          <SubHeading className="script-label" testId={`${testId}-tests-subheading`}>Tests</SubHeading>
           <Code code={scripts.tests as string} language="javascript" showLineNumbers testId={`${testId}-tests`} />
         </div>
       )}

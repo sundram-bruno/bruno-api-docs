@@ -2,6 +2,8 @@ import type { Locator, Page } from '@playwright/test';
 import { BaseComponent } from '../base.component';
 import { SecretValueComponent } from '../secret-value.component';
 
+export type ConfigurationGroup = 'headers' | 'auth' | 'vars' | 'script' | 'tests';
+
 export class ConfigurationSection extends BaseComponent {
   readonly copyButton: Locator;
   readonly secret: SecretValueComponent;
@@ -19,8 +21,8 @@ export class ConfigurationSection extends BaseComponent {
       .filter({ has: page.getByTestId('disabled-badge') });
   }
 
-  subHeading(name: string): Locator {
-    return this.root.getByTestId(`${this.testId}-subheading`).filter({ hasText: name });
+  subHeading(group: ConfigurationGroup): Locator {
+    return this.root.getByTestId(`${this.testId}-${group}-subheading`);
   }
 
   async copyToClipboard(): Promise<void> {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TruncatedText } from '@/components/TruncatedText/TruncatedText';
+import cx from '@/utils/cx';
 import { StyledWrapper } from './StyledWrapper';
 
 interface EnvironmentLabelProps {
@@ -19,20 +20,18 @@ export const EnvironmentLabel: React.FC<EnvironmentLabelProps> = ({
   truncate = false,
   testId
 }) => (
-  <StyledWrapper className={['environment-label', className].filter(Boolean).join(' ')} data-testid={testId}>
+  <StyledWrapper className={cx('environment-label', className)} data-testid={testId}>
     <span
-      className={['environment-label-dot', color ? '' : 'environment-label-dot--empty'].filter(Boolean).join(' ')}
+      className={cx('environment-label-dot', { 'environment-label-dot--empty': !color })}
       style={color ? { background: color } : undefined}
     />
     {truncate ? (
       <TruncatedText
         text={name}
-        className={['environment-label-name', 'environment-label-name--clamped', nameClassName]
-          .filter(Boolean)
-          .join(' ')}
+        className={cx('environment-label-name', 'environment-label-name--clamped', nameClassName)}
       />
     ) : (
-      <span className={['environment-label-name', nameClassName].filter(Boolean).join(' ')}>{name}</span>
+      <span className={cx('environment-label-name', nameClassName)}>{name}</span>
     )}
   </StyledWrapper>
 );

@@ -18,7 +18,7 @@ import { Heading } from '../../components/Heading/Heading';
 import { Section } from '../../components/Section/Section';
 import { ViewMore } from '../../components/ViewMore/ViewMore';
 import { Tags } from '@/components/Tags/Tags';
-import { BookIcon } from '@/assets/icons';
+import { BookIcon, RefreshIcon } from '@/assets/icons';
 import { StyledWrapper } from './StyledWrapper';
 
 const getDocsContent = (docs: OpenCollection['docs']): string => {
@@ -112,7 +112,7 @@ export const Overview: React.FC<OverviewProps> = ({ collection, testId = 'overvi
                   <CollectionConfiguration
                     headers={collection.request?.headers}
                     auth={collection.request?.auth}
-                    groups="request"
+                    sectionType="request"
                     authModeLabels={AUTH_MODE_LABELS}
                   />
                 ) : (
@@ -120,29 +120,36 @@ export const Overview: React.FC<OverviewProps> = ({ collection, testId = 'overvi
                     testId="overview-empty"
                     icon={<BookIcon />}
                     heading="No configuration set"
-                    subheading="This collection has no shared headers, auth, scripts, variables, or tests. Configure them in Bruno and they'll appear here."
+                    subheading="This collection has no shared headers or auth. Configure them in Bruno and they'll appear here."
                   />
                 )}
               </Section>
             )}
 
-            {hasExecutionContext && (
-              <Section
-                label="Execution Context"
-                testId="overview-section-label"
-                collapsible
-                storageKey="collection-execution-context"
-              >
+            <Section
+              label="Execution Context"
+              testId="overview-section-label"
+              collapsible={hasExecutionContext}
+              storageKey="collection-execution-context"
+            >
+              {hasExecutionContext ? (
                 <CollectionConfiguration
                   scripts={scripts}
                   preVars={preVars}
                   postVars={postVars}
-                  groups="execution"
+                  sectionType="execution"
                   authModeLabels={AUTH_MODE_LABELS}
                   testId="collection-execution-context"
                 />
-              </Section>
-            )}
+              ) : (
+                <EmptyState
+                  testId="collection-execution-context-empty"
+                  icon={<RefreshIcon />}
+                  heading="No execution context"
+                  subheading="This collection has no shared scripts, variables, or tests."
+                />
+              )}
+            </Section>
           </div>
         </div>
       </StyledWrapper>

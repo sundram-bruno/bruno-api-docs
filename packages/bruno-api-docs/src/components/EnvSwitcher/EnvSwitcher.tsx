@@ -70,7 +70,6 @@ const EnvSwitcher: React.FC<EnvSwitcherProps> = ({ hideWhenEmpty = false, testId
     return (
       <StyledWrapper data-testid={`${testId}-root`}>
         <button
-          type="button"
           className="env-switcher-trigger env-switcher-trigger--empty"
           aria-disabled="true"
           aria-label="Select environment"

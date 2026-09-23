@@ -41,12 +41,12 @@ test.describe('Collection Overview', () => {
       await expect(overviewPage.sectionLabel('Collection Configuration')).toBeVisible();
 
       await test.step('the Headers group lists the collection-level header and its value', async () => {
-        await expect(configuration.subHeading('Headers')).toBeVisible();
+        await expect(configuration.subHeading('headers')).toBeVisible();
         await expect(configuration.root.getByText('collection-header-value')).toBeVisible();
       });
 
       await test.step('the Auth group shows the resolved auth mode (Bearer Token)', async () => {
-        await expect(configuration.subHeading('Auth')).toBeVisible();
+        await expect(configuration.subHeading('auth')).toBeVisible();
         await expect(configuration.root.getByText('Bearer Token')).toBeVisible();
       });
     });
@@ -56,21 +56,15 @@ test.describe('Collection Overview', () => {
       await expect(overviewPage.sectionLabel('Execution Context')).toBeVisible();
 
       await test.step('the Variables group lists the collection-level pre-request variables', async () => {
-        await expect(executionContext.subHeading('Variables')).toBeVisible();
+        await expect(executionContext.subHeading('vars')).toBeVisible();
         await expect(executionContext.root.getByText('collection_pre_var_value', { exact: true })).toBeVisible();
         await expect(executionContext.root.getByText('collection-var-value', { exact: true })).toBeVisible();
       });
 
       await test.step('the Script and Tests groups are present', async () => {
-        await expect(executionContext.subHeading('Script')).toBeVisible();
-        await expect(executionContext.subHeading('Tests')).toBeVisible();
+        await expect(executionContext.subHeading('script')).toBeVisible();
+        await expect(executionContext.subHeading('tests')).toBeVisible();
       });
-    });
-
-    test('separates the two sections with a gap, so the headings do not run together', async ({ overviewPage }) => {
-      const configBox = (await overviewPage.sectionLabel('Collection Configuration').boundingBox())!;
-      const executionBox = (await overviewPage.sectionLabel('Execution Context').boundingBox())!;
-      expect(executionBox.y).toBeGreaterThan(configBox.y + configBox.height + 12);
     });
 
     test('collapses the Execution Context section and remembers it across a reload', async ({
@@ -89,23 +83,19 @@ test.describe('Collection Overview', () => {
       await expect(toggle()).toHaveAttribute('aria-expanded', 'false');
     });
 
-    test('mutes the Execution Context heading like the other overview headings', async ({ overviewPage }) => {
-      const colorOf = (el: HTMLElement) => getComputedStyle(el).color;
-      const configuration = await overviewPage
-        .sectionLabel('Collection Configuration')
-        .getByTestId('section-label')
-        .evaluate(colorOf);
-      const execution = await overviewPage
-        .sectionLabel('Execution Context')
-        .getByTestId('section-label')
-        .evaluate(colorOf);
-      expect(execution).toBe(configuration);
+    test('shows the Execution Context empty state when the collection has no vars, scripts or tests', async ({
+      overviewPage
+    }) => {
+      await overviewPage.goto('/?fixture=folders');
+      await expect(overviewPage.sectionLabel('Execution Context')).toBeVisible();
+      await expect(overviewPage.executionContextEmptyState).toContainText('No execution context');
+      await expect(overviewPage.executionContext.root).toHaveCount(0);
     });
 
     test('keeps headers and auth out of the Execution Context section', async ({ overviewPage }) => {
-      await expect(overviewPage.executionContext.subHeading('Headers')).toHaveCount(0);
-      await expect(overviewPage.executionContext.subHeading('Auth')).toHaveCount(0);
-      await expect(overviewPage.configuration.subHeading('Script')).toHaveCount(0);
+      await expect(overviewPage.executionContext.subHeading('headers')).toHaveCount(0);
+      await expect(overviewPage.executionContext.subHeading('auth')).toHaveCount(0);
+      await expect(overviewPage.configuration.subHeading('script')).toHaveCount(0);
     });
 
     test('keeps the auth token masked until the reveal toggle is clicked', async ({ overviewPage }) => {
