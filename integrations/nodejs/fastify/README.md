@@ -11,7 +11,7 @@ npm install @usebruno/api-docs-fastify
 ```js
 const { apiDocs } = require('@usebruno/api-docs-fastify');
 
-app.register(apiDocs, { prefix: '/docs', collection: './api-collection' });
+app.register(apiDocs, { prefix: '/docs', collectionUrl: './api-collection' });
 ```
 
 Open `http://localhost:<port>/docs/`. The plugin is encapsulated and its routes are hidden from `@fastify/swagger`.
@@ -21,7 +21,7 @@ Open `http://localhost:<port>/docs/`. The plugin is encapsulated and its routes 
 ```js
 app.register(apiDocs, {
   prefix: '/docs',
-  collection: './api-collection',
+  collectionUrl: './api-collection',
   environments: { include: ['Local'] },
   tags: { exclude: ['internal'] },
   pageTitle: 'Acme API',
@@ -30,7 +30,7 @@ app.register(apiDocs, {
 });
 ```
 
-`collection` is a Bruno folder (`bruno.json` and `.bru` files), an OpenCollection yml folder or one bundled `.yml` file. The path is relative to your app's entry file.
+`collectionUrl` is the path to a Bruno folder (`bruno.json` and `.bru` files), an OpenCollection yml folder or one bundled `.yml` file. The path is relative to your app's entry file.
 
 `environments` and `tags` take `{ include, exclude }`, where `include` is a list of names or `'*'`. Leave `environments` out and none are published. Excluded tags drop their requests from the served collection.
 
@@ -45,7 +45,7 @@ app.register(async (guarded) => {
       return reply.code(401).send();
     }
   });
-  await guarded.register(apiDocs, { prefix: '/docs', collection: './api-collection' });
+  await guarded.register(apiDocs, { prefix: '/docs', collectionUrl: './api-collection' });
 });
 ```
 
@@ -66,7 +66,7 @@ connect-src 'self' data: https://cdn.jsdelivr.net
 ```js
 const { apiDocs, embed } = require('@usebruno/api-docs-fastify');
 
-app.register(apiDocs, { prefix: '/docs', collection: './api-collection' });
+app.register(apiDocs, { prefix: '/docs', collectionUrl: './api-collection' });
 app.get('/', async (request, reply) => reply.type('text/html').send(`<h1>Acme</h1>${embed({ base: '/docs' })}`));
 ```
 

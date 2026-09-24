@@ -22,7 +22,7 @@ Module({
   imports: [
     ApiDocsModule.forRoot({
       mountPath: '/docs',
-      collection: COLLECTION,
+      collectionUrl: COLLECTION,
       environments: { include: ['Local'] },
       tags: { exclude: ['internal'] },
       pageTitle: 'Acme API',
@@ -31,15 +31,15 @@ Module({
     }),
     ApiDocsModule.forRoot({
       mountPath: '/api/v2/docs',
-      collection: COLLECTION,
+      collectionUrl: COLLECTION,
       environments: { include: '*', exclude: ['Prod'] }
     }),
-    ApiDocsModule.forRoot({ mountPath: '/internal/docs', collection: COLLECTION }),
-    ApiDocsModule.forRoot({ mountPath: '/bundled/docs', collection: BUNDLED }),
-    ApiDocsModule.forRoot({ mountPath: '/bru/docs', collection: BRU, environments: { include: ['Local'] }, tags: { exclude: ['internal'] } }),
-    ApiDocsModule.forRoot({ mountPath: '/broken/docs', collection: './there-is-no-collection-here' }),
-    ApiDocsModule.forRoot({ mountPath: '/oversize/docs', collection: '../fixtures/walk-oversize' }),
-    ApiDocsModule.forRoot({ mountPath: '/misconfigured/docs', collection: COLLECTION, theme: 'dark' })
+    ApiDocsModule.forRoot({ mountPath: '/internal/docs', collectionUrl: COLLECTION }),
+    ApiDocsModule.forRoot({ mountPath: '/bundled/docs', collectionUrl: BUNDLED }),
+    ApiDocsModule.forRoot({ mountPath: '/bru/docs', collectionUrl: BRU, environments: { include: ['Local'] }, tags: { exclude: ['internal'] } }),
+    ApiDocsModule.forRoot({ mountPath: '/broken/docs', collectionUrl: './there-is-no-collection-here' }),
+    ApiDocsModule.forRoot({ mountPath: '/oversize/docs', collectionUrl: '../fixtures/walk-oversize' }),
+    ApiDocsModule.forRoot({ mountPath: '/misconfigured/docs', collectionUrl: COLLECTION, theme: 'dark' })
   ]
 })(AppModule);
 

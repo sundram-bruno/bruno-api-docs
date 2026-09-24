@@ -12,7 +12,7 @@ npm install @usebruno/api-docs-nestjs
 import { ApiDocsModule } from '@usebruno/api-docs-nestjs';
 
 @Module({
-  imports: [ApiDocsModule.forRoot({ collection: '../api-collection' })]
+  imports: [ApiDocsModule.forRoot({ collectionUrl: '../api-collection' })]
 })
 export class AppModule {}
 ```
@@ -25,7 +25,7 @@ Open `http://localhost:<port>/docs/`. The path counts from `dist/main.js`, so a 
 
 ```ts
 ApiDocsModule.forRoot({
-  collection: '../api-collection',
+  collectionUrl: '../api-collection',
   mountPath: '/docs',
   environments: { include: ['Local'] },
   tags: { exclude: ['internal'] },
@@ -35,7 +35,7 @@ ApiDocsModule.forRoot({
 })
 ```
 
-`collection` is a Bruno folder (`bruno.json` and `.bru` files), an OpenCollection yml folder or one bundled `.yml` file. The path is relative to your app's entry file.
+`collectionUrl` is the path to a Bruno folder (`bruno.json` and `.bru` files), an OpenCollection yml folder or one bundled `.yml` file. The path is relative to your app's entry file.
 
 `environments` and `tags` take `{ include, exclude }`, where `include` is a list of names or `'*'`. Leave `environments` out and none are published. Excluded tags drop their requests from the served collection.
 

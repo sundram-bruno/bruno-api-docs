@@ -4,6 +4,6 @@ import { PortalController } from './portal.controller';
 
 @Module({
   controllers: [PortalController],
-  imports: [ApiDocsModule.forRoot({ collection: '../../api-collection' })]
+  imports: [ApiDocsModule.forRoot({ collectionUrl: '../../api-collection' })]
 })
 export class AppModule {}
