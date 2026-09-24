@@ -106,6 +106,10 @@ export class ResponsePaneComponent extends BaseComponent {
    * switch to settle (the target becomes the selected tab) so a following switch never races the
    * layout mid-transition.
    */
+  tab(id: string): Locator {
+    return this.page.getByTestId(`response-tabs-tab-${id}`);
+  }
+
   async switchToTab(id: string): Promise<void> {
     const inlineTab = this.page.getByTestId(`response-tabs-tab-${id}`);
     if (await inlineTab.isVisible()) {
