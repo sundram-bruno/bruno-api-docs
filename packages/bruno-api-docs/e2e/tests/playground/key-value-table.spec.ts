@@ -1,6 +1,11 @@
 import { test, expect } from '../../playwright';
 
-test.describe('KeyValueTable — tooltips & mobile scroll', () => {
+const textStart = (el: HTMLElement) =>
+  el.getBoundingClientRect().left
+  + parseFloat(getComputedStyle(el).borderLeftWidth)
+  + parseFloat(getComputedStyle(el).paddingLeft);
+
+test.describe('KeyValueTable: cells and layout', () => {
   test.beforeEach(async ({ page, playground }) => {
     await page.goto('/#/?pg=1&dock=bottom');
     await playground.openSidebarItem('get users');
@@ -19,12 +24,45 @@ test.describe('KeyValueTable — tooltips & mobile scroll', () => {
     await expect(nameInput).toHaveAttribute('title', value);
   });
 
+  test('the first column header lines up with the name text in the rows below it', async ({ playground }) => {
+    const { keyValueTable } = playground;
+    const headerStart = await keyValueTable.nameHeader.evaluate(textStart);
+    const cellStart = await keyValueTable.nameInputs.first().evaluate(textStart);
+    expect(Math.abs(headerStart - cellStart)).toBeLessThan(0.5);
+  });
+
+  test('a one-line description cell is exactly as tall as the name cell beside it', async ({ playground }) => {
+    const { keyValueTable } = playground;
+    const nameHeight = (await keyValueTable.nameInputs.first().boundingBox())!.height;
+    const descriptionHeight = (await keyValueTable.descriptionInputs.first().boundingBox())!.height;
+    expect(Math.abs(descriptionHeight - nameHeight)).toBeLessThan(0.5);
+  });
+
+  test('a read-only path-param key lines up with its header and matches the value cell height', async ({ playground }) => {
+    await playground.openSidebarItem('Jokes');
+    await playground.selectTab('params');
+    const { pathParams } = playground;
+    await expect(pathParams.nameTexts.first()).toHaveText('postId');
+
+    const headerStart = await pathParams.nameHeader.evaluate(textStart);
+    const keyStart = await pathParams.nameTexts.first().evaluate(textStart);
+    expect(Math.abs(headerStart - keyStart)).toBeLessThan(0.5);
+
+    const keyHeight = (await pathParams.nameTexts.first().boundingBox())!.height;
+    const valueHeight = (await pathParams.valueInputs.first().boundingBox())!.height;
+    expect(Math.abs(keyHeight - valueHeight)).toBeLessThan(0.5);
+  });
+
+  test('the query params table labels its first column Name, like the app', async ({ playground }) => {
+    await playground.selectTab('params');
+    await expect(playground.keyValueTable.nameHeader).toHaveText('Name');
+  });
+
   test('the table has a min-width and a horizontally-scrollable container', async ({ page, playground }) => {
     const { keyValueTable } = playground;
     await expect(keyValueTable.container).toHaveCSS('overflow-x', 'auto');
-    await expect(keyValueTable.table).toHaveCSS('min-width', '448px'); // 28rem @16px
+    await expect(keyValueTable.table).toHaveCSS('min-width', '448px');
 
-    // Narrow the viewport below the min-width → the container actually overflows and scrolls.
     await page.setViewportSize({ width: 360, height: 800 });
     const overflows = await keyValueTable.container.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
     expect(overflows).toBe(true);
@@ -32,7 +70,6 @@ test.describe('KeyValueTable — tooltips & mobile scroll', () => {
 
   test('offers {{variable}} autocomplete in the value cell but not the name cell', async ({ page, playground }) => {
     const { keyValueTable } = playground;
-    // Value cell: a `{{` reference surfaces the collection's variables.
     await keyValueTable.valueInputs.last().click();
     await page.keyboard.type('{{coll');
     await expect(keyValueTable.autocomplete).toBeVisible();
@@ -40,12 +77,18 @@ test.describe('KeyValueTable — tooltips & mobile scroll', () => {
     await page.keyboard.press('Escape');
     await expect(keyValueTable.autocomplete).toHaveCount(0);
 
-    // Name cell: the same reference must not open the dropdown — the app only
-    // autocompletes variables in value cells, never in param/variable name cells.
     await keyValueTable.nameInputs.last().click();
     await page.keyboard.type('{{coll');
     await page.waitForTimeout(250);
     await expect(keyValueTable.autocomplete).toHaveCount(0);
+  });
+
+  test('the header-name suggestions list scrolls with the thin themed scrollbar', async ({ page, playground }) => {
+    const { keyValueTable } = playground;
+    await keyValueTable.nameInputs.last().click();
+    await page.keyboard.type('Content');
+    await expect(keyValueTable.autocomplete).toBeVisible();
+    await expect(keyValueTable.autocomplete).toHaveCSS('scrollbar-width', 'thin');
   });
 
   test('flags a header name that contains a space with an inline error', async ({ page, playground }) => {
@@ -59,7 +102,6 @@ test.describe('KeyValueTable — tooltips & mobile scroll', () => {
 
   test('a named row can be enabled and disabled via its checkbox', async ({ playground }) => {
     const { keyValueTable } = playground;
-    // The trailing blank row has no checkbox; naming a row promotes it to a real row with one.
     await keyValueTable.nameInputs.last().fill('X-Custom');
 
     const toggle = keyValueTable.enableToggle('X-Custom');
@@ -77,8 +119,6 @@ test.describe('KeyValueTable — tooltips & mobile scroll', () => {
     const valueHeader = keyValueTable.columnHeader('col-value');
     const before = (await valueHeader.boundingBox())!.width;
 
-    // Drag the Name/Value divider (the first handle) to the right: Name grows and Value shrinks by
-    // the same amount (zero-sum), so the Value column gets measurably narrower.
     const handle = keyValueTable.resizeHandles.first();
     const box = (await handle.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
