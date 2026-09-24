@@ -39,6 +39,7 @@ export class GrpcRequestPage extends BasePage {
   readonly codeSnippet: Locator = this.snippet.code;
 
   readonly executionContextSection: Locator = this.page.getByTestId('grpc-request-section-execution-context');
+  readonly executionContextToggle: Locator = this.executionContextSection.getByRole('button', { name: 'Execution Context' });
   readonly executionContextEmpty: Locator = this.page.getByTestId('grpc-request-execution-context-empty');
 
   async open(path: string[]): Promise<void> {

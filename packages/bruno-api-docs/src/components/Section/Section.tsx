@@ -39,7 +39,7 @@ export const Section: React.FC<SectionProps> = ({
   navGroup,
   labelClassName
 }) => {
-  const [open, setOpen] = useSessionStorage(storageKey ? `section-${storageKey}` : '', defaultOpen);
+  const [open, setOpen] = useSessionStorage(storageKey ? `oc-docs:section-${storageKey}` : '', defaultOpen);
   const panelId = useId();
   const labelId = useId();
 
