@@ -61,6 +61,7 @@ export const Section: React.FC<SectionProps> = ({
               type="button"
               id={labelId}
               className="section-toggle"
+              data-testid={testId ? `${testId}-toggle` : undefined}
               aria-expanded={open}
               aria-controls={panelId}
               onClick={() => setOpen((v) => !v)}
