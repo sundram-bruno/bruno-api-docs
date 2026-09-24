@@ -28,9 +28,12 @@ export const StyledWrapper = styled.div`
     background: var(--oc-app-collection-toolbar-environment-selector-hover-bg);
   }
 
-  .env-switcher-trigger--empty {
+  .env-switcher-trigger--empty,
+  .env-switcher-trigger--empty:hover {
     color: var(--oc-app-collection-toolbar-environment-selector-no-environment-text);
     background: var(--oc-app-collection-toolbar-environment-selector-no-environment-bg);
+    border-color: var(--oc-border-border1);
+    cursor: default;
   }
 
   .env-switcher-chevron {

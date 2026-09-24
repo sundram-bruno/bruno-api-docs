@@ -55,11 +55,3 @@ export const hasCollectionRequestConfig = (headers: HttpRequestHeader[] = [], au
 
 export const hasCollectionExecutionContext = (scripts: CollectionScripts = {}, hasVars = false): boolean =>
   hasVars || Boolean(scripts.preRequest || scripts.postResponse || scripts.tests);
-
-export const hasCollectionConfiguration = (
-  headers: HttpRequestHeader[] = [],
-  auth?: Auth,
-  scripts: CollectionScripts = {},
-  hasVars = false
-): boolean =>
-  hasCollectionRequestConfig(headers, auth) || hasCollectionExecutionContext(scripts, hasVars);

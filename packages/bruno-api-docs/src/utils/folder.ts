@@ -128,9 +128,6 @@ export const hasFolderExecutionContext = (config: FolderConfig): boolean =>
   || config.inheritedPreVariables.length > 0
   || config.inheritedPostVariables.length > 0;
 
-export const hasFolderConfig = (config: FolderConfig): boolean =>
-  hasFolderRequestConfig(config) || hasFolderExecutionContext(config);
-
 export const countFolderRequests = (folder: Folder): number => {
   let count = 0;
   const walk = (items: Item[] | undefined): void => {

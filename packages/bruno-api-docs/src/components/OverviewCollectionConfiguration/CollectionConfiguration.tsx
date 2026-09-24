@@ -23,7 +23,7 @@ interface CollectionConfigurationProps {
   preVars?: PreRequestVarRow[];
   postVars?: PostResponseVarRow[];
   authModeLabels?: Record<string, string>;
-  sectionType?: 'request' | 'execution';
+  sectionType: 'request' | 'execution';
   testId?: string;
 }
 
@@ -37,8 +37,8 @@ export const CollectionConfiguration: React.FC<CollectionConfigurationProps> = (
   sectionType,
   testId = 'collection-config'
 }) => {
-  const showRequestGroups = sectionType !== 'execution';
-  const showExecutionGroups = sectionType !== 'request';
+  const showRequestGroups = sectionType === 'request';
+  const showExecutionGroups = sectionType === 'execution';
   const headerRows: PropertyRow[] = headers
     .filter((header) => header && header.name)
     .map((header) => ({

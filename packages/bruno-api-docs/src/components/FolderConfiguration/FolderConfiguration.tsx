@@ -14,7 +14,7 @@ interface FolderConfigurationProps {
   config: FolderConfig;
   authModeLabels?: Record<string, string>;
   onNavigate?: (uuid: string) => void;
-  sectionType?: 'request' | 'execution';
+  sectionType: 'request' | 'execution';
   testId?: string;
 }
 
@@ -25,8 +25,8 @@ export const FolderConfiguration: React.FC<FolderConfigurationProps> = ({
   sectionType,
   testId
 }) => {
-  const showRequestGroups = sectionType !== 'execution';
-  const showExecutionGroups = sectionType !== 'request';
+  const showRequestGroups = sectionType === 'request';
+  const showExecutionGroups = sectionType === 'execution';
   const hasInheritedHeaders = config.inheritedHeaders.length > 0;
   const hasHeaders = showRequestGroups && (config.headers.length > 0 || hasInheritedHeaders);
   const hasAuth = showRequestGroups && Boolean(config.auth);

@@ -16,17 +16,16 @@ test.describe('Environment switcher with no environments', () => {
     await expect(playground.envSwitcher.trigger).toContainText('No environments');
   });
 
-  test('opens no menu in the playground, and shows no caret', async ({ page, playground }) => {
+  test('shows plain text in the playground, with no caret and nothing to open', async ({ page, playground }) => {
     await page.goto(`${NO_ENVIRONMENTS}#/?pg=1&dock=bottom`);
     await playground.ensureSidebarOpen();
     const { trigger } = playground.envSwitcher;
 
-    await expect(trigger).toHaveAttribute('aria-disabled', 'true');
+    await expect(trigger).toContainText('No environments');
+    await expect(playground.envSwitcher.root.getByRole('button')).toHaveCount(0);
     await expect(trigger.locator('.env-switcher-chevron')).toHaveCount(0);
 
-    // Forced: Playwright sees it as disabled and would not click it otherwise.
-    await trigger.click({ force: true });
-    await page.waitForTimeout(300);
+    await trigger.click();
     await expect(playground.envSwitcher.menu).toHaveCount(0);
   });
 });

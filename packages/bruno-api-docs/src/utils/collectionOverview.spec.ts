@@ -1,13 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import type { OpenCollection } from '@opencollection/types';
 import type { Item as OpenCollectionItem } from '@opencollection/types/collection/item';
+import type { HttpRequestHeader } from '@opencollection/types/requests/http';
+import type { Auth } from '@opencollection/types/common/auth';
 import {
   countItems,
   getCollectionStats,
-  hasCollectionConfiguration,
   hasCollectionExecutionContext,
-  hasCollectionRequestConfig
+  hasCollectionRequestConfig,
+  type CollectionScripts
 } from './collectionOverview';
+
+const hasCollectionConfiguration = (
+  headers: HttpRequestHeader[] = [],
+  auth?: Auth,
+  scripts: CollectionScripts = {},
+  hasVars = false
+): boolean =>
+  hasCollectionRequestConfig(headers, auth) || hasCollectionExecutionContext(scripts, hasVars);
 
 describe('countItems', () => {
   it('counts requests and folders recursively at every depth', () => {
