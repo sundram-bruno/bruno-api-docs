@@ -20,6 +20,10 @@ export interface OpenCollectionOptions {
   gitCollectionUrl?: string;
 }
 
+export interface ApiDocsOptions extends Omit<OpenCollectionOptions, 'target' | 'opencollection'> {
+  content: OpenCollectionOptions['opencollection'];
+}
+
 export class OpenCollectionRenderer {
   private root: Root | null = null;
   private options: OpenCollectionOptions;
@@ -112,5 +116,11 @@ export class OpenCollectionRenderer {
 export default OpenCollectionRenderer;
 
 if (typeof window !== 'undefined') {
-  (window as any).OpenCollection = OpenCollectionRenderer;
+  const globals = window as any;
+  globals.OpenCollection = OpenCollectionRenderer;
+  globals.Bruno = {
+    ...globals.Bruno,
+    apiDocs: (target: HTMLElement, { content, ...options }: ApiDocsOptions) =>
+      new OpenCollectionRenderer({ target, opencollection: content, ...options })
+  };
 }
