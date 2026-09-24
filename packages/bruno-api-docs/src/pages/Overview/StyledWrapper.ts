@@ -30,7 +30,8 @@ export const StyledWrapper = styled.div`
     border-top: 1px solid var(--border-color);
   }
 
-  .overview-col-left {
+  .overview-col-left,
+  .overview-col-right {
     gap: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -40,7 +41,7 @@ export const StyledWrapper = styled.div`
     margin-top: 0.25rem;
   }
 
-  [data-testid='overview-section-label'] > [data-testid='section-label'] {
+  [data-testid='overview-section-label'] [data-testid='section-label'] {
     color: var(--text-muted);
   }
   .overview-col-right [data-testid='overview-section-label'] > [data-testid='section-label'] {

@@ -2,7 +2,11 @@ import React, { useMemo } from 'react';
 import type { OpenCollection } from '@opencollection/types';
 import type { StructuredText } from '@opencollection/types/common/description';
 import { useMarkdownRenderer } from '@/hooks';
-import { getCollectionStats, hasCollectionConfiguration } from '@/utils/collectionOverview';
+import {
+  getCollectionStats,
+  hasCollectionExecutionContext,
+  hasCollectionRequestConfig
+} from '@/utils/collectionOverview';
 import { scriptsArrayToObject } from '@/utils/schemaHelpers';
 import { getCollectionVariables } from '@/utils/request';
 import { AUTH_MODE_LABELS } from '@/constants';
@@ -13,7 +17,7 @@ import { PageWrapper } from '../../components/PageWrapper/PageWrapper';
 import { Heading } from '../../components/Heading/Heading';
 import { Section } from '../../components/Section/Section';
 import { ViewMore } from '../../components/ViewMore/ViewMore';
-import { BookIcon } from '@/assets/icons';
+import { BookIcon, RefreshIcon } from '@/assets/icons';
 import { StyledWrapper } from './StyledWrapper';
 
 const getDocsContent = (docs: OpenCollection['docs']): string => {
@@ -49,14 +53,13 @@ export const Overview: React.FC<OverviewProps> = ({ collection, testId = 'overvi
   }, [collection.docs, md]);
 
   const hasOverview = Boolean(docsHtml);
-  const hasConfig = useMemo(
-    () => hasCollectionConfiguration(
-      collection.request?.headers,
-      collection.request?.auth,
-      scripts,
-      preVars.length > 0 || postVars.length > 0
-    ),
-    [collection.request, scripts, preVars, postVars]
+  const hasRequestConfig = useMemo(
+    () => hasCollectionRequestConfig(collection.request?.headers, collection.request?.auth),
+    [collection.request]
+  );
+  const hasExecutionContext = useMemo(
+    () => hasCollectionExecutionContext(scripts, preVars.length > 0 || postVars.length > 0),
+    [scripts, preVars, postVars]
   );
 
   return (
@@ -100,22 +103,47 @@ export const Overview: React.FC<OverviewProps> = ({ collection, testId = 'overvi
           </div>
 
           <div className="overview-col-right">
-            <Section label="Collection Configuration" testId="overview-section-label">
-              {hasConfig ? (
+            {(hasRequestConfig || !hasExecutionContext) && (
+              <Section label="Collection Configuration" testId="overview-section-label">
+                {hasRequestConfig ? (
+                  <CollectionConfiguration
+                    headers={collection.request?.headers}
+                    auth={collection.request?.auth}
+                    sectionType="request"
+                    authModeLabels={AUTH_MODE_LABELS}
+                  />
+                ) : (
+                  <EmptyState
+                    testId="overview-empty"
+                    icon={<BookIcon />}
+                    heading="No configuration set"
+                    subheading="This collection has no shared headers or auth. Configure them in Bruno and they'll appear here."
+                  />
+                )}
+              </Section>
+            )}
+
+            <Section
+              label="Execution Context"
+              testId="overview-section-label"
+              collapsible={hasExecutionContext}
+              storageKey="collection-execution-context"
+            >
+              {hasExecutionContext ? (
                 <CollectionConfiguration
-                  headers={collection.request?.headers}
-                  auth={collection.request?.auth}
                   scripts={scripts}
                   preVars={preVars}
                   postVars={postVars}
+                  sectionType="execution"
                   authModeLabels={AUTH_MODE_LABELS}
+                  testId="collection-execution-context"
                 />
               ) : (
                 <EmptyState
-                  testId="overview-empty"
-                  icon={<BookIcon />}
-                  heading="No configuration set"
-                  subheading="This collection has no shared headers, auth, scripts, variables, or tests. Configure them in Bruno and they'll appear here."
+                  testId="collection-execution-context-empty"
+                  icon={<RefreshIcon />}
+                  heading="No execution context"
+                  subheading="This collection has no shared scripts, variables, or tests."
                 />
               )}
             </Section>
